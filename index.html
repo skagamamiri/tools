@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="ms" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hub Tool ICT - SK Agama (MIS) Miri</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        tech: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Mobile Fixes and Animations */
+        body {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .dark .glass-card {
+            background: rgba(30, 41, 59, 0.85);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .ios-shadow {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between pb-20 md:pb-6">
+
+    <!-- Top Header Navigation -->
+    <header class="sticky top-0 z-30 glass-card border-b border-slate-200/80 dark:border-slate-800/80 px-4 py-3 shadow-sm">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-tech-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                    <i class="fa-solid fa-laptop-code text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-heading font-bold text-base md:text-lg tracking-tight leading-none text-slate-900 dark:text-white">
+                        Hub Tool ICT
+                    </h1>
+                    <p class="text-[11px] font-medium text-brand-700 dark:text-brand-400">SK Agama (MIS) Miri</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons Right -->
+            <div class="flex items-center space-x-2">
+                <!-- Teacher Auth Status Badge / Button -->
+                <div id="teacherAuthContainer">
+                    <!-- Dynamic rendering via JS (Login button or Logged-in badge) -->
+                </div>
+
+                <!-- Theme Toggle -->
+                <button id="themeToggleBtn" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Tukar Tema">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+                </button>
+
+                <!-- Admin Button -->
+                <button onclick="toggleAdminModal()" class="px-3 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold hover:opacity-90 transition flex items-center space-x-1.5 shadow-sm">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span class="hidden sm:inline">Panel Admin</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-5 w-full flex-grow">
+        
+        <!-- Welcome Hero Banner -->
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-brand-700 via-brand-600 to-tech-700 p-5 md:p-7 text-white shadow-xl mb-6">
+            <div class="relative z-10 max-w-2xl">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/20 text-white backdrop-blur-md mb-2">
+                    <i class="fa-solid fa-star text-amber-300 mr-1.5 text-[10px]"></i> Portal Guru ICT Cg Sabri
+                </span>
+                <h2 class="font-heading text-xl md:text-3xl font-extrabold tracking-tight">
+                    Pusat Koleksi & Tool Aplikasi Digital PdP
+                </h2>
+                <p class="text-xs md:text-sm text-emerald-100 mt-1 leading-relaxed">
+                    Akses pantas alatan pengajaran, pengurusan multimedia, dan widget HTML interaktif khusus untuk guru SK Agama (MIS) Miri.
+                </p>
+            </div>
+            <!-- Decorative BG Circles -->
+            <div class="absolute -right-8 -bottom-10 w-44 h-44 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute right-20 -top-10 w-32 h-32 bg-tech-400/20 rounded-full blur-xl pointer-events-none"></div>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="space-y-4 mb-6">
+            <!-- Search Bar -->
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" id="searchInput" oninput="filterTools()" placeholder="Cari nama alatan, fungsi, atau kata kunci..." 
+                    class="w-full pl-11 pr-10 py-3 rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 transition shadow-sm placeholder:text-slate-400">
+                <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Categories Horizontal Scroll Bar -->
+            <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar pb-1 text-xs" id="categoryChips">
+                <button onclick="setCategory('ALL')" class="cat-chip active px-4 py-2 rounded-xl font-medium whitespace-nowrap transition bg-brand-600 text-white shadow-sm shadow-brand-600/30">
+                    <i class="fa-solid fa-border-all mr-1.5"></i>Semua Alatan
+                </button>
+                <button onclick="setCategory('PDP')" class="cat-chip px-4 py-2 rounded-xl font-medium whitespace-nowrap transition bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <i class="fa-solid fa-chalkboard-user mr-1.5 text-emerald-500"></i>PdP & Kelas
+                </button>
+                <button onclick="setCategory('PENTADBIRAN')" class="cat-chip px-4 py-2 rounded-xl font-medium whitespace-nowrap transition bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <i class="fa-solid fa-folder-tree mr-1.5 text-blue-500"></i>Pengurusan & KPM
+                </button>
+                <button onclick="setCategory('GRAFIK')" class="cat-chip px-4 py-2 rounded-xl font-medium whitespace-nowrap transition bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1.5 text-purple-500"></i>Reka Bentuk & Grafik
+                </button>
+                <button onclick="setCategory('HTML')" class="cat-chip px-4 py-2 rounded-xl font-medium whitespace-nowrap transition bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <i class="fa-solid fa-code mr-1.5 text-amber-500"></i>Widget HTML Interaktif
+                </button>
+                <button onclick="setCategory('FAV')" class="cat-chip px-4 py-2 rounded-xl font-medium whitespace-nowrap transition bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <i class="fa-solid fa-bookmark mr-1.5 text-rose-500"></i>Disimpan (Pilihan)
+                </button>
+            </div>
+        </div>
+
+        <!-- Tools Grid Section -->
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-heading font-bold text-sm md:text-base text-slate-700 dark:text-slate-300 flex items-center">
+                <span id="sectionTitle">Senarai Alatan ICT</span>
+                <span id="toolCountBadge" class="ml-2 px-2 py-0.5 rounded-full text-[11px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">0</span>
+            </h3>
+            <span class="text-[11px] text-slate-400">Pilih alatan untuk melancarkan</span>
+        </div>
+
+        <!-- Grid Cards Container -->
+        <div id="toolsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Cards populated dynamically via JavaScript -->
+        </div>
+
+        <!-- Empty State View -->
+        <div id="emptyState" class="hidden py-12 text-center bg-white dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 mt-4">
+            <div class="w-14 h-14 mx-auto rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 mb-3">
+                <i class="fa-solid fa-magnifying-glass text-xl"></i>
+            </div>
+            <h4 class="font-heading font-bold text-slate-700 dark:text-slate-300 text-base">Tiada alatan ditemui</h4>
+            <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">Cuba cari kata kunci lain atau tambah alatan baharu melalui Panel Admin.</p>
+        </div>
+
+    </main>
+
+    <!-- Interactive HTML Tool Modal Viewer -->
+    <div id="htmlModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4">
+        <div class="w-full sm:max-w-4xl h-[92vh] sm:h-[85vh] bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom duration-200">
+            <!-- Modal Header -->
+            <div class="px-4 py-3 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700/80 flex items-center justify-between">
+                <div class="flex items-center space-x-2.5 truncate">
+                    <span id="htmlModalIcon" class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm font-bold">
+                        <i class="fa-solid fa-code"></i>
+                    </span>
+                    <div class="truncate">
+                        <h4 id="htmlModalTitle" class="font-heading font-bold text-sm text-slate-900 dark:text-white truncate">Tajuk Widget HTML</h4>
+                        <p class="text-[10px] text-slate-400">Mod HTML Interaktif</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="reloadHtmlTool()" class="p-2 text-slate-500 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-xs" title="Muat Semula Widget">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <button onclick="closeHtmlModal()" class="p-2 text-slate-500 hover:text-rose-500 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-xs" title="Tutup">
+                        <i class="fa-solid fa-xmark text-base"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Sandbox Content Area -->
+            <div class="flex-grow w-full bg-slate-50 dark:bg-slate-950 relative">
+                <iframe id="htmlSandboxFrame" class="w-full h-full border-none" sandbox="allow-scripts allow-modals allow-forms allow-same-origin"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Backend Modal -->
+    <div id="adminModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto">
+            
+            <!-- Admin Login Step -->
+            <div id="adminAuthStep" class="p-6 text-center">
+                <div class="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-700 dark:text-slate-200 mx-auto mb-3">
+                    <i class="fa-solid fa-lock text-xl"></i>
+                </div>
+                <h3 class="font-heading font-bold text-lg text-slate-900 dark:text-white">Akses Panel Admin</h3>
+                <p class="text-xs text-slate-400 mt-1 mb-4">Masukkan PIN Keselamatan Pentadbir (Lalai: <code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-brand-600 font-mono">1234</code>)</p>
+                
+                <div class="max-w-xs mx-auto space-y-3">
+                    <input type="password" id="adminPinInput" placeholder="Masukkan PIN 4-Digit" maxlength="8"
+                        class="w-full px-4 py-2.5 text-center text-lg font-bold tracking-widest rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                    <div id="authErrorMsg" class="text-xs text-rose-500 hidden font-medium">PIN tidak sah. Sila cuba lagi.</div>
+                    <div class="flex space-x-2">
+                        <button onclick="closeAdminModal()" class="w-1/2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">
+                            Batal
+                        </button>
+                        <button onclick="verifyAdminPin()" class="w-1/2 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md">
+                            Log Masuk
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard Content -->
+            <div id="adminDashboardStep" class="hidden flex flex-col max-h-[85vh]">
+                <!-- Header -->
+                <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                        <h3 class="font-heading font-bold text-base text-slate-900 dark:text-white">Panel Pentadbir Guru ICT</h3>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="exportDataJSON()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300" title="Muat Turun Backup JSON">
+                            <i class="fa-solid fa-download mr-1"></i>Eksport
+                        </button>
+                        <button onclick="closeAdminModal()" class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabs Admin -->
+                <div class="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold overflow-x-auto no-scrollbar">
+                    <button id="tabBtnAdd" onclick="switchAdminTab('ADD')" class="flex-1 min-w-[120px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center">
+                        <i class="fa-solid fa-plus-circle mr-1.5"></i>Tambah Tool
+                    </button>
+                    <button id="tabBtnManage" onclick="switchAdminTab('MANAGE')" class="flex-1 min-w-[120px] py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center">
+                        <i class="fa-solid fa-list-check mr-1.5"></i>Urus Tool
+                    </button>
+                    <button id="tabBtnTeachers" onclick="switchAdminTab('TEACHERS')" class="flex-1 min-w-[140px] py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center">
+                        <i class="fa-solid fa-id-card-clip mr-1.5 text-brand-600"></i>ID Guru (CSV)
+                    </button>
+                </div>
+
+                <!-- Tab Content Body -->
+                <div class="p-5 overflow-y-auto space-y-4 flex-grow">
+                    
+                    <!-- Form Tambah Tool -->
+                    <form id="addToolForm" onsubmit="handleSaveTool(event)" class="space-y-4">
+                        <input type="hidden" id="editingToolId" value="">
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tajuk Tool / Nama Aplikasi <span class="text-rose-500">*</span></label>
+                                <input type="text" id="toolTitle" required placeholder="Contoh: Pemutar Nama Murid" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Kategori <span class="text-rose-500">*</span></label>
+                                <select id="toolCategory" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                                    <option value="PDP">PdP & Kelas</option>
+                                    <option value="PENTADBIRAN">Pengurusan & KPM</option>
+                                    <option value="GRAFIK">Reka Bentuk & Grafik</option>
+                                    <option value="HTML">Widget HTML Interaktif</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Penerangan Ringkas</label>
+                            <input type="text" id="toolDesc" placeholder="Contoh: Aplikasi pemutar nama secara rawak untuk aktiviti soal jawab kelas." class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Jenis Input Tool <span class="text-rose-500">*</span></label>
+                                <select id="toolType" onchange="toggleTypeInput()" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-2 focus:ring-brand-500 outline-none">
+                                    <option value="URL">Pautan URL Luar (Web Link)</option>
+                                    <option value="HTML">Kod HTML Interaktif (Embedded)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Ikon (FontAwesome Class)</label>
+                                <div class="flex space-x-2">
+                                    <input type="text" id="toolIcon" placeholder="fa-solid fa-gamepad" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                                    <div id="iconPreview" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-brand-600 text-sm">
+                                        <i class="fa-solid fa-wrench"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- URL Input Container -->
+                        <div id="urlInputContainer">
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Pautan Web URL <span class="text-rose-500">*</span></label>
+                            <input type="url" id="toolUrl" placeholder="https://delimamb.moe-dl.edu.my" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+
+                        <!-- HTML Input Container -->
+                        <div id="htmlInputContainer" class="hidden">
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Kod HTML / JS Interaktif <span class="text-rose-500">*</span></label>
+                            <textarea id="toolHtmlCode" rows="6" placeholder="<!-- Masukkan HTML, CSS & JavaScript alatan di sini -->&#10;<style>body { font-family: sans-serif; text-align: center; padding: 20px; }</style>&#10;<h3>Timer PdP</h3>&#10;<button onclick='alert(&quot;Mula!&quot;)'>Mula</button>" class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-900 text-emerald-400 font-mono text-xs focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+                            <p class="text-[10px] text-slate-400 mt-1"><i class="fa-solid fa-circle-info mr-1"></i>Kod HTML ini akan dijalankan secara selamat di dalam paparan modal web app.</p>
+                        </div>
+
+                        <div class="flex justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                            <button type="button" onclick="resetForm()" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">
+                                Set Semula
+                            </button>
+                            <button type="submit" id="submitFormBtn" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md">
+                                <i class="fa-solid fa-floppy-disk mr-1.5"></i>Simpan Tool
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Manage Tools List View -->
+                    <div id="manageToolsView" class="hidden space-y-3">
+                        <div id="manageToolsList" class="space-y-2">
+                            <!-- Items inserted dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Teacher ID DELIMa CSV Management View -->
+                    <div id="manageTeachersView" class="hidden space-y-4">
+                        <div class="p-4 rounded-xl bg-brand-50/50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40">
+                            <h4 class="font-bold text-xs text-brand-800 dark:text-brand-300 flex items-center">
+                                <i class="fa-solid fa-file-csv mr-2 text-base"></i>Muat Naik SENARAI_ID_DELIMA_GURU.csv
+                            </h4>
+                            <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-1 mb-3">
+                                Pilih fail CSV yang mengandungi senarai ID DELIMa Guru (contoh: <code>g-12345678@moe-dl.edu.my</code>) untuk membolehkan guru log masuk.
+                            </p>
+                            
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                <input type="file" id="teacherCsvInput" accept=".csv, .txt" class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer">
+                                <button onclick="processTeacherCSV()" class="px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-bold text-xs hover:opacity-90 transition whitespace-nowrap">
+                                    <i class="fa-solid fa-upload mr-1.5"></i>Import CSV
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Manual Add Teacher ID -->
+                        <div class="flex items-center space-x-2 pt-2">
+                            <input type="text" id="manualTeacherId" placeholder="Atau tambah ID DELIMa manual (cth: g-12345678@moe-dl.edu.my)" class="flex-grow px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                            <button onclick="addTeacherIdManual()" class="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold text-xs hover:bg-brand-700 transition">
+                                <i class="fa-solid fa-plus mr-1"></i>Tambah
+                            </button>
+                        </div>
+
+                        <!-- Registered Teachers List -->
+                        <div class="mt-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Senarai ID Guru Berdaftar (<span id="teacherCount">0</span>)</span>
+                                <button onclick="clearAllTeachers()" class="text-[11px] text-rose-500 hover:underline font-semibold">Padam Semua</button>
+                            </div>
+                            <div id="teacherIdList" class="max-h-52 overflow-y-auto space-y-1.5 border border-slate-200 dark:border-slate-800 p-2 rounded-xl bg-slate-50 dark:bg-slate-900/50">
+                                <!-- Dynamic List -->
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Teacher Login Modal Overlay -->
+    <div id="teacherLoginModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 text-center animate-in zoom-in-95 duration-200">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center text-2xl mb-4 shadow-sm">
+                <i class="fa-solid fa-user-lock"></i>
+            </div>
+            
+            <h3 class="font-heading font-extrabold text-xl text-slate-900 dark:text-white">Log Masuk Guru SKAMIS</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-6 leading-relaxed">
+                Portal alatan PdP ini terhad kepada warga guru SK Agama (MIS) Miri. Sila masukkan ID DELIMa KPM anda untuk mengakses alatan.
+            </p>
+
+            <form onsubmit="handleTeacherLogin(event)" class="space-y-4">
+                <div class="text-left">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">ID DELIMa Guru / ID Sekolah</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="loginDelimaId" required placeholder="Contoh: g-12345678@moe-dl.edu.my" 
+                            class="w-full pl-9 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                </div>
+
+                <div id="loginErrorAlert" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold text-left">
+                    <i class="fa-solid fa-circle-exclamation mr-1.5"></i>
+                    <span>ID DELIMa tidak didaftarkan. Sila hubungi Guru ICT (Cg Sabri).</span>
+                </div>
+
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="closeTeacherLoginModal()" class="w-1/3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        Batal
+                    </button>
+                    <button type="submit" class="w-2/3 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center space-x-2">
+                        <span>Log Masuk</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </button>
+                </div>
+            </form>
+            <p class="text-[10px] text-slate-400 mt-5">SK Agama (MIS) Miri • Unit ICT Sekolah</p>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-xs font-semibold shadow-2xl flex items-center space-x-2 border border-slate-700">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMsg">Mesej Notifikasi</span>
+    </div>
+
+    <!-- Bottom Mobile Menu Bar -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 glass-card border-t border-slate-200 dark:border-slate-800 px-6 py-2 z-20 flex justify-around items-center">
+        <button onclick="setCategory('ALL')" class="flex flex-col items-center text-slate-600 dark:text-slate-300 focus:text-brand-600">
+            <i class="fa-solid fa-house text-base"></i>
+            <span class="text-[10px] mt-0.5 font-medium">Utama</span>
+        </button>
+        <button onclick="setCategory('FAV')" class="flex flex-col items-center text-slate-600 dark:text-slate-300 focus:text-brand-600">
+            <i class="fa-solid fa-bookmark text-base text-rose-500"></i>
+            <span class="text-[10px] mt-0.5 font-medium">Kegemaran</span>
+        </button>
+        <button onclick="toggleAdminModal()" class="flex flex-col items-center text-slate-600 dark:text-slate-300 focus:text-brand-600">
+            <i class="fa-solid fa-user-gear text-base text-tech-500"></i>
+            <span class="text-[10px] mt-0.5 font-medium">Admin</span>
+        </button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-8 border-t border-slate-200 dark:border-slate-800/60 py-6 text-center text-xs text-slate-400">
+        <p>© 2026 SK Agama (MIS) Miri, Sarawak • Disediakan oleh Cg Sabri (Guru ICT)</p>
+        <p class="text-[10px] text-slate-400 mt-1">Dihoskan di <code class="text-brand-600 dark:text-brand-400 font-mono">cgsabri.github.io/tools</code></p>
+    </footer>
+
+    <script>
+        // Default Default Pre-loaded Tools
+        const INITIAL_TOOLS = [
+            {
+                id: 'tool_delima',
+                title: 'DELIMa KPM 2.0',
+                category: 'PENTADBIRAN',
+                desc: 'Portal Rasmi Pembelajaran Digital KPM untuk Guru & Murid.',
+                type: 'URL',
+                url: 'https://delimamb.moe-dl.edu.my',
+                icon: 'fa-solid fa-graduation-cap',
+                isPinned: true
+            },
+            {
+                id: 'tool_canva',
+                title: 'Canva Education',
+                category: 'GRAFIK',
+                desc: 'Bina bahan PdP, slaid pembentangan, dan poster dengan akaun Guru.',
+                type: 'URL',
+                url: 'https://www.canva.com',
+                icon: 'fa-solid fa-palette',
+                isPinned: true
+            },
+            {
+                id: 'tool_qr_generator',
+                title: 'Pembuat QR Code SKAMIS',
+                category: 'HTML',
+                desc: 'Widget percuma janajasa QR Code pantas untuk pautan bahanPdP.',
+                type: 'HTML',
+                htmlCode: `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+</head>
+<body class="bg-slate-900 text-white p-6 flex flex-col items-center justify-center min-h-screen font-sans">
+  <div class="max-w-md w-full bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 text-center">
+     <h2 class="text-xl font-bold text-emerald-400 mb-2">Penjana QR Code SKAMIS</h2>
+     <p class="text-xs text-slate-400 mb-4">Masukkan URL atau teks di bawah untuk menghasilkan QR Code.</p>
+     <input type="text" id="qrText" value="https://cgsabri.github.io/tools" placeholder="https://..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+     <button onclick="generate()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-xl text-sm transition">Jana QR Code</button>
+     <div id="qrcode" class="mt-6 flex justify-center p-4 bg-white rounded-xl"></div>
+  </div>
+  <script>
+    let qrcode = new QRCode(document.getElementById("qrcode"), { width: 160, height: 160 });
+    function generate() {
+      let val = document.getElementById("qrText").value.trim();
+      if(val) qrcode.makeCode(val);
+    }
+    generate();
+  <\/script>
+</body>
+</html>`,
+                icon: 'fa-solid fa-qrcode',
+                isPinned: true
+            },
+            {
+                id: 'tool_picker_wheel',
+                title: 'Pemutar Nama Murid',
+                category: 'HTML',
+                desc: 'Widget rawak nama murid untuk menentukan giliran membentang / menjawab soalan.',
+                type: 'HTML',
+                htmlCode: `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"><\/script>
+</head>
+<body class="bg-slate-900 text-white p-4 flex flex-col items-center justify-center min-h-screen font-sans">
+  <div class="max-w-md w-full bg-slate-800 p-6 rounded-2xl border border-slate-700 text-center">
+    <h2 class="text-xl font-bold text-amber-400 mb-1">🎯 Pemilih Nama Rawak Class</h2>
+    <p class="text-xs text-slate-400 mb-4">Pisahkan nama murid dengan koma ( , )</p>
+    <textarea id="namesList" rows="3" class="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white mb-3">Ahmad, Siti, Sabri, Umar, Aisyah, Adam, Rayyan</textarea>
+    <button onclick="pickRandom()" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90 font-bold rounded-xl text-sm transition shadow-lg">Pilih Nama Murid!</button>
+    <div id="resultBox" class="mt-6 py-6 px-4 bg-slate-900 rounded-2xl border-2 border-dashed border-amber-500/40 min-h-[90px] flex items-center justify-center">
+       <span id="resultText" class="text-2xl font-black text-amber-300">Tekan Butang Di Atas</span>
+    </div>
+  </div>
+  <script>
+    function pickRandom() {
+      let names = document.getElementById('namesList').value.split(',').map(n => n.trim()).filter(n => n);
+      if(names.length === 0) return;
+      let resText = document.getElementById('resultText');
+      let count = 0;
+      let timer = setInterval(() => {
+         resText.innerText = names[Math.floor(Math.random() * names.length)];
+         count++;
+         if(count > 15) {
+            clearInterval(timer);
+         }
+      }, 80);
+    }
+  <\/script>
+</body>
+</html>`,
+                icon: 'fa-solid fa-arrows-spin',
+                isPinned: false
+            },
+            {
+                id: 'tool_timer_pdp',
+                title: 'Pemasa Kuis PdP (Timer)',
+                category: 'HTML',
+                desc: 'Jam randik & countdown visual untuk aktiviti berkumpulan murid di dalam kelas.',
+                type: 'HTML',
+                htmlCode: `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"><\/script>
+</head>
+<body class="bg-slate-950 text-white flex flex-col items-center justify-center min-h-screen font-sans p-4">
+  <div class="text-center bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl max-w-sm w-full">
+     <h2 class="text-lg font-bold text-slate-300 mb-4"><i class="fa-solid fa-stopwatch mr-2 text-rose-500"></i>Pemasa Masa Aktiviti</h2>
+     <div id="display" class="text-6xl font-black font-mono tracking-wider text-rose-500 mb-6">05:00</div>
+     <div class="grid grid-cols-3 gap-2 mb-4">
+        <button onclick="setMinutes(1)" class="py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl border border-slate-700">1 Minit</button>
+        <button onclick="setMinutes(5)" class="py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl border border-slate-700">5 Minit</button>
+        <button onclick="setMinutes(10)" class="py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl border border-slate-700">10 Minit</button>
+     </div>
+     <div class="flex space-x-2">
+        <button onclick="startTimer()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl text-sm">Mula</button>
+        <button onclick="resetTimer()" class="py-3 px-4 bg-slate-700 hover:bg-slate-600 font-semibold rounded-xl text-sm">Reset</button>
+     </div>
+  </div>
+  <script>
+     let seconds = 300;
+     let timerId = null;
+     function updateDisplay() {
+        let m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        let s = (seconds % 60).toString().padStart(2, '0');
+        document.getElementById('display').innerText = m + ":" + s;
+     }
+     function setMinutes(m) {
+        clearInterval(timerId); timerId = null;
+        seconds = m * 60;
+        updateDisplay();
+     }
+     function startTimer() {
+        if(timerId) return;
+        timerId = setInterval(() => {
+           if(seconds > 0) { seconds--; updateDisplay(); }
+           else { clearInterval(timerId); timerId = null; }
+        }, 1000);
+     }
+     function resetTimer() {
+        clearInterval(timerId); timerId = null;
+        seconds = 300;
+        updateDisplay();
+     }
+  <\/script>
+</body>
+</html>`,
+                icon: 'fa-solid fa-clock',
+                isPinned: false
+            },
+            {
+                id: 'tool_wordwall',
+                title: 'Wordwall Interactive',
+                category: 'PDP',
+                desc: 'Bina lembaran kerja interaktif dan kuiz permainan PdP.',
+                type: 'URL',
+                url: 'https://wordwall.net',
+                icon: 'fa-solid fa-gamepad',
+                isPinned: false
+            }
+        ];
+
+        // State Variables
+        let tools = [];
+        let currentCategory = 'ALL';
+        let searchQuery = '';
+        let favorites = [];
+        let activeAdminTab = 'ADD';
+        const ADMIN_PIN = '1234'; // Default Admin Pin
+
+        // Default Pre-loaded Allowed Teacher DELIMa IDs
+        const DEFAULT_TEACHERS = [
+            'g-12345678@moe-dl.edu.my',
+            'g-87654321@moe-dl.edu.my',
+            'g-sabrimiri@moe-dl.edu.my',
+            'g-skamis@moe-dl.edu.my',
+            'guru'
+        ];
+        
+        let allowedTeachers = [];
+        let loggedInTeacher = null; // Contains teacher ID string when logged in
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            loadLocalStorage();
+            setupTheme();
+            renderTeacherAuthHeader();
+            renderTools();
+        });
+
+        // Load LocalStorage
+        function loadLocalStorage() {
+            const savedTools = localStorage.getItem('skamis_ict_tools');
+            if (savedTools) {
+                try { tools = JSON.parse(savedTools); } catch(e) { tools = INITIAL_TOOLS; }
+            } else {
+                tools = INITIAL_TOOLS;
+                saveToolsToStorage();
+            }
+
+            const savedFavs = localStorage.getItem('skamis_ict_favs');
+            if (savedFavs) {
+                try { favorites = JSON.parse(savedFavs); } catch(e) { favorites = []; }
+            }
+
+            // Load Allowed Teacher List
+            const savedTeachers = localStorage.getItem('skamis_allowed_teachers');
+            if (savedTeachers) {
+                try { allowedTeachers = JSON.parse(savedTeachers); } catch(e) { allowedTeachers = DEFAULT_TEACHERS; }
+            } else {
+                allowedTeachers = DEFAULT_TEACHERS;
+                saveTeachersToStorage();
+            }
+
+            // Load Active Teacher Session
+            const activeSession = sessionStorage.getItem('skamis_current_teacher');
+            if (activeSession) {
+                loggedInTeacher = activeSession;
+            }
+        }
+
+        function saveTeachersToStorage() {
+            localStorage.setItem('skamis_allowed_teachers', JSON.stringify(allowedTeachers));
+        }
+
+        function renderTeacherAuthHeader() {
+            const container = document.getElementById('teacherAuthContainer');
+            if (!container) return;
+
+            if (loggedInTeacher) {
+                const shortId = loggedInTeacher.split('@')[0];
+                container.innerHTML = `
+                    <div class="flex items-center space-x-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5 rounded-xl text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                        <i class="fa-solid fa-circle-user text-sm"></i>
+                        <span class="max-w-[100px] truncate font-semibold" title="${loggedInTeacher}">Cg ${shortId}</span>
+                        <button onclick="logoutTeacher()" class="ml-1 text-slate-400 hover:text-rose-500" title="Log Keluar">
+                            <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                        </button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <button onclick="openTeacherLoginModal()" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span>Log Masuk Guru</span>
+                    </button>
+                `;
+            }
+        }
+
+        function openTeacherLoginModal() {
+            document.getElementById('loginDelimaId').value = '';
+            document.getElementById('loginErrorAlert').classList.add('hidden');
+            document.getElementById('teacherLoginModal').classList.remove('hidden');
+        }
+
+        function closeTeacherLoginModal() {
+            document.getElementById('teacherLoginModal').classList.add('hidden');
+        }
+
+        function handleTeacherLogin(e) {
+            e.preventDefault();
+            const inputId = document.getElementById('loginDelimaId').value.trim().toLowerCase();
+            
+            // Check against allowed teacher IDs
+            const match = allowedTeachers.some(t => t.toLowerCase() === inputId);
+            if (match) {
+                loggedInTeacher = inputId;
+                sessionStorage.setItem('skamis_current_teacher', inputId);
+                renderTeacherAuthHeader();
+                closeTeacherLoginModal();
+                showToast(`Selamat datang, Cg ${inputId.split('@')[0]}!`, 'success');
+            } else {
+                document.getElementById('loginErrorAlert').classList.remove('hidden');
+            }
+        }
+
+        function logoutTeacher() {
+            loggedInTeacher = null;
+            sessionStorage.removeItem('skamis_current_teacher');
+            renderTeacherAuthHeader();
+            showToast('Anda telah log keluar.', 'info');
+        }
+
+        // Launch Tool Action (Guarded with Login Check)
+        let activeHtmlTool = null;
+        function launchTool(id) {
+            // Guard: Must be logged in as a teacher!
+            if (!loggedInTeacher) {
+                openTeacherLoginModal();
+                showToast('Sila log masuk sebagai guru untuk melancarkan alatan ini.', 'info');
+                return;
+            }
+
+            const tool = tools.find(t => t.id === id);
+            if (!tool) return;
+
+            if (tool.type === 'URL') {
+                window.open(tool.url, '_blank');
+            } else if (tool.type === 'HTML') {
+                activeHtmlTool = tool;
+                document.getElementById('htmlModalTitle').innerText = tool.title;
+                
+                // Inject HTML Code into iframe sandbox
+                const iframe = document.getElementById('htmlSandboxFrame');
+                iframe.srcdoc = tool.htmlCode || '<html><body><p>Tiada kod HTML disediakan.</p></body></html>';
+
+                document.getElementById('htmlModal').classList.remove('hidden');
+            }
+        }
+
+        function switchAdminTab(tab) {
+            activeAdminTab = tab;
+            const btnAdd = document.getElementById('tabBtnAdd');
+            const btnManage = document.getElementById('tabBtnManage');
+            const btnTeachers = document.getElementById('tabBtnTeachers');
+            
+            const formAdd = document.getElementById('addToolForm');
+            const viewManage = document.getElementById('manageToolsView');
+            const viewTeachers = document.getElementById('manageTeachersView');
+
+            // Reset class tabs
+            [btnAdd, btnManage, btnTeachers].forEach(b => b.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center');
+            [formAdd, viewManage, viewTeachers].forEach(v => v.classList.add('hidden'));
+
+            if (tab === 'ADD') {
+                btnAdd.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
+                formAdd.classList.remove('hidden');
+            } else if (tab === 'MANAGE') {
+                btnManage.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
+                viewManage.classList.remove('hidden');
+                renderManageToolsList();
+            } else if (tab === 'TEACHERS') {
+                btnTeachers.className = 'flex-1 min-w-[140px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
+                viewTeachers.classList.remove('hidden');
+                renderTeacherList();
+            }
+        }
+
+        // CSV Import Handler for SENARAI_ID_DELIMA_GURU.csv
+        function processTeacherCSV() {
+            const fileInput = document.getElementById('teacherCsvInput');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showToast('Sila pilih fail CSV dahulu!', 'info');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const text = e.target.result;
+                // Parse CSV by lines and commas
+                const lines = text.split(/\r\n|\n/);
+                let addedCount = 0;
+
+                lines.forEach(line => {
+                    if (!line.trim()) return;
+                    const items = line.split(',');
+                    items.forEach(item => {
+                        const cleanId = item.trim().replace(/^["']|["']$/g, '');
+                        if (cleanId && cleanId.length > 3 && !allowedTeachers.includes(cleanId)) {
+                            allowedTeachers.push(cleanId);
+                            addedCount++;
+                        }
+                    });
+                });
+
+                saveTeachersToStorage();
+                renderTeacherList();
+                fileInput.value = '';
+                showToast(`Berjaya mengimport ${addedCount} ID Guru dari CSV!`, 'success');
+            };
+
+            reader.readAsText(file);
+        }
+
+        function addTeacherIdManual() {
+            const input = document.getElementById('manualTeacherId');
+            const val = input.value.trim();
+            if (!val) return;
+
+            if (!allowedTeachers.includes(val)) {
+                allowedTeachers.push(val);
+                saveTeachersToStorage();
+                renderTeacherList();
+                input.value = '';
+                showToast('ID Guru berjaya ditambah', 'success');
+            } else {
+                showToast('ID Guru sudah sedia ada', 'info');
+            }
+        }
+
+        function removeTeacherId(id) {
+            allowedTeachers = allowedTeachers.filter(t => t !== id);
+            saveTeachersToStorage();
+            renderTeacherList();
+            showToast('ID Guru dipadam', 'info');
+        }
+
+        function clearAllTeachers() {
+            if (confirm('Adakah anda pasti untuk mengosongkan semua ID Guru berdaftar?')) {
+                allowedTeachers = [];
+                saveTeachersToStorage();
+                renderTeacherList();
+                showToast('Senarai ID Guru dikosongkan', 'info');
+            }
+        }
+
+        function renderTeacherList() {
+            const container = document.getElementById('teacherIdList');
+            const countBadge = document.getElementById('teacherCount');
+            if (!container) return;
+
+            countBadge.innerText = allowedTeachers.length;
+            container.innerHTML = '';
+
+            if (allowedTeachers.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-3">Tiada ID Guru berdaftar. Sila import CSV atau tambah manual.</p>`;
+                return;
+            }
+
+            allowedTeachers.forEach(id => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between py-1.5 px-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-xs font-mono';
+                row.innerHTML = `
+                    <span class="text-slate-800 dark:text-slate-200 truncate mr-2"><i class="fa-solid fa-at mr-1.5 text-brand-500"></i>${id}</span>
+                    <button onclick="removeTeacherId('${id}')" class="text-slate-400 hover:text-rose-500 text-xs p-1" title="Padam">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // Render Cards Grid
+        function renderTools() {
+            const grid = document.getElementById('toolsGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.innerHTML = '';
+
+            let filtered = tools.filter(t => {
+                // Category Filter
+                if (currentCategory === 'FAV') {
+                    if (!favorites.includes(t.id)) return false;
+                } else if (currentCategory !== 'ALL' && t.category !== currentCategory) {
+                    return false;
+                }
+
+                // Search Filter
+                if (searchQuery.trim() !== '') {
+                    const q = searchQuery.toLowerCase();
+                    const matchTitle = t.title.toLowerCase().includes(q);
+                    const matchDesc = (t.desc || '').toLowerCase().includes(q);
+                    return matchTitle || matchDesc;
+                }
+
+                return true;
+            });
+
+            // Update Badge Count
+            document.getElementById('toolCountBadge').innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                grid.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.classList.remove('hidden');
+
+            filtered.forEach(tool => {
+                const isFav = favorites.includes(tool.id);
+                const card = document.createElement('div');
+                card.className = 'glass-card p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 hover:border-brand-500/50 dark:hover:border-brand-500/50 transition-all duration-200 flex flex-col justify-between group relative ios-shadow';
+
+                let catBadgeColor = 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+                let catLabel = 'KPM & Pengurusan';
+                if(tool.category === 'PDP') { catBadgeColor = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'; catLabel = 'PdP & Kelas'; }
+                if(tool.category === 'GRAFIK') { catBadgeColor = 'bg-purple-500/10 text-purple-600 dark:text-purple-400'; catLabel = 'Reka Bentuk'; }
+                if(tool.category === 'HTML') { catBadgeColor = 'bg-amber-500/10 text-amber-600 dark:text-amber-400'; catLabel = 'HTML Widget'; }
+
+                const typeBadge = tool.type === 'HTML' 
+                    ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20"><i class="fa-solid fa-code mr-1"></i>HTML</span>`
+                    : `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-tech-500/10 text-tech-600 border border-tech-500/20"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>Pautan URL</span>`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="w-11 h-11 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-brand-600 dark:text-brand-400 text-lg group-hover:scale-105 transition-transform">
+                                <i class="${tool.icon || 'fa-solid fa-wrench'}"></i>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <button onclick="toggleFavorite('${tool.id}')" class="p-1.5 text-slate-300 hover:text-rose-500 ${isFav ? 'text-rose-500' : ''} transition" title="Simpan Kegemaran">
+                                    <i class="fa-${isFav ? 'solid' : 'regular'} fa-bookmark text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-1.5 mb-1.5">
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${catBadgeColor}">${catLabel}</span>
+                            ${typeBadge}
+                        </div>
+
+                        <h4 class="font-heading font-bold text-sm md:text-base text-slate-900 dark:text-white leading-snug group-hover:text-brand-600 dark:group-hover:text-brand-400 transition">
+                            ${tool.title}
+                        </h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                            ${tool.desc || 'Tiada penerangan.'}
+                        </p>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                        <button onclick="launchTool('${tool.id}')" class="w-full py-2 px-3 rounded-xl bg-slate-900 dark:bg-slate-100 hover:bg-brand-600 dark:hover:bg-brand-500 text-white dark:text-slate-900 dark:hover:text-white text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-sm">
+                            <span>Launch Tool</span>
+                            <i class="fa-solid ${tool.type === 'HTML' ? 'fa-play text-[10px]' : 'fa-arrow-right text-[10px]'}"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Filter and Category Controls
+        function setCategory(cat) {
+            currentCategory = cat;
+            
+            // Update UI Chips
+            const chips = document.querySelectorAll('.cat-chip');
+            chips.forEach(chip => {
+                chip.classList.remove('bg-brand-600', 'text-white', 'shadow-sm', 'shadow-brand-600/30');
+                chip.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+            });
+
+            event.currentTarget.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+            event.currentTarget.classList.add('bg-brand-600', 'text-white', 'shadow-sm', 'shadow-brand-600/30');
+
+            // Titles
+            const titles = {
+                'ALL': 'Semua Alatan ICT',
+                'PDP': 'Alatan PdP & Kelas',
+                'PENTADBIRAN': 'Pengurusan & Portal KPM',
+                'GRAFIK': 'Reka Bentuk & Multimedia',
+                'HTML': 'Widget HTML Interaktif',
+                'FAV': 'Alatan Disimpan (Pilihan)'
+            };
+            document.getElementById('sectionTitle').innerText = titles[cat] || 'Senarai Alatan';
+
+            renderTools();
+        }
+
+        function filterTools() {
+            searchQuery = document.getElementById('searchInput').value;
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if (searchQuery.trim().length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+            renderTools();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            searchQuery = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            renderTools();
+        }
+
+        function toggleFavorite(id) {
+            if (favorites.includes(id)) {
+                favorites = favorites.filter(item => item !== id);
+                showToast('Dikeluarkan dari senarai kegemaran', 'info');
+            } else {
+                favorites.push(id);
+                showToast('Ditambah ke senarai kegemaran', 'success');
+            }
+            saveFavsToStorage();
+            renderTools();
+        }
+
+        // Launch Tool Action
+        let activeHtmlTool = null;
+        function launchTool(id) {
+            const tool = tools.find(t => t.id === id);
+            if (!tool) return;
+
+            if (tool.type === 'URL') {
+                window.open(tool.url, '_blank');
+            } else if (tool.type === 'HTML') {
+                activeHtmlTool = tool;
+                document.getElementById('htmlModalTitle').innerText = tool.title;
+                
+                // Inject HTML Code into iframe sandbox
+                const iframe = document.getElementById('htmlSandboxFrame');
+                iframe.srcdoc = tool.htmlCode || '<html><body><p>Tiada kod HTML disediakan.</p></body></html>';
+
+                document.getElementById('htmlModal').classList.remove('hidden');
+            }
+        }
+
+        function reloadHtmlTool() {
+            if (activeHtmlTool) {
+                const iframe = document.getElementById('htmlSandboxFrame');
+                iframe.srcdoc = activeHtmlTool.htmlCode;
+                showToast('Muat semula widget...', 'info');
+            }
+        }
+
+        function closeHtmlModal() {
+            document.getElementById('htmlModal').classList.add('hidden');
+            document.getElementById('htmlSandboxFrame').srcdoc = '';
+            activeHtmlTool = null;
+        }
+
+        // Admin Backend Operations
+        let isAdminAuthenticated = false;
+
+        function toggleAdminModal() {
+            const modal = document.getElementById('adminModal');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                if (!isAdminAuthenticated) {
+                    document.getElementById('adminAuthStep').classList.remove('hidden');
+                    document.getElementById('adminDashboardStep').classList.add('hidden');
+                } else {
+                    document.getElementById('adminAuthStep').classList.add('hidden');
+                    document.getElementById('adminDashboardStep').classList.remove('hidden');
+                    renderManageToolsList();
+                }
+            } else {
+                closeAdminModal();
+            }
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').classList.add('hidden');
+        }
+
+        function verifyAdminPin() {
+            const pin = document.getElementById('adminPinInput').value;
+            if (pin === ADMIN_PIN) {
+                isAdminAuthenticated = true;
+                document.getElementById('adminAuthStep').classList.add('hidden');
+                document.getElementById('adminDashboardStep').classList.remove('hidden');
+                document.getElementById('authErrorMsg').classList.add('hidden');
+                renderManageToolsList();
+                showToast('Log masuk Admin Berjaya', 'success');
+            } else {
+                document.getElementById('authErrorMsg').classList.remove('hidden');
+            }
+        }
+
+        function switchAdminTab(tab) {
+            activeAdminTab = tab;
+            const btnAdd = document.getElementById('tabBtnAdd');
+            const btnManage = document.getElementById('tabBtnManage');
+            const formAdd = document.getElementById('addToolForm');
+            const viewManage = document.getElementById('manageToolsView');
+
+            if (tab === 'ADD') {
+                btnAdd.className = 'flex-1 py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
+                btnManage.className = 'flex-1 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center';
+                formAdd.classList.remove('hidden');
+                viewManage.classList.add('hidden');
+            } else {
+                btnManage.className = 'flex-1 py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
+                btnAdd.className = 'flex-1 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center';
+                formAdd.classList.add('hidden');
+                viewManage.classList.remove('hidden');
+                renderManageToolsList();
+            }
+        }
+
+        function toggleTypeInput() {
+            const type = document.getElementById('toolType').value;
+            const urlBox = document.getElementById('urlInputContainer');
+            const htmlBox = document.getElementById('htmlInputContainer');
+
+            if (type === 'URL') {
+                urlBox.classList.remove('hidden');
+                htmlBox.classList.add('hidden');
+                document.getElementById('toolUrl').required = true;
+                document.getElementById('toolHtmlCode').required = false;
+            } else {
+                urlBox.classList.add('hidden');
+                htmlBox.classList.remove('hidden');
+                document.getElementById('toolUrl').required = false;
+                document.getElementById('toolHtmlCode').required = true;
+            }
+        }
+
+        // Add / Edit Tool Handler
+        function handleSaveTool(e) {
+            e.preventDefault();
+
+            const editingId = document.getElementById('editingToolId').value;
+            const title = document.getElementById('toolTitle').value.trim();
+            const category = document.getElementById('toolCategory').value;
+            const desc = document.getElementById('toolDesc').value.trim();
+            const type = document.getElementById('toolType').value;
+            const icon = document.getElementById('toolIcon').value.trim() || 'fa-solid fa-wrench';
+            const url = document.getElementById('toolUrl').value.trim();
+            const htmlCode = document.getElementById('toolHtmlCode').value;
+
+            if (editingId) {
+                // Edit Existing
+                const index = tools.findIndex(t => t.id === editingId);
+                if (index !== -1) {
+                    tools[index] = {
+                        ...tools[index],
+                        title, category, desc, type, icon, url, htmlCode
+                    };
+                    showToast('Tool berjaya dikemaskini!', 'success');
+                }
+            } else {
+                // Add New Tool
+                const newTool = {
+                    id: 'tool_' + Date.now(),
+                    title,
+                    category,
+                    desc,
+                    type,
+                    icon,
+                    url: type === 'URL' ? url : '',
+                    htmlCode: type === 'HTML' ? htmlCode : '',
+                    isPinned: false
+                };
+                tools.unshift(newTool);
+                showToast('Tool baharu berjaya ditambah!', 'success');
+            }
+
+            saveToolsToStorage();
+            renderTools();
+            resetForm();
+            switchAdminTab('MANAGE');
+        }
+
+        function resetForm() {
+            document.getElementById('editingToolId').value = '';
+            document.getElementById('toolTitle').value = '';
+            document.getElementById('toolDesc').value = '';
+            document.getElementById('toolUrl').value = '';
+            document.getElementById('toolHtmlCode').value = '';
+            document.getElementById('toolIcon').value = '';
+            document.getElementById('submitFormBtn').innerHTML = `<i class="fa-solid fa-floppy-disk mr-1.5"></i>Simpan Tool`;
+        }
+
+        function renderManageToolsList() {
+            const container = document.getElementById('manageToolsList');
+            container.innerHTML = '';
+
+            if (tools.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Tiada alatan di dalam senarai.</p>`;
+                return;
+            }
+
+            tools.forEach(tool => {
+                const item = document.createElement('div');
+                item.className = 'p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between text-xs';
+                
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3 truncate mr-2">
+                        <div class="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center text-brand-600">
+                            <i class="${tool.icon}"></i>
+                        </div>
+                        <div class="truncate">
+                            <h5 class="font-bold text-slate-900 dark:text-white truncate">${tool.title}</h5>
+                            <span class="text-[10px] text-slate-400">${tool.category} • ${tool.type}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-1.5">
+                        <button onclick="editTool('${tool.id}')" class="px-2.5 py-1.5 rounded-lg bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 font-semibold text-[11px]">
+                            <i class="fa-solid fa-pen mr-1"></i>Edit
+                        </button>
+                        <button onclick="deleteTool('${tool.id}')" class="px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 font-semibold text-[11px]">
+                            <i class="fa-solid fa-trash mr-1"></i>Padam
+                        </button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function editTool(id) {
+            const tool = tools.find(t => t.id === id);
+            if (!tool) return;
+
+            document.getElementById('editingToolId').value = tool.id;
+            document.getElementById('toolTitle').value = tool.title;
+            document.getElementById('toolCategory').value = tool.category;
+            document.getElementById('toolDesc').value = tool.desc || '';
+            document.getElementById('toolType').value = tool.type;
+            document.getElementById('toolIcon').value = tool.icon || '';
+            document.getElementById('toolUrl').value = tool.url || '';
+            document.getElementById('toolHtmlCode').value = tool.htmlCode || '';
+
+            toggleTypeInput();
+            document.getElementById('submitFormBtn').innerHTML = `<i class="fa-solid fa-pen-to-square mr-1.5"></i>Kemaskini Tool`;
+            switchAdminTab('ADD');
+        }
+
+        function deleteTool(id) {
+            if (confirm("Adakah anda pasti untuk memadam tool ini?")) {
+                tools = tools.filter(t => t.id !== id);
+                favorites = favorites.filter(favId => favId !== id);
+                saveToolsToStorage();
+                saveFavsToStorage();
+                renderTools();
+                renderManageToolsList();
+                showToast('Tool telah dipadam', 'info');
+            }
+        }
+
+        function exportDataJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tools, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "skamis_ict_tools_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Fail JSON disimpankan!', 'success');
+        }
+
+        // Toast Helper
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = msg;
+            if (type === 'success') toastIcon.className = 'fa-solid fa-circle-check text-emerald-400';
+            else toastIcon.className = 'fa-solid fa-circle-info text-blue-400';
+
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
