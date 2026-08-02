@@ -92,7 +92,7 @@
             <div class="flex items-center space-x-2">
                 <!-- Teacher Auth Status Badge / Button -->
                 <div id="teacherAuthContainer">
-                    <!-- Dynamic rendering via JS (Login button or Logged-in badge) -->
+                    <!-- Dynamic rendering via JS -->
                 </div>
 
                 <!-- Theme Toggle -->
@@ -165,7 +165,6 @@
             </div>
         </div>
 
-        <!-- Tools Grid Section -->
         <div class="flex items-center justify-between mb-3">
             <h3 class="font-heading font-bold text-sm md:text-base text-slate-700 dark:text-slate-300 flex items-center">
                 <span id="sectionTitle">Senarai Alatan ICT</span>
@@ -180,12 +179,15 @@
         </div>
 
         <!-- Empty State View -->
-        <div id="emptyState" class="hidden py-12 text-center bg-white dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 mt-4">
+        <div id="emptyState" class="hidden py-12 text-center bg-white dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 mt-4 px-4">
             <div class="w-14 h-14 mx-auto rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 mb-3">
                 <i class="fa-solid fa-magnifying-glass text-xl"></i>
             </div>
             <h4 class="font-heading font-bold text-slate-700 dark:text-slate-300 text-base">Tiada alatan ditemui</h4>
-            <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">Cuba cari kata kunci lain atau tambah alatan baharu melalui Panel Admin.</p>
+            <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto mb-4">Sila cuba kata kunci lain atau kosongkan carian untuk melihat semula senarai alatan.</p>
+            <button onclick="clearSearch()" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-xs font-semibold shadow-md hover:bg-brand-700 transition">
+                <i class="fa-solid fa-rotate-left mr-1.5"></i>Set Semula Carian
+            </button>
         </div>
 
     </main>
@@ -466,11 +468,11 @@
     <!-- Footer -->
     <footer class="mt-8 border-t border-slate-200 dark:border-slate-800/60 py-6 text-center text-xs text-slate-400">
         <p>© 2026 SK Agama (MIS) Miri, Sarawak • Disediakan oleh Cg Sabri (Guru ICT)</p>
-        <p class="text-[10px] text-slate-400 mt-1">Dihoskan di <code class="text-brand-600 dark:text-brand-400 font-mono">cgsabri.github.io/tools</code></p>
+        <p class="text-[10px] text-slate-400 mt-1">Dihoskan di <code class="text-brand-600 dark:text-brand-400 font-mono">skagamamiri.github.io/tools</code></p>
     </footer>
 
     <script>
-        // Default Default Pre-loaded Tools
+        // Default Pre-loaded Tools
         const INITIAL_TOOLS = [
             {
                 id: 'tool_delima',
@@ -496,7 +498,7 @@
                 id: 'tool_qr_generator',
                 title: 'Pembuat QR Code SKAMIS',
                 category: 'HTML',
-                desc: 'Widget percuma janajasa QR Code pantas untuk pautan bahanPdP.',
+                desc: 'Widget percuma janajasa QR Code pantas untuk pautan bahan PdP.',
                 type: 'HTML',
                 htmlCode: `<!DOCTYPE html>
 <html>
@@ -510,7 +512,7 @@
   <div class="max-w-md w-full bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 text-center">
      <h2 class="text-xl font-bold text-emerald-400 mb-2">Penjana QR Code SKAMIS</h2>
      <p class="text-xs text-slate-400 mb-4">Masukkan URL atau teks di bawah untuk menghasilkan QR Code.</p>
-     <input type="text" id="qrText" value="https://cgsabri.github.io/tools" placeholder="https://..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+     <input type="text" id="qrText" value="https://skagamamiri.github.io/tools" placeholder="https://..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500">
      <button onclick="generate()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-xl text-sm transition">Jana QR Code</button>
      <div id="qrcode" class="mt-6 flex justify-center p-4 bg-white rounded-xl"></div>
   </div>
@@ -659,6 +661,8 @@
         
         let allowedTeachers = [];
         let loggedInTeacher = null; // Contains teacher ID string when logged in
+        let activeHtmlTool = null;
+        let isAdminAuthenticated = false;
 
         // Initialize App
         window.addEventListener('DOMContentLoaded', () => {
@@ -668,7 +672,25 @@
             renderTools();
         });
 
-        // Load LocalStorage
+        function setupTheme() {
+            const themeBtn = document.getElementById('themeToggleBtn');
+            const savedTheme = localStorage.getItem('skamis_theme');
+            
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+
+            if (themeBtn) {
+                themeBtn.onclick = () => {
+                    document.documentElement.classList.toggle('dark');
+                    const isDark = document.documentElement.classList.contains('dark');
+                    localStorage.setItem('skamis_theme', isDark ? 'dark' : 'light');
+                };
+            }
+        }
+
         function loadLocalStorage() {
             const savedTools = localStorage.getItem('skamis_ict_tools');
             if (savedTools) {
@@ -697,6 +719,14 @@
             if (activeSession) {
                 loggedInTeacher = activeSession;
             }
+        }
+
+        function saveToolsToStorage() {
+            localStorage.setItem('skamis_ict_tools', JSON.stringify(tools));
+        }
+
+        function saveFavsToStorage() {
+            localStorage.setItem('skamis_ict_favs', JSON.stringify(favorites));
         }
 
         function saveTeachersToStorage() {
@@ -763,9 +793,7 @@
         }
 
         // Launch Tool Action (Guarded with Login Check)
-        let activeHtmlTool = null;
         function launchTool(id) {
-            // Guard: Must be logged in as a teacher!
             if (!loggedInTeacher) {
                 openTeacherLoginModal();
                 showToast('Sila log masuk sebagai guru untuk melancarkan alatan ini.', 'info');
@@ -789,131 +817,20 @@
             }
         }
 
-        function switchAdminTab(tab) {
-            activeAdminTab = tab;
-            const btnAdd = document.getElementById('tabBtnAdd');
-            const btnManage = document.getElementById('tabBtnManage');
-            const btnTeachers = document.getElementById('tabBtnTeachers');
-            
-            const formAdd = document.getElementById('addToolForm');
-            const viewManage = document.getElementById('manageToolsView');
-            const viewTeachers = document.getElementById('manageTeachersView');
-
-            // Reset class tabs
-            [btnAdd, btnManage, btnTeachers].forEach(b => b.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center');
-            [formAdd, viewManage, viewTeachers].forEach(v => v.classList.add('hidden'));
-
-            if (tab === 'ADD') {
-                btnAdd.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
-                formAdd.classList.remove('hidden');
-            } else if (tab === 'MANAGE') {
-                btnManage.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
-                viewManage.classList.remove('hidden');
-                renderManageToolsList();
-            } else if (tab === 'TEACHERS') {
-                btnTeachers.className = 'flex-1 min-w-[140px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
-                viewTeachers.classList.remove('hidden');
-                renderTeacherList();
+        function reloadHtmlTool() {
+            if (activeHtmlTool) {
+                const iframe = document.getElementById('htmlSandboxFrame');
+                iframe.srcdoc = activeHtmlTool.htmlCode;
+                showToast('Muat semula widget...', 'info');
             }
         }
 
-        // CSV Import Handler for SENARAI_ID_DELIMA_GURU.csv
-        function processTeacherCSV() {
-            const fileInput = document.getElementById('teacherCsvInput');
-            if (!fileInput.files || fileInput.files.length === 0) {
-                showToast('Sila pilih fail CSV dahulu!', 'info');
-                return;
-            }
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                const text = e.target.result;
-                // Parse CSV by lines and commas
-                const lines = text.split(/\r\n|\n/);
-                let addedCount = 0;
-
-                lines.forEach(line => {
-                    if (!line.trim()) return;
-                    const items = line.split(',');
-                    items.forEach(item => {
-                        const cleanId = item.trim().replace(/^["']|["']$/g, '');
-                        if (cleanId && cleanId.length > 3 && !allowedTeachers.includes(cleanId)) {
-                            allowedTeachers.push(cleanId);
-                            addedCount++;
-                        }
-                    });
-                });
-
-                saveTeachersToStorage();
-                renderTeacherList();
-                fileInput.value = '';
-                showToast(`Berjaya mengimport ${addedCount} ID Guru dari CSV!`, 'success');
-            };
-
-            reader.readAsText(file);
+        function closeHtmlModal() {
+            document.getElementById('htmlModal').classList.add('hidden');
+            document.getElementById('htmlSandboxFrame').srcdoc = '';
+            activeHtmlTool = null;
         }
 
-        function addTeacherIdManual() {
-            const input = document.getElementById('manualTeacherId');
-            const val = input.value.trim();
-            if (!val) return;
-
-            if (!allowedTeachers.includes(val)) {
-                allowedTeachers.push(val);
-                saveTeachersToStorage();
-                renderTeacherList();
-                input.value = '';
-                showToast('ID Guru berjaya ditambah', 'success');
-            } else {
-                showToast('ID Guru sudah sedia ada', 'info');
-            }
-        }
-
-        function removeTeacherId(id) {
-            allowedTeachers = allowedTeachers.filter(t => t !== id);
-            saveTeachersToStorage();
-            renderTeacherList();
-            showToast('ID Guru dipadam', 'info');
-        }
-
-        function clearAllTeachers() {
-            if (confirm('Adakah anda pasti untuk mengosongkan semua ID Guru berdaftar?')) {
-                allowedTeachers = [];
-                saveTeachersToStorage();
-                renderTeacherList();
-                showToast('Senarai ID Guru dikosongkan', 'info');
-            }
-        }
-
-        function renderTeacherList() {
-            const container = document.getElementById('teacherIdList');
-            const countBadge = document.getElementById('teacherCount');
-            if (!container) return;
-
-            countBadge.innerText = allowedTeachers.length;
-            container.innerHTML = '';
-
-            if (allowedTeachers.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-3">Tiada ID Guru berdaftar. Sila import CSV atau tambah manual.</p>`;
-                return;
-            }
-
-            allowedTeachers.forEach(id => {
-                const row = document.createElement('div');
-                row.className = 'flex items-center justify-between py-1.5 px-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-xs font-mono';
-                row.innerHTML = `
-                    <span class="text-slate-800 dark:text-slate-200 truncate mr-2"><i class="fa-solid fa-at mr-1.5 text-brand-500"></i>${id}</span>
-                    <button onclick="removeTeacherId('${id}')" class="text-slate-400 hover:text-rose-500 text-xs p-1" title="Padam">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                `;
-                container.appendChild(row);
-            });
-        }
-
-        // Render Cards Grid
         function renderTools() {
             const grid = document.getElementById('toolsGrid');
             const emptyState = document.getElementById('emptyState');
@@ -929,10 +846,12 @@
 
                 // Search Filter
                 if (searchQuery.trim() !== '') {
-                    const q = searchQuery.toLowerCase();
+                    const q = searchQuery.toLowerCase().trim();
                     const matchTitle = t.title.toLowerCase().includes(q);
                     const matchDesc = (t.desc || '').toLowerCase().includes(q);
-                    return matchTitle || matchDesc;
+                    const matchCat = (t.category || '').toLowerCase().includes(q);
+                    const matchType = (t.type || '').toLowerCase().includes(q);
+                    return matchTitle || matchDesc || matchCat || matchType;
                 }
 
                 return true;
@@ -1006,17 +925,17 @@
         function setCategory(cat) {
             currentCategory = cat;
             
-            // Update UI Chips
             const chips = document.querySelectorAll('.cat-chip');
             chips.forEach(chip => {
                 chip.classList.remove('bg-brand-600', 'text-white', 'shadow-sm', 'shadow-brand-600/30');
                 chip.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
             });
 
-            event.currentTarget.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
-            event.currentTarget.classList.add('bg-brand-600', 'text-white', 'shadow-sm', 'shadow-brand-600/30');
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+                event.currentTarget.classList.add('bg-brand-600', 'text-white', 'shadow-sm', 'shadow-brand-600/30');
+            }
 
-            // Titles
             const titles = {
                 'ALL': 'Semua Alatan ICT',
                 'PDP': 'Alatan PdP & Kelas',
@@ -1060,43 +979,6 @@
             renderTools();
         }
 
-        // Launch Tool Action
-        let activeHtmlTool = null;
-        function launchTool(id) {
-            const tool = tools.find(t => t.id === id);
-            if (!tool) return;
-
-            if (tool.type === 'URL') {
-                window.open(tool.url, '_blank');
-            } else if (tool.type === 'HTML') {
-                activeHtmlTool = tool;
-                document.getElementById('htmlModalTitle').innerText = tool.title;
-                
-                // Inject HTML Code into iframe sandbox
-                const iframe = document.getElementById('htmlSandboxFrame');
-                iframe.srcdoc = tool.htmlCode || '<html><body><p>Tiada kod HTML disediakan.</p></body></html>';
-
-                document.getElementById('htmlModal').classList.remove('hidden');
-            }
-        }
-
-        function reloadHtmlTool() {
-            if (activeHtmlTool) {
-                const iframe = document.getElementById('htmlSandboxFrame');
-                iframe.srcdoc = activeHtmlTool.htmlCode;
-                showToast('Muat semula widget...', 'info');
-            }
-        }
-
-        function closeHtmlModal() {
-            document.getElementById('htmlModal').classList.add('hidden');
-            document.getElementById('htmlSandboxFrame').srcdoc = '';
-            activeHtmlTool = null;
-        }
-
-        // Admin Backend Operations
-        let isAdminAuthenticated = false;
-
         function toggleAdminModal() {
             const modal = document.getElementById('adminModal');
             if (modal.classList.contains('hidden')) {
@@ -1136,20 +1018,26 @@
             activeAdminTab = tab;
             const btnAdd = document.getElementById('tabBtnAdd');
             const btnManage = document.getElementById('tabBtnManage');
+            const btnTeachers = document.getElementById('tabBtnTeachers');
+            
             const formAdd = document.getElementById('addToolForm');
             const viewManage = document.getElementById('manageToolsView');
+            const viewTeachers = document.getElementById('manageTeachersView');
+
+            [btnAdd, btnManage, btnTeachers].forEach(b => b.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center');
+            [formAdd, viewManage, viewTeachers].forEach(v => v.classList.add('hidden'));
 
             if (tab === 'ADD') {
-                btnAdd.className = 'flex-1 py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
-                btnManage.className = 'flex-1 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center';
+                btnAdd.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
                 formAdd.classList.remove('hidden');
-                viewManage.classList.add('hidden');
-            } else {
-                btnManage.className = 'flex-1 py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
-                btnAdd.className = 'flex-1 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center';
-                formAdd.classList.add('hidden');
+            } else if (tab === 'MANAGE') {
+                btnManage.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
                 viewManage.classList.remove('hidden');
                 renderManageToolsList();
+            } else if (tab === 'TEACHERS') {
+                btnTeachers.className = 'flex-1 min-w-[140px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
+                viewTeachers.classList.remove('hidden');
+                renderTeacherList();
             }
         }
 
@@ -1171,7 +1059,6 @@
             }
         }
 
-        // Add / Edit Tool Handler
         function handleSaveTool(e) {
             e.preventDefault();
 
@@ -1185,24 +1072,15 @@
             const htmlCode = document.getElementById('toolHtmlCode').value;
 
             if (editingId) {
-                // Edit Existing
                 const index = tools.findIndex(t => t.id === editingId);
                 if (index !== -1) {
-                    tools[index] = {
-                        ...tools[index],
-                        title, category, desc, type, icon, url, htmlCode
-                    };
+                    tools[index] = { ...tools[index], title, category, desc, type, icon, url, htmlCode };
                     showToast('Tool berjaya dikemaskini!', 'success');
                 }
             } else {
-                // Add New Tool
                 const newTool = {
                     id: 'tool_' + Date.now(),
-                    title,
-                    category,
-                    desc,
-                    type,
-                    icon,
+                    title, category, desc, type, icon,
                     url: type === 'URL' ? url : '',
                     htmlCode: type === 'HTML' ? htmlCode : '',
                     isPinned: false
@@ -1293,6 +1171,101 @@
             }
         }
 
+        // CSV Teacher ID Operations
+        function processTeacherCSV() {
+            const fileInput = document.getElementById('teacherCsvInput');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showToast('Sila pilih fail CSV dahulu!', 'info');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split(/\r\n|\n/);
+                let addedCount = 0;
+
+                lines.forEach(line => {
+                    if (!line.trim()) return;
+                    const items = line.split(',');
+                    items.forEach(item => {
+                        const cleanId = item.trim().replace(/^["']|["']$/g, '');
+                        if (cleanId && cleanId.length > 3 && !allowedTeachers.includes(cleanId)) {
+                            allowedTeachers.push(cleanId);
+                            addedCount++;
+                        }
+                    });
+                });
+
+                saveTeachersToStorage();
+                renderTeacherList();
+                fileInput.value = '';
+                showToast(`Berjaya mengimport ${addedCount} ID Guru dari CSV!`, 'success');
+            };
+
+            reader.readAsText(file);
+        }
+
+        function addTeacherIdManual() {
+            const input = document.getElementById('manualTeacherId');
+            const val = input.value.trim();
+            if (!val) return;
+
+            if (!allowedTeachers.includes(val)) {
+                allowedTeachers.push(val);
+                saveTeachersToStorage();
+                renderTeacherList();
+                input.value = '';
+                showToast('ID Guru berjaya ditambah', 'success');
+            } else {
+                showToast('ID Guru sudah sedia ada', 'info');
+            }
+        }
+
+        function removeTeacherId(id) {
+            allowedTeachers = allowedTeachers.filter(t => t !== id);
+            saveTeachersToStorage();
+            renderTeacherList();
+            showToast('ID Guru dipadam', 'info');
+        }
+
+        function clearAllTeachers() {
+            if (confirm('Adakah anda pasti untuk mengosongkan semua ID Guru berdaftar?')) {
+                allowedTeachers = [];
+                saveTeachersToStorage();
+                renderTeacherList();
+                showToast('Senarai ID Guru dikosongkan', 'info');
+            }
+        }
+
+        function renderTeacherList() {
+            const container = document.getElementById('teacherIdList');
+            const countBadge = document.getElementById('teacherCount');
+            if (!container) return;
+
+            countBadge.innerText = allowedTeachers.length;
+            container.innerHTML = '';
+
+            if (allowedTeachers.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-3">Tiada ID Guru berdaftar. Sila import CSV atau tambah manual.</p>`;
+                return;
+            }
+
+            allowedTeachers.forEach(id => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between py-1.5 px-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-xs font-mono';
+                row.innerHTML = `
+                    <span class="text-slate-800 dark:text-slate-200 truncate mr-2"><i class="fa-solid fa-at mr-1.5 text-brand-500"></i>${id}</span>
+                    <button onclick="removeTeacherId('${id}')" class="text-slate-400 hover:text-rose-500 text-xs p-1" title="Padam">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
         function exportDataJSON() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tools, null, 2));
             const downloadAnchor = document.createElement('a');
@@ -1304,7 +1277,6 @@
             showToast('Fail JSON disimpankan!', 'success');
         }
 
-        // Toast Helper
         function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toastMsg');
