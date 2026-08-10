@@ -350,16 +350,21 @@
                     <!-- Firebase Teacher Access Management View -->
                     <div id="manageTeachersView" class="hidden space-y-4">
                         <div class="p-4 rounded-xl bg-brand-50/50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40">
+                            <div class="text-[11px] text-slate-600 dark:text-slate-300 mb-3">
+                                <i class="fa-solid fa-shield-halved text-brand-600 mr-1"></i>
+                                <strong>Whitelist Firebase:</strong> hanya email yang tersenarai di sini dan mempunyai <code>active = true</code> boleh menggunakan portal.
+                            </div>
                             <h4 class="font-bold text-xs text-brand-800 dark:text-brand-300 flex items-center">
                                 <i class="fa-solid fa-cloud mr-2 text-base"></i>Pengurusan Akses Guru (Firebase)
                             </h4>
                             <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-1">
-                                Daftarkan email Google guru yang dibenarkan menggunakan Hub Tool ICT. Email mestilah akaun DELIMa <code>@moe-dl.edu.my</code>.
+                                Daftarkan email Google guru yang dibenarkan menggunakan Hub Tool ICT. Hanya email yang tersenarai dan <code>active = true</code> boleh log masuk.
                             </p>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <input type="email" id="teacherEmailInput" placeholder="email@moe-dl.edu.my" class="sm:col-span-2 w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                            <input type="email" id="teacherEmailInput" placeholder="email Google guru" class="sm:col-span-2 w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                            <input type="text" id="teacherNameInput" placeholder="Nama guru" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
                             <select id="teacherRoleInput" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
                                 <option value="teacher">Guru</option>
                                 <option value="admin">Admin</option>
@@ -398,7 +403,7 @@
             </div>
             <h3 class="font-heading font-extrabold text-xl text-slate-900 dark:text-white">Log Masuk Guru SKAMIS</h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-6 leading-relaxed">
-                Portal alatan PdP ini terhad kepada guru SK Agama (MIS) Miri. Gunakan akaun Google DELIMa yang telah didaftarkan oleh Guru ICT.
+                Portal alatan PdP ini terhad kepada guru SK Agama (MIS) Miri. Gunakan akaun Google yang telah didaftarkan oleh Guru ICT.
             </p>
 
             <div id="loginErrorAlert" class="hidden mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold text-left"></div>
@@ -1216,9 +1221,18 @@
         provider.setCustomParameters({ prompt: 'select_account' });
 
         const TEACHERS = 'teachers';
+
+        // WHITELIST FIRESTORE:
+        // Document ID mesti sama tepat dengan email Google pengguna.
+        // Contoh:
+        // teachers/sekolah-8965@moe-dl.edu.my
+        // active: true
+        // role: admin
+        
         const LOGIN_LOGS = 'loginLogs';
         const TOOLS = 'tools';
-        const DOMAIN = '@moe-dl.edu.my';
+        // Akses tidak lagi bergantung kepada domain.
+        // Firebase teachers collection ialah whitelist tunggal.
 
         function escapeHtml(value) {
             return String(value ?? '')
@@ -1366,10 +1380,8 @@
                 const result = await signInWithPopup(auth, provider);
                 const user = result.user;
                 const email = (user.email || '').toLowerCase().trim();
-                if (!email.endsWith(DOMAIN)) {
-                    await signOut(auth);
-                    throw new Error('Akses hanya dibenarkan menggunakan akaun DELIMa @moe-dl.edu.my.');
-                }
+                // Akses ditentukan sepenuhnya oleh dokumen teachers/{email}.
+                // Tiada lagi whitelist berdasarkan domain sahaja.
                 const ref = doc(db, TEACHERS, email);
                 const snap = await getDoc(ref);
                 if (!snap.exists() || snap.data().active === false) {
@@ -1419,22 +1431,44 @@
                 showToast('Hanya Admin boleh mengurus akses guru.', 'info'); return;
             }
             const input = document.getElementById('teacherEmailInput');
+            const nameInput = document.getElementById('teacherNameInput');
             const role = document.getElementById('teacherRoleInput').value;
             const email = (input.value || '').trim().toLowerCase();
-            if (!email || !email.endsWith(DOMAIN)) {
-                showToast('Masukkan email DELIMa yang sah.', 'info'); return;
+            const displayName = (nameInput.value || '').trim();
+            if (!email || !email.includes('@')) {
+                showToast('Masukkan alamat email Google yang sah.', 'info'); return;
             }
             try {
-                await setDoc(doc(db, TEACHERS, email), { email, role, active: true, createdAt: serverTimestamp() }, { merge: true });
+                const ref = doc(db, TEACHERS, email);
+                const existing = await getDoc(ref);
+                const data = { email, role, active: true, updatedAt: serverTimestamp() };
+                if (!existing.exists()) data.createdAt = serverTimestamp();
+                if (displayName) data.displayName = displayName;
+                await setDoc(ref, data, { merge: true });
                 input.value = '';
-                showToast('Guru berjaya didaftarkan di Firebase.', 'success');
+                nameInput.value = '';
+                document.getElementById('teacherRoleInput').value = 'teacher';
+                showToast(existing.exists() ? 'Rekod guru berjaya dikemas kini.' : 'Guru berjaya ditambah ke whitelist.', 'success');
                 refreshTeacherList();
             } catch (e) { console.error(e); showToast('Gagal menyimpan guru. Semak Firestore Rules.', 'info'); }
         };
 
+        window.updateTeacherAccess = async function(email, patch) {
+            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') { showToast('Akses Admin diperlukan.', 'info'); return; }
+            if (email === window.currentTeacher.email && patch.active === false) {
+                showToast('Anda tidak boleh menyahaktifkan akaun admin yang sedang digunakan.', 'info'); return;
+            }
+            try {
+                await setDoc(doc(db, TEACHERS, email), { ...patch, updatedAt: serverTimestamp() }, { merge: true });
+                showToast('Akses guru berjaya dikemas kini.', 'success');
+                refreshTeacherList();
+            } catch (e) { console.error(e); showToast('Gagal mengemas kini akses guru.', 'info'); }
+        };
+
         window.removeTeacherFromFirebase = async function(email) {
             if (!window.currentTeacher || window.currentTeacher.role !== 'admin') { showToast('Akses Admin diperlukan.', 'info'); return; }
-            if (!confirm(`Padam akses ${email}?`)) return;
+            if (email === window.currentTeacher.email) { showToast('Anda tidak boleh memadam akaun admin yang sedang digunakan.', 'info'); return; }
+            if (!confirm(`Padam akses ${email}? Akaun ini perlu didaftarkan semula untuk masuk.`)) return;
             try { await deleteDoc(doc(db, TEACHERS, email)); refreshTeacherList(); showToast('Akses guru telah dipadam.', 'info'); }
             catch (e) { console.error(e); showToast('Gagal memadam guru.', 'info'); }
         };
@@ -1457,9 +1491,60 @@
                 container.innerHTML = '';
                 docs.forEach(d => {
                     const x = d.data();
+                    const email = d.id;
                     const row = document.createElement('div');
-                    row.className = 'flex items-center justify-between py-2 px-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-xs';
-                    row.innerHTML = `<div class="truncate mr-2"><div class="font-semibold text-slate-800 dark:text-slate-200 truncate"><i class="fa-solid fa-at mr-1.5 text-brand-500"></i>${escapeHtml(d.id)}</div><div class="text-[9px] text-slate-400">${escapeHtml(x.role || 'teacher')} • ${x.active === false ? 'Tidak aktif' : 'Aktif'}</div></div><button onclick="removeTeacherFromFirebase('${escapeHtml(d.id)}')" class="text-slate-400 hover:text-rose-500 p-1" title="Padam"><i class="fa-solid fa-xmark"></i></button>`;
+                    row.className = 'p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 space-y-2';
+
+                    const top = document.createElement('div');
+                    top.className = 'flex items-start justify-between gap-2';
+                    const info = document.createElement('div');
+                    info.className = 'min-w-0';
+                    const name = document.createElement('div');
+                    name.className = 'font-semibold text-slate-800 dark:text-slate-200 text-xs truncate';
+                    name.innerHTML = `<i class="fa-solid fa-user mr-1.5 text-brand-500"></i>${escapeHtml(x.displayName || 'Nama belum ditetapkan')}`;
+                    const mail = document.createElement('div');
+                    mail.className = 'text-[9px] text-slate-400 truncate';
+                    mail.textContent = email;
+                    info.appendChild(name); info.appendChild(mail);
+
+                    const status = document.createElement('span');
+                    status.className = x.active === false ? 'text-[8px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 font-bold whitespace-nowrap' : 'text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-bold whitespace-nowrap';
+                    status.textContent = x.active === false ? 'TIDAK AKTIF' : 'AKTIF';
+                    top.appendChild(info); top.appendChild(status); row.appendChild(top);
+
+                    const controls = document.createElement('div');
+                    controls.className = 'grid grid-cols-1 sm:grid-cols-4 gap-2';
+
+                    const nameInput = document.createElement('input');
+                    nameInput.type = 'text'; nameInput.value = x.displayName || ''; nameInput.placeholder = 'Nama guru';
+                    nameInput.className = 'sm:col-span-2 w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-[10px] outline-none';
+
+                    const roleSelect = document.createElement('select');
+                    roleSelect.className = 'w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-[10px] outline-none';
+                    roleSelect.innerHTML = '<option value="teacher">Guru</option><option value="admin">Admin</option>';
+                    roleSelect.value = x.role === 'admin' ? 'admin' : 'teacher';
+
+                    const saveBtn = document.createElement('button');
+                    saveBtn.type = 'button'; saveBtn.className = 'px-2.5 py-1.5 rounded-lg bg-brand-600 text-white text-[10px] font-semibold hover:bg-brand-700';
+                    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i>Simpan';
+                    saveBtn.onclick = () => updateTeacherAccess(email, { displayName: nameInput.value.trim(), role: roleSelect.value, active: x.active !== false });
+
+                    controls.appendChild(nameInput); controls.appendChild(roleSelect); controls.appendChild(saveBtn); row.appendChild(controls);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'flex items-center justify-between pt-1';
+                    const toggleBtn = document.createElement('button');
+                    toggleBtn.type = 'button'; toggleBtn.className = 'text-[10px] font-semibold ' + (x.active === false ? 'text-emerald-600' : 'text-amber-600');
+                    toggleBtn.innerHTML = x.active === false ? '<i class="fa-solid fa-user-check mr-1"></i>Aktifkan' : '<i class="fa-solid fa-user-slash mr-1"></i>Nyahaktifkan';
+                    toggleBtn.onclick = () => updateTeacherAccess(email, { active: x.active === false });
+                    actions.appendChild(toggleBtn);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.type = 'button'; deleteBtn.className = 'text-[10px] font-semibold text-rose-500 hover:text-rose-600';
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-trash mr-1"></i>Padam';
+                    deleteBtn.onclick = () => removeTeacherFromFirebase(email);
+                    actions.appendChild(deleteBtn);
+                    row.appendChild(actions);
                     container.appendChild(row);
                 });
             } catch (e) { console.error(e); container.innerHTML = '<p class="text-xs text-rose-500 text-center py-3">Gagal memuatkan senarai. Semak Firestore Rules.</p>'; }
@@ -1476,7 +1561,10 @@
             }
             try {
                 const email = (user.email || '').toLowerCase().trim();
-                if (!email.endsWith(DOMAIN)) { await signOut(auth); return; }
+                if (!email) { await signOut(auth); return; }
+
+                // Hanya akaun yang mempunyai dokumen dalam teachers/{email}
+                // dan active !== false dibenarkan.
                 const snap = await getDoc(doc(db, TEACHERS, email));
                 if (!snap.exists() || snap.data().active === false) { await signOut(auth); return; }
                 setLoggedIn(user, snap.data());
