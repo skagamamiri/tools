@@ -277,7 +277,7 @@
                         <i class="fa-solid fa-list-check mr-1.5"></i>Urus Tool
                     </button>
                     <button id="tabBtnTeachers" onclick="switchAdminTab('TEACHERS')" class="flex-1 min-w-[140px] py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center">
-                        <i class="fa-solid fa-id-card-clip mr-1.5 text-brand-600"></i>ID Guru (CSV)
+                        <i class="fa-solid fa-user-shield mr-1.5 text-brand-600"></i>Akses Guru
                     </button>
                 </div>
 
@@ -358,40 +358,39 @@
                         </div>
                     </div>
 
-                    <!-- Teacher ID DELIMa CSV Management View -->
+                    <!-- Firebase Teacher Access Management View -->
                     <div id="manageTeachersView" class="hidden space-y-4">
                         <div class="p-4 rounded-xl bg-brand-50/50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40">
                             <h4 class="font-bold text-xs text-brand-800 dark:text-brand-300 flex items-center">
-                                <i class="fa-solid fa-file-csv mr-2 text-base"></i>Muat Naik SENARAI_ID_DELIMA_GURU.csv
+                                <i class="fa-solid fa-cloud mr-2 text-base"></i>Pengurusan Akses Guru (Firebase)
                             </h4>
-                            <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-1 mb-3">
-                                Pilih fail CSV yang mengandungi senarai ID DELIMa Guru (contoh: <code>g-12345678@moe-dl.edu.my</code>) untuk membolehkan guru log masuk.
+                            <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-1">
+                                Daftarkan email Google guru yang dibenarkan menggunakan Hub Tool ICT. Email mestilah akaun DELIMa <code>@moe-dl.edu.my</code>.
                             </p>
-                            
-                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                                <input type="file" id="teacherCsvInput" accept=".csv, .txt" class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer">
-                                <button onclick="processTeacherCSV()" class="px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-bold text-xs hover:opacity-90 transition whitespace-nowrap">
-                                    <i class="fa-solid fa-upload mr-1.5"></i>Import CSV
-                                </button>
-                            </div>
                         </div>
 
-                        <!-- Manual Add Teacher ID -->
-                        <div class="flex items-center space-x-2 pt-2">
-                            <input type="text" id="manualTeacherId" placeholder="Atau tambah ID DELIMa manual (cth: g-12345678@moe-dl.edu.my)" class="flex-grow px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-                            <button onclick="addTeacherIdManual()" class="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold text-xs hover:bg-brand-700 transition">
-                                <i class="fa-solid fa-plus mr-1"></i>Tambah
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <input type="email" id="teacherEmailInput" placeholder="email@moe-dl.edu.my" class="sm:col-span-2 w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                            <select id="teacherRoleInput" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                                <option value="teacher">Guru</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="addTeacherToFirebase()" class="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold text-xs hover:bg-brand-700 transition">
+                                <i class="fa-solid fa-user-plus mr-1"></i>Daftar Guru
+                            </button>
+                            <button onclick="refreshTeacherList()" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">
+                                <i class="fa-solid fa-rotate mr-1"></i>Muat Semula
                             </button>
                         </div>
 
-                        <!-- Registered Teachers List -->
                         <div class="mt-4">
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Senarai ID Guru Berdaftar (<span id="teacherCount">0</span>)</span>
-                                <button onclick="clearAllTeachers()" class="text-[11px] text-rose-500 hover:underline font-semibold">Padam Semua</button>
+                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Guru Berdaftar (<span id="teacherCount">0</span>)</span>
                             </div>
-                            <div id="teacherIdList" class="max-h-52 overflow-y-auto space-y-1.5 border border-slate-200 dark:border-slate-800 p-2 rounded-xl bg-slate-50 dark:bg-slate-900/50">
-                                <!-- Dynamic List -->
+                            <div id="teacherIdList" class="max-h-64 overflow-y-auto space-y-1.5 border border-slate-200 dark:border-slate-800 p-2 rounded-xl bg-slate-50 dark:bg-slate-900/50">
+                                <p class="text-xs text-slate-400 text-center py-3">Tekan “Muat Semula” untuk melihat senarai.</p>
                             </div>
                         </div>
                     </div>
@@ -402,43 +401,28 @@
         </div>
     </div>
 
-    <!-- Teacher Login Modal Overlay -->
+    <!-- Google Teacher Login Modal -->
     <div id="teacherLoginModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 text-center animate-in zoom-in-95 duration-200">
             <div class="w-16 h-16 mx-auto rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center text-2xl mb-4 shadow-sm">
-                <i class="fa-solid fa-user-lock"></i>
+                <i class="fa-solid fa-user-shield"></i>
             </div>
-            
             <h3 class="font-heading font-extrabold text-xl text-slate-900 dark:text-white">Log Masuk Guru SKAMIS</h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-6 leading-relaxed">
-                Portal alatan PdP ini terhad kepada warga guru SK Agama (MIS) Miri. Sila masukkan ID DELIMa KPM anda untuk mengakses alatan.
+                Portal alatan PdP ini terhad kepada guru SK Agama (MIS) Miri. Gunakan akaun Google DELIMa yang telah didaftarkan oleh Guru ICT.
             </p>
 
-            <form onsubmit="handleTeacherLogin(event)" class="space-y-4">
-                <div class="text-left">
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">ID DELIMa Guru / ID Sekolah</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        <input type="text" id="loginDelimaId" required placeholder="Contoh: g-12345678@moe-dl.edu.my" 
-                            class="w-full pl-9 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
-                    </div>
-                </div>
+            <div id="loginErrorAlert" class="hidden mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold text-left"></div>
 
-                <div id="loginErrorAlert" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold text-left">
-                    <i class="fa-solid fa-circle-exclamation mr-1.5"></i>
-                    <span>ID DELIMa tidak didaftarkan. Sila hubungi Guru ICT (Cg Sabri).</span>
-                </div>
+            <button id="googleLoginModalBtn" onclick="loginWithGoogle()" class="w-full py-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-500 hover:shadow-md text-slate-800 dark:text-white font-bold text-sm transition flex items-center justify-center space-x-3">
+                <i class="fa-brands fa-google text-red-500 text-base"></i>
+                <span>Teruskan dengan Google</span>
+            </button>
 
-                <div class="flex space-x-2 pt-2">
-                    <button type="button" onclick="closeTeacherLoginModal()" class="w-1/3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
-                        Batal
-                    </button>
-                    <button type="submit" class="w-2/3 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center space-x-2">
-                        <span>Log Masuk</span>
-                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
-                    </button>
-                </div>
-            </form>
+            <button type="button" onclick="closeTeacherLoginModal()" class="w-full mt-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                Batal
+            </button>
+
             <p class="text-[10px] text-slate-400 mt-5">SK Agama (MIS) Miri • Unit ICT Sekolah</p>
         </div>
     </div>
@@ -650,17 +634,8 @@
         let activeAdminTab = 'ADD';
         const ADMIN_PIN = '1234'; // Default Admin Pin
 
-        // Default Pre-loaded Allowed Teacher DELIMa IDs
-        const DEFAULT_TEACHERS = [
-            'g-12345678@moe-dl.edu.my',
-            'g-87654321@moe-dl.edu.my',
-            'g-sabrimiri@moe-dl.edu.my',
-            'g-skamis@moe-dl.edu.my',
-            'guru'
-        ];
-        
-        let allowedTeachers = [];
-        let loggedInTeacher = null; // Contains teacher ID string when logged in
+        // Firebase authentication state
+        let loggedInTeacher = null;
         let activeHtmlTool = null;
         let isAdminAuthenticated = false;
 
@@ -705,20 +680,7 @@
                 try { favorites = JSON.parse(savedFavs); } catch(e) { favorites = []; }
             }
 
-            // Load Allowed Teacher List
-            const savedTeachers = localStorage.getItem('skamis_allowed_teachers');
-            if (savedTeachers) {
-                try { allowedTeachers = JSON.parse(savedTeachers); } catch(e) { allowedTeachers = DEFAULT_TEACHERS; }
-            } else {
-                allowedTeachers = DEFAULT_TEACHERS;
-                saveTeachersToStorage();
-            }
 
-            // Load Active Teacher Session
-            const activeSession = sessionStorage.getItem('skamis_current_teacher');
-            if (activeSession) {
-                loggedInTeacher = activeSession;
-            }
         }
 
         function saveToolsToStorage() {
@@ -729,70 +691,33 @@
             localStorage.setItem('skamis_ict_favs', JSON.stringify(favorites));
         }
 
-        function saveTeachersToStorage() {
-            localStorage.setItem('skamis_allowed_teachers', JSON.stringify(allowedTeachers));
-        }
-
         function renderTeacherAuthHeader() {
-            const container = document.getElementById('teacherAuthContainer');
-            if (!container) return;
-
-            if (loggedInTeacher) {
-                const shortId = loggedInTeacher.split('@')[0];
-                container.innerHTML = `
-                    <div class="flex items-center space-x-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5 rounded-xl text-xs text-emerald-700 dark:text-emerald-400 font-medium">
-                        <i class="fa-solid fa-circle-user text-sm"></i>
-                        <span class="max-w-[100px] truncate font-semibold" title="${loggedInTeacher}">Cg ${shortId}</span>
-                        <button onclick="logoutTeacher()" class="ml-1 text-slate-400 hover:text-rose-500" title="Log Keluar">
-                            <i class="fa-solid fa-right-from-bracket text-xs"></i>
-                        </button>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = `
-                    <button onclick="openTeacherLoginModal()" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition flex items-center space-x-1.5">
-                        <i class="fa-solid fa-right-to-bracket"></i>
-                        <span>Log Masuk Guru</span>
-                    </button>
-                `;
+            // Header akan dikawal oleh Firebase module.
+            // Fungsi ini dikekalkan supaya kod lama tidak rosak.
+            if (window.renderFirebaseTeacherHeader) {
+                window.renderFirebaseTeacherHeader();
             }
         }
 
         function openTeacherLoginModal() {
-            document.getElementById('loginDelimaId').value = '';
-            document.getElementById('loginErrorAlert').classList.add('hidden');
-            document.getElementById('teacherLoginModal').classList.remove('hidden');
+            const modal = document.getElementById('teacherLoginModal');
+            const error = document.getElementById('loginErrorAlert');
+            if (error) error.classList.add('hidden');
+            if (modal) modal.classList.remove('hidden');
         }
 
         function closeTeacherLoginModal() {
-            document.getElementById('teacherLoginModal').classList.add('hidden');
-        }
-
-        function handleTeacherLogin(e) {
-            e.preventDefault();
-            const inputId = document.getElementById('loginDelimaId').value.trim().toLowerCase();
-            
-            // Check against allowed teacher IDs
-            const match = allowedTeachers.some(t => t.toLowerCase() === inputId);
-            if (match) {
-                loggedInTeacher = inputId;
-                sessionStorage.setItem('skamis_current_teacher', inputId);
-                renderTeacherAuthHeader();
-                closeTeacherLoginModal();
-                showToast(`Selamat datang, Cg ${inputId.split('@')[0]}!`, 'success');
-            } else {
-                document.getElementById('loginErrorAlert').classList.remove('hidden');
-            }
+            const modal = document.getElementById('teacherLoginModal');
+            if (modal) modal.classList.add('hidden');
         }
 
         function logoutTeacher() {
-            loggedInTeacher = null;
-            sessionStorage.removeItem('skamis_current_teacher');
-            renderTeacherAuthHeader();
-            showToast('Anda telah log keluar.', 'info');
+            if (window.firebaseLogoutTeacher) {
+                window.firebaseLogoutTeacher();
+            }
         }
 
-        // Launch Tool Action (Guarded with Login Check)
+        // Launch Tool Action (Guarded with Firebase Login Check)
         function launchTool(id) {
             if (!loggedInTeacher) {
                 openTeacherLoginModal();
@@ -1171,99 +1096,25 @@
             }
         }
 
-        // CSV Teacher ID Operations
+        // Firebase Teacher Access Operations
         function processTeacherCSV() {
-            const fileInput = document.getElementById('teacherCsvInput');
-            if (!fileInput.files || fileInput.files.length === 0) {
-                showToast('Sila pilih fail CSV dahulu!', 'info');
-                return;
-            }
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                const text = e.target.result;
-                const lines = text.split(/\r\n|\n/);
-                let addedCount = 0;
-
-                lines.forEach(line => {
-                    if (!line.trim()) return;
-                    const items = line.split(',');
-                    items.forEach(item => {
-                        const cleanId = item.trim().replace(/^["']|["']$/g, '');
-                        if (cleanId && cleanId.length > 3 && !allowedTeachers.includes(cleanId)) {
-                            allowedTeachers.push(cleanId);
-                            addedCount++;
-                        }
-                    });
-                });
-
-                saveTeachersToStorage();
-                renderTeacherList();
-                fileInput.value = '';
-                showToast(`Berjaya mengimport ${addedCount} ID Guru dari CSV!`, 'success');
-            };
-
-            reader.readAsText(file);
+            showToast('Import CSV telah digantikan dengan pengurusan guru melalui Firebase.', 'info');
         }
 
         function addTeacherIdManual() {
-            const input = document.getElementById('manualTeacherId');
-            const val = input.value.trim();
-            if (!val) return;
-
-            if (!allowedTeachers.includes(val)) {
-                allowedTeachers.push(val);
-                saveTeachersToStorage();
-                renderTeacherList();
-                input.value = '';
-                showToast('ID Guru berjaya ditambah', 'success');
-            } else {
-                showToast('ID Guru sudah sedia ada', 'info');
-            }
+            addTeacherToFirebase();
         }
 
         function removeTeacherId(id) {
-            allowedTeachers = allowedTeachers.filter(t => t !== id);
-            saveTeachersToStorage();
-            renderTeacherList();
-            showToast('ID Guru dipadam', 'info');
+            if (window.removeTeacherFromFirebase) window.removeTeacherFromFirebase(id);
         }
 
         function clearAllTeachers() {
-            if (confirm('Adakah anda pasti untuk mengosongkan semua ID Guru berdaftar?')) {
-                allowedTeachers = [];
-                saveTeachersToStorage();
-                renderTeacherList();
-                showToast('Senarai ID Guru dikosongkan', 'info');
-            }
+            showToast('Padam semua guru secara pukal dinyahaktifkan untuk keselamatan.', 'info');
         }
 
         function renderTeacherList() {
-            const container = document.getElementById('teacherIdList');
-            const countBadge = document.getElementById('teacherCount');
-            if (!container) return;
-
-            countBadge.innerText = allowedTeachers.length;
-            container.innerHTML = '';
-
-            if (allowedTeachers.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-3">Tiada ID Guru berdaftar. Sila import CSV atau tambah manual.</p>`;
-                return;
-            }
-
-            allowedTeachers.forEach(id => {
-                const row = document.createElement('div');
-                row.className = 'flex items-center justify-between py-1.5 px-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-xs font-mono';
-                row.innerHTML = `
-                    <span class="text-slate-800 dark:text-slate-200 truncate mr-2"><i class="fa-solid fa-at mr-1.5 text-brand-500"></i>${id}</span>
-                    <button onclick="removeTeacherId('${id}')" class="text-slate-400 hover:text-rose-500 text-xs p-1" title="Padam">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                `;
-                container.appendChild(row);
-            });
+            if (window.refreshTeacherList) window.refreshTeacherList();
         }
 
         function exportDataJSON() {
@@ -1292,5 +1143,210 @@
             }, 2500);
         }
     </script>
+    <!-- Firebase Authentication Module -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+        import {
+            getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+        import {
+            getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE",
+            authDomain: "skamis-hubtool.firebaseapp.com",
+            projectId: "skamis-hubtool",
+            storageBucket: "skamis-hubtool.firebasestorage.app",
+            messagingSenderId: "236769370780",
+            appId: "1:236769370780:web:9dfa07d772a721ecfe0359"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+
+        const TEACHERS = 'teachers';
+        const LOGIN_LOGS = 'loginLogs';
+        const DOMAIN = '@moe-dl.edu.my';
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function initials(name) {
+            const parts = String(name || 'Guru').trim().split(/\s+/);
+            if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+            return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+        }
+
+        function setLoggedIn(user, teacherData) {
+            loggedInTeacher = user.email;
+            window.loggedInTeacher = user.email;
+            window.currentTeacher = {
+                uid: user.uid, email: user.email,
+                displayName: user.displayName || teacherData?.displayName || 'Guru',
+                photoURL: user.photoURL || teacherData?.photoURL || '',
+                role: teacherData?.role || 'teacher', active: teacherData?.active !== false
+            };
+        }
+
+        function renderFirebaseTeacherHeader() {
+            const container = document.getElementById('teacherAuthContainer');
+            if (!container) return;
+            const teacher = window.currentTeacher;
+            if (!teacher) {
+                container.innerHTML = `
+                    <button onclick="openTeacherLoginModal()" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-semibold shadow-sm hover:shadow-md hover:border-brand-500 transition flex items-center space-x-2">
+                        <i class="fa-brands fa-google text-red-500"></i>
+                        <span class="hidden sm:inline">Login dengan Google</span>
+                    </button>`;
+                return;
+            }
+            const photo = teacher.photoURL
+                ? `<img src="${escapeHtml(teacher.photoURL)}" class="w-7 h-7 rounded-full object-cover border border-white shadow-sm" alt="Profil">`
+                : `<div class="w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px] font-bold">${escapeHtml(initials(teacher.displayName))}</div>`;
+            const badge = teacher.role === 'admin' ? `<span class="text-[8px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 font-bold">ADMIN</span>` : '';
+            container.innerHTML = `
+                <div class="flex items-center space-x-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1.5 rounded-xl">
+                    ${photo}
+                    <div class="hidden md:block max-w-[150px] leading-tight">
+                        <div class="flex items-center gap-1"><span class="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold truncate">${escapeHtml(teacher.displayName)}</span>${badge}</div>
+                        <div class="text-[9px] text-slate-400 truncate">${escapeHtml(teacher.email)}</div>
+                    </div>
+                    <button onclick="logoutTeacher()" class="ml-1 p-1.5 text-slate-400 hover:text-rose-500" title="Log Keluar"><i class="fa-solid fa-right-from-bracket text-xs"></i></button>
+                </div>`;
+        }
+
+        window.renderFirebaseTeacherHeader = renderFirebaseTeacherHeader;
+
+        window.loginWithGoogle = async function() {
+            const modalBtn = document.getElementById('googleLoginModalBtn');
+            const error = document.getElementById('loginErrorAlert');
+            if (error) error.classList.add('hidden');
+            if (modalBtn) { modalBtn.disabled = true; modalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-brand-600"></i><span>Sedang log masuk...</span>'; }
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                const email = (user.email || '').toLowerCase().trim();
+                if (!email.endsWith(DOMAIN)) {
+                    await signOut(auth);
+                    throw new Error('Akses hanya dibenarkan menggunakan akaun DELIMa @moe-dl.edu.my.');
+                }
+                const ref = doc(db, TEACHERS, email);
+                const snap = await getDoc(ref);
+                if (!snap.exists() || snap.data().active === false) {
+                    await signOut(auth);
+                    throw new Error('Akaun anda belum didaftarkan atau telah dinyahaktifkan. Sila hubungi Guru ICT.');
+                }
+                if (snap.data().uid && snap.data().uid !== user.uid) {
+                    await signOut(auth);
+                    throw new Error('Akaun Google ini tidak sepadan dengan rekod guru.');
+                }
+                await setDoc(ref, {
+                    uid: user.uid, displayName: user.displayName || snap.data().displayName || 'Guru',
+                    photoURL: user.photoURL || '', lastLoginAt: serverTimestamp()
+                }, { merge: true });
+                await setDoc(doc(collection(db, LOGIN_LOGS)), {
+                    uid: user.uid, email, displayName: user.displayName || 'Guru', loginAt: serverTimestamp()
+                });
+                setLoggedIn(user, snap.data());
+                renderFirebaseTeacherHeader();
+                closeTeacherLoginModal();
+                showToast(`Selamat datang, ${window.currentTeacher.displayName}!`, 'success');
+            } catch (err) {
+                console.error(err);
+                const msg = err.message || 'Log masuk Google gagal. Sila cuba lagi.';
+                if (error) { error.classList.remove('hidden'); error.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1.5"></i>${escapeHtml(msg)}`; }
+                showToast(msg, 'info');
+            } finally {
+                if (modalBtn) { modalBtn.disabled = false; modalBtn.innerHTML = '<i class="fa-brands fa-google text-red-500 text-base"></i><span>Teruskan dengan Google</span>'; }
+            }
+        };
+
+        window.firebaseLogoutTeacher = async function() {
+            try { await signOut(auth); } catch (e) { console.error(e); }
+        };
+
+        window.logoutTeacher = window.firebaseLogoutTeacher;
+
+        window.addTeacherToFirebase = async function() {
+            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
+                showToast('Hanya Admin boleh mengurus akses guru.', 'info'); return;
+            }
+            const input = document.getElementById('teacherEmailInput');
+            const role = document.getElementById('teacherRoleInput').value;
+            const email = (input.value || '').trim().toLowerCase();
+            if (!email || !email.endsWith(DOMAIN)) {
+                showToast('Masukkan email DELIMa yang sah.', 'info'); return;
+            }
+            try {
+                await setDoc(doc(db, TEACHERS, email), { email, role, active: true, createdAt: serverTimestamp() }, { merge: true });
+                input.value = '';
+                showToast('Guru berjaya didaftarkan di Firebase.', 'success');
+                refreshTeacherList();
+            } catch (e) { console.error(e); showToast('Gagal menyimpan guru. Semak Firestore Rules.', 'info'); }
+        };
+
+        window.removeTeacherFromFirebase = async function(email) {
+            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') { showToast('Akses Admin diperlukan.', 'info'); return; }
+            if (!confirm(`Padam akses ${email}?`)) return;
+            try { await deleteDoc(doc(db, TEACHERS, email)); refreshTeacherList(); showToast('Akses guru telah dipadam.', 'info'); }
+            catch (e) { console.error(e); showToast('Gagal memadam guru.', 'info'); }
+        };
+
+        window.refreshTeacherList = async function() {
+            const container = document.getElementById('teacherIdList');
+            const count = document.getElementById('teacherCount');
+            if (!container) return;
+            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
+                container.innerHTML = '<p class="text-xs text-slate-400 text-center py-3">Akses Admin diperlukan.</p>';
+                if (count) count.textContent = '0';
+                return;
+            }
+            container.innerHTML = '<p class="text-xs text-slate-400 text-center py-3"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Memuatkan...</p>';
+            try {
+                const snap = await getDocs(collection(db, TEACHERS));
+                const docs = snap.docs.sort((a,b) => (a.id || '').localeCompare(b.id || ''));
+                if (count) count.textContent = docs.length;
+                if (!docs.length) { container.innerHTML = '<p class="text-xs text-slate-400 text-center py-3">Tiada guru berdaftar.</p>'; return; }
+                container.innerHTML = '';
+                docs.forEach(d => {
+                    const x = d.data();
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between py-2 px-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-xs';
+                    row.innerHTML = `<div class="truncate mr-2"><div class="font-semibold text-slate-800 dark:text-slate-200 truncate"><i class="fa-solid fa-at mr-1.5 text-brand-500"></i>${escapeHtml(d.id)}</div><div class="text-[9px] text-slate-400">${escapeHtml(x.role || 'teacher')} • ${x.active === false ? 'Tidak aktif' : 'Aktif'}</div></div><button onclick="removeTeacherFromFirebase('${escapeHtml(d.id)}')" class="text-slate-400 hover:text-rose-500 p-1" title="Padam"><i class="fa-solid fa-xmark"></i></button>`;
+                    container.appendChild(row);
+                });
+            } catch (e) { console.error(e); container.innerHTML = '<p class="text-xs text-rose-500 text-center py-3">Gagal memuatkan senarai. Semak Firestore Rules.</p>'; }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                loggedInTeacher = null;
+                window.loggedInTeacher = null;
+                window.currentTeacher = null;
+                renderFirebaseTeacherHeader();
+                return;
+            }
+            try {
+                const email = (user.email || '').toLowerCase().trim();
+                if (!email.endsWith(DOMAIN)) { await signOut(auth); return; }
+                const snap = await getDoc(doc(db, TEACHERS, email));
+                if (!snap.exists() || snap.data().active === false) { await signOut(auth); return; }
+                setLoggedIn(user, snap.data());
+                renderFirebaseTeacherHeader();
+            } catch (e) {
+                console.error('Auth state error:', e);
+                await signOut(auth);
+            }
+        });
+    </script>
+
 </body>
 </html>
