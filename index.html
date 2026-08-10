@@ -70,6 +70,7 @@
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.3/papaparse.min.js"></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between pb-20 md:pb-6">
 
@@ -1579,7 +1580,191 @@
 
         // Load public tool catalogue on first visit.
         loadToolsFromFirebase();
-    </script>
+    
+// ============================================================
+// BULK TEACHER CSV IMPORT
+// ============================================================
+
+function normalizeTeacherCsvRow(row) {
+    const clean = {};
+    Object.keys(row || {}).forEach(k => {
+        const key = String(k).trim().toLowerCase().replace(/[\s._-]+/g, '');
+        clean[key] = typeof row[k] === 'string' ? row[k].trim() : row[k];
+    });
+
+    const email = String(
+        clean.email || clean.gmail || clean.googleemail || clean.emailgoogle || ''
+    ).trim().toLowerCase();
+
+    const displayName = String(
+        clean.displayname || clean.nama || clean.namaguru || clean.name || ''
+    ).trim();
+
+    let role = String(
+        clean.role || clean.peranan || 'teacher'
+    ).trim().toLowerCase();
+
+    if (role === 'guru') role = 'teacher';
+    if (role !== 'admin') role = 'teacher';
+
+    return { email, displayName, role };
+}
+
+function showTeacherImportResult(message, type = 'info') {
+    const el = document.getElementById('teacherImportResult');
+    if (!el) return;
+
+    el.className = `mt-3 text-xs rounded-xl px-3 py-2 ${
+        type === 'success'
+            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
+            : type === 'error'
+                ? 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300'
+                : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+    }`;
+
+    el.textContent = message;
+}
+
+async function importTeachersCsv() {
+    const input = document.getElementById('importTeachersCsvInput');
+    const file = input?.files?.[0];
+
+    if (!file) {
+        showTeacherImportResult('Sila pilih fail CSV terlebih dahulu.', 'error');
+        return;
+    }
+
+    if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
+        showTeacherImportResult('Hanya Admin boleh mengimport guru.', 'error');
+        return;
+    }
+
+    if (!window.Papa) {
+        showTeacherImportResult('CSV parser belum dimuatkan. Refresh halaman dan cuba lagi.', 'error');
+        return;
+    }
+
+    showTeacherImportResult('Sedang membaca fail CSV...', 'info');
+
+    window.Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: h => String(h || '').trim(),
+        complete: async (results) => {
+            try {
+                const rows = (results.data || [])
+                    .map(normalizeTeacherCsvRow)
+                    .filter(r => r.email);
+
+                if (!rows.length) {
+                    showTeacherImportResult(
+                        'Tiada email ditemui. Pastikan CSV mempunyai lajur "email".',
+                        'error'
+                    );
+                    return;
+                }
+
+                const invalid = rows.filter(r => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email));
+
+                if (invalid.length) {
+                    showTeacherImportResult(
+                        `${invalid.length} baris mempunyai email tidak sah. Import dibatalkan.`,
+                        'error'
+                    );
+                    return;
+                }
+
+                const unique = [];
+                const seen = new Set();
+
+                rows.forEach(r => {
+                    if (!seen.has(r.email)) {
+                        seen.add(r.email);
+                        unique.push(r);
+                    }
+                });
+
+                let added = 0;
+                let updated = 0;
+                let failed = 0;
+
+                for (const teacher of unique) {
+                    try {
+                        const ref = doc(db, TEACHERS, teacher.email);
+                        const existing = await getDoc(ref);
+
+                        const payload = {
+                            active: true,
+                            displayName: teacher.displayName || existing.data()?.displayName || teacher.email.split('@')[0],
+                            role: teacher.role,
+                            importedAt: serverTimestamp()
+                        };
+
+                        if (existing.exists()) {
+                            await updateDoc(ref, payload);
+                            updated++;
+                        } else {
+                            await setDoc(ref, payload);
+                            added++;
+                        }
+                    } catch (err) {
+                        console.error('Import teacher gagal:', teacher.email, err);
+                        failed++;
+                    }
+                }
+
+                showTeacherImportResult(
+                    `Import selesai: ${added} ditambah, ${updated} dikemas kini, ${failed} gagal.`,
+                    failed ? 'info' : 'success'
+                );
+
+                input.value = '';
+
+                if (typeof loadTeachers === 'function') {
+                    await loadTeachers();
+                }
+
+            } catch (err) {
+                console.error(err);
+                showTeacherImportResult(
+                    'Import gagal. Sila semak format CSV dan Firestore Rules.',
+                    'error'
+                );
+            }
+        },
+        error: (error) => {
+            console.error(error);
+            showTeacherImportResult(
+                'Gagal membaca fail CSV.',
+                'error'
+            );
+        }
+    });
+}
+
+function downloadTeacherCsvTemplate() {
+    const csv =
+`email,displayName,role
+guru1@moe-dl.edu.my,Cikgu Ali,teacher
+guru2@moe-dl.edu.my,Cikgu Siti,teacher
+`;
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+
+    a.href = url;
+    a.download = 'template_guru_hub_tool_ict.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+window.importTeachersCsv = importTeachersCsv;
+window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
+
+</script>
 
 </body>
 </html>
