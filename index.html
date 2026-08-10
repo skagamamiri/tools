@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ms" class="scroll-smooth">
-<head> 
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hub Tool ICT - SK Agama (MIS) Miri</title>
@@ -615,6 +615,8 @@
             }
         ];
 
+        window.INITIAL_TOOLS = INITIAL_TOOLS;
+
         // State Variables
         let tools = [];
         let currentCategory = 'ALL';
@@ -633,6 +635,9 @@
             renderTeacherAuthHeader();
             updateAdminVisibility();
             renderTools();
+            if (window.loadToolsFromFirebase) {
+                window.loadToolsFromFirebase();
+            }
         });
 
         function setupTheme() {
@@ -655,24 +660,16 @@
         }
 
         function loadLocalStorage() {
-            const savedTools = localStorage.getItem('skamis_ict_tools');
-            if (savedTools) {
-                try { tools = JSON.parse(savedTools); } catch(e) { tools = INITIAL_TOOLS; }
-            } else {
-                tools = INITIAL_TOOLS;
-                saveToolsToStorage();
-            }
-
             const savedFavs = localStorage.getItem('skamis_ict_favs');
             if (savedFavs) {
                 try { favorites = JSON.parse(savedFavs); } catch(e) { favorites = []; }
             }
-
-
         }
 
+        // Tools kini disimpan dalam Firestore. Fungsi lama dikekalkan
+        // sebagai compatibility shim supaya kod lain tidak rosak.
         function saveToolsToStorage() {
-            localStorage.setItem('skamis_ict_tools', JSON.stringify(tools));
+            // No-op: tools are managed by Firestore.
         }
 
         function saveFavsToStorage() {
@@ -992,8 +989,13 @@
             }
         }
 
-        function handleSaveTool(e) {
+        async function handleSaveTool(e) {
             e.preventDefault();
+
+            if (!window.isCurrentUserAdmin || !window.isCurrentUserAdmin()) {
+                showToast('Akses Admin diperlukan untuk menyimpan tool.', 'info');
+                return;
+            }
 
             const editingId = document.getElementById('editingToolId').value;
             const title = document.getElementById('toolTitle').value.trim();
@@ -1004,30 +1006,55 @@
             const url = document.getElementById('toolUrl').value.trim();
             const htmlCode = document.getElementById('toolHtmlCode').value;
 
-            if (editingId) {
-                const index = tools.findIndex(t => t.id === editingId);
-                if (index !== -1) {
-                    tools[index] = { ...tools[index], title, category, desc, type, icon, url, htmlCode };
-                    showToast('Tool berjaya dikemaskini!', 'success');
-                }
-            } else {
-                const newTool = {
-                    id: 'tool_' + Date.now(),
-                    title, category, desc, type, icon,
-                    url: type === 'URL' ? url : '',
-                    htmlCode: type === 'HTML' ? htmlCode : '',
-                    isPinned: false
-                };
-                tools.unshift(newTool);
-                showToast('Tool baharu berjaya ditambah!', 'success');
+            if (!title) {
+                showToast('Sila masukkan nama tool.', 'info');
+                return;
             }
 
-            saveToolsToStorage();
-            renderTools();
-            resetForm();
-            switchAdminTab('MANAGE');
-        }
+            if (type === 'URL' && !url) {
+                showToast('Sila masukkan URL tool.', 'info');
+                return;
+            }
 
+            if (type === 'HTML' && !htmlCode.trim()) {
+                showToast('Sila masukkan kod HTML.', 'info');
+                return;
+            }
+
+            const id = editingId || ('tool_' + Date.now());
+            const existing = tools.find(t => t.id === id);
+            const tool = {
+                id,
+                title,
+                category,
+                desc,
+                type,
+                icon,
+                url: type === 'URL' ? url : '',
+                htmlCode: type === 'HTML' ? htmlCode : '',
+                isPinned: existing?.isPinned || false,
+                order: existing?.order ?? 9999
+            };
+
+            try {
+                if (!window.firebaseSaveTool) {
+                    throw new Error('Firebase Tools module belum siap.');
+                }
+                await window.firebaseSaveTool(tool, !!editingId);
+
+                const index = tools.findIndex(t => t.id === id);
+                if (index !== -1) tools[index] = tool;
+                else tools.push(tool);
+
+                renderTools();
+                resetForm();
+                switchAdminTab('MANAGE');
+                showToast(editingId ? 'Tool berjaya dikemaskini!' : 'Tool baharu berjaya ditambah!', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast(err.message || 'Gagal menyimpan tool ke Firebase.', 'info');
+            }
+        }
         function resetForm() {
             document.getElementById('editingToolId').value = '';
             document.getElementById('toolTitle').value = '';
@@ -1092,18 +1119,30 @@
             switchAdminTab('ADD');
         }
 
-        function deleteTool(id) {
-            if (confirm("Adakah anda pasti untuk memadam tool ini?")) {
+        async function deleteTool(id) {
+            if (!window.isCurrentUserAdmin || !window.isCurrentUserAdmin()) {
+                showToast('Akses Admin diperlukan.', 'info');
+                return;
+            }
+
+            if (!confirm('Adakah anda pasti untuk memadam tool ini?')) return;
+
+            try {
+                if (!window.firebaseDeleteTool) {
+                    throw new Error('Firebase Tools module belum siap.');
+                }
+                await window.firebaseDeleteTool(id);
                 tools = tools.filter(t => t.id !== id);
                 favorites = favorites.filter(favId => favId !== id);
-                saveToolsToStorage();
                 saveFavsToStorage();
                 renderTools();
                 renderManageToolsList();
                 showToast('Tool telah dipadam', 'info');
+            } catch (err) {
+                console.error(err);
+                showToast(err.message || 'Gagal memadam tool.', 'info');
             }
         }
-
         // Firebase Teacher Access Operations
         function processTeacherCSV() {
             showToast('Import CSV telah digantikan dengan pengurusan guru melalui Firebase.', 'info');
@@ -1158,7 +1197,7 @@
             getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
         import {
-            getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp
+            getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -1178,6 +1217,7 @@
 
         const TEACHERS = 'teachers';
         const LOGIN_LOGS = 'loginLogs';
+        const TOOLS = 'tools';
         const DOMAIN = '@moe-dl.edu.my';
 
         function escapeHtml(value) {
@@ -1203,6 +1243,90 @@
                 role: teacherData?.role || 'teacher', active: teacherData?.active !== false
             };
         }
+
+        // ============================================================
+        // FIRESTORE TOOLS
+        // ============================================================
+
+        async function loadToolsFromFirebase() {
+            try {
+                const snap = await getDocs(collection(db, TOOLS));
+
+                if (snap.empty) {
+                    // Jika admin pertama kali masuk, seed tool asal sekali sahaja.
+                    if (window.currentTeacher && window.currentTeacher.role === 'admin' && Array.isArray(window.INITIAL_TOOLS)) {
+                        await seedInitialTools();
+                        return loadToolsFromFirebase();
+                    }
+
+                    window.setToolsFromFirebase([]);
+                    return;
+                }
+
+                const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                loaded.sort((a, b) => {
+                    const ao = Number.isFinite(a.order) ? a.order : 9999;
+                    const bo = Number.isFinite(b.order) ? b.order : 9999;
+                    return ao - bo || String(a.title || '').localeCompare(String(b.title || ''));
+                });
+
+                window.setToolsFromFirebase(loaded);
+            } catch (err) {
+                console.error('Gagal memuatkan tools dari Firestore:', err);
+                showToast('Gagal memuatkan tool dari Firebase. Semak Firestore Rules.', 'info');
+            }
+        }
+
+        async function seedInitialTools() {
+            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
+                throw new Error('Hanya Admin boleh menyediakan tool awal.');
+            }
+
+            const initial = window.INITIAL_TOOLS || [];
+            if (!initial.length) return;
+
+            const batch = writeBatch(db);
+            initial.forEach((tool, index) => {
+                const ref = doc(db, TOOLS, tool.id);
+                batch.set(ref, {
+                    ...tool,
+                    order: index,
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+            });
+            await batch.commit();
+            showToast('Tool asal berjaya disimpan ke Firebase.', 'success');
+        }
+
+        window.setToolsFromFirebase = function(loaded) {
+            tools = Array.isArray(loaded) ? loaded : [];
+            renderTools();
+            if (typeof renderManageToolsList === 'function' && activeAdminTab === 'MANAGE') {
+                renderManageToolsList();
+            }
+        };
+
+        window.loadToolsFromFirebase = loadToolsFromFirebase;
+
+        window.firebaseSaveTool = async function(tool, isEditing = false) {
+            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
+                throw new Error('Akses Admin diperlukan.');
+            }
+            const ref = doc(db, TOOLS, tool.id);
+            await setDoc(ref, {
+                ...tool,
+                updatedAt: serverTimestamp(),
+                ...(isEditing ? {} : { createdAt: serverTimestamp() })
+            }, { merge: true });
+        };
+
+        window.firebaseDeleteTool = async function(id) {
+            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
+                throw new Error('Akses Admin diperlukan.');
+            }
+            await deleteDoc(doc(db, TOOLS, id));
+        };
 
         function renderFirebaseTeacherHeader() {
             const container = document.getElementById('teacherAuthContainer');
@@ -1266,6 +1390,7 @@
                 setLoggedIn(user, snap.data());
                 renderFirebaseTeacherHeader();
                 updateAdminVisibility();
+                await loadToolsFromFirebase();
                 updateAdminVisibility();
                 closeTeacherLoginModal();
                 showToast(`Selamat datang, ${window.currentTeacher.displayName}!`, 'success');
@@ -1356,11 +1481,16 @@
                 if (!snap.exists() || snap.data().active === false) { await signOut(auth); return; }
                 setLoggedIn(user, snap.data());
                 renderFirebaseTeacherHeader();
+                updateAdminVisibility();
+                await loadToolsFromFirebase();
             } catch (e) {
                 console.error('Auth state error:', e);
                 await signOut(auth);
             }
         });
+
+        // Load public tool catalogue on first visit.
+        loadToolsFromFirebase();
     </script>
 
 </body>
