@@ -1392,14 +1392,14 @@
                     await signOut(auth);
                     throw new Error('Akaun Google ini tidak sepadan dengan rekod guru.');
                 }
-                await setDoc(ref, {
-                    uid: user.uid, displayName: user.displayName || snap.data().displayName || 'Guru',
-                    photoURL: user.photoURL || '', lastLoginAt: serverTimestamp()
-                }, { merge: true });
+                // Jangan menulis semula dokumen teachers ketika login.
+                // Rules hanya membenarkan admin mengubah data guru.
+                // Maklumat login direkodkan secara berasingan dalam loginLogs.
                 await setDoc(doc(collection(db, LOGIN_LOGS)), {
                     uid: user.uid, email, displayName: user.displayName || 'Guru', loginAt: serverTimestamp()
                 });
                 setLoggedIn(user, snap.data());
+                // Login berjaya tanpa memerlukan permission update pada teachers.
                 renderFirebaseTeacherHeader();
                 updateAdminVisibility();
                 await loadToolsFromFirebase();
