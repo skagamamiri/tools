@@ -102,7 +102,7 @@
                 </button>
 
                 <!-- Admin Button -->
-                <button onclick="toggleAdminModal()" class="px-3 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold hover:opacity-90 transition flex items-center space-x-1.5 shadow-sm">
+                <button id="adminHeaderBtn" onclick="toggleAdminModal()" class="hidden px-3 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold hover:opacity-90 transition flex items-center space-x-1.5 shadow-sm">
                     <i class="fa-solid fa-user-gear"></i>
                     <span class="hidden sm:inline">Panel Admin</span>
                 </button>
@@ -227,27 +227,16 @@
     <div id="adminModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
         <div class="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto">
             
-            <!-- Admin Login Step -->
+            <!-- Admin Access Step -->
             <div id="adminAuthStep" class="p-6 text-center">
-                <div class="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-700 dark:text-slate-200 mx-auto mb-3">
-                    <i class="fa-solid fa-lock text-xl"></i>
+                <div class="w-12 h-12 bg-amber-500/10 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600 dark:text-amber-400 mx-auto mb-3">
+                    <i class="fa-solid fa-user-shield text-xl"></i>
                 </div>
                 <h3 class="font-heading font-bold text-lg text-slate-900 dark:text-white">Akses Panel Admin</h3>
-                <p class="text-xs text-slate-400 mt-1 mb-4">Masukkan PIN Keselamatan Pentadbir (Lalai: <code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-brand-600 font-mono">1234</code>)</p>
-                
-                <div class="max-w-xs mx-auto space-y-3">
-                    <input type="password" id="adminPinInput" placeholder="Masukkan PIN 4-Digit" maxlength="8"
-                        class="w-full px-4 py-2.5 text-center text-lg font-bold tracking-widest rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
-                    <div id="authErrorMsg" class="text-xs text-rose-500 hidden font-medium">PIN tidak sah. Sila cuba lagi.</div>
-                    <div class="flex space-x-2">
-                        <button onclick="closeAdminModal()" class="w-1/2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">
-                            Batal
-                        </button>
-                        <button onclick="verifyAdminPin()" class="w-1/2 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md">
-                            Log Masuk
-                        </button>
-                    </div>
-                </div>
+                <p id="adminAccessMessage" class="text-xs text-slate-400 mt-1 mb-4 leading-relaxed">Panel ini hanya boleh diakses oleh akaun Google yang mempunyai peranan <strong>admin</strong> dalam Firebase.</p>
+                <button onclick="closeAdminModal()" class="px-5 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold hover:opacity-90 transition">
+                    Tutup
+                </button>
             </div>
 
             <!-- Admin Dashboard Content -->
@@ -443,7 +432,7 @@
             <i class="fa-solid fa-bookmark text-base text-rose-500"></i>
             <span class="text-[10px] mt-0.5 font-medium">Kegemaran</span>
         </button>
-        <button onclick="toggleAdminModal()" class="flex flex-col items-center text-slate-600 dark:text-slate-300 focus:text-brand-600">
+        <button id="adminMobileBtn" onclick="toggleAdminModal()" class="hidden flex-col items-center text-slate-600 dark:text-slate-300 focus:text-brand-600">
             <i class="fa-solid fa-user-gear text-base text-tech-500"></i>
             <span class="text-[10px] mt-0.5 font-medium">Admin</span>
         </button>
@@ -632,18 +621,17 @@
         let searchQuery = '';
         let favorites = [];
         let activeAdminTab = 'ADD';
-        const ADMIN_PIN = '1234'; // Default Admin Pin
 
         // Firebase authentication state
         let loggedInTeacher = null;
         let activeHtmlTool = null;
-        let isAdminAuthenticated = false;
 
         // Initialize App
         window.addEventListener('DOMContentLoaded', () => {
             loadLocalStorage();
             setupTheme();
             renderTeacherAuthHeader();
+            updateAdminVisibility();
             renderTools();
         });
 
@@ -906,37 +894,57 @@
 
         function toggleAdminModal() {
             const modal = document.getElementById('adminModal');
+            const teacher = window.currentTeacher;
+
+            if (!modal) return;
+
             if (modal.classList.contains('hidden')) {
-                modal.classList.remove('hidden');
-                if (!isAdminAuthenticated) {
+                if (!teacher) {
+                    openTeacherLoginModal();
+                    showToast('Sila log masuk dengan Google terlebih dahulu.', 'info');
+                    return;
+                }
+
+                if (teacher.role !== 'admin') {
+                    modal.classList.remove('hidden');
                     document.getElementById('adminAuthStep').classList.remove('hidden');
                     document.getElementById('adminDashboardStep').classList.add('hidden');
-                } else {
-                    document.getElementById('adminAuthStep').classList.add('hidden');
-                    document.getElementById('adminDashboardStep').classList.remove('hidden');
-                    renderManageToolsList();
+                    document.getElementById('adminAccessMessage').innerHTML =
+                        'Akaun <strong>' + escapeHtml(teacher.email) + '</strong> tidak mempunyai akses Admin. Sila hubungi Guru ICT.';
+                    return;
                 }
+
+                modal.classList.remove('hidden');
+                document.getElementById('adminAuthStep').classList.add('hidden');
+                document.getElementById('adminDashboardStep').classList.remove('hidden');
+                renderManageToolsList();
             } else {
                 closeAdminModal();
             }
         }
 
         function closeAdminModal() {
-            document.getElementById('adminModal').classList.add('hidden');
+            const modal = document.getElementById('adminModal');
+            if (modal) modal.classList.add('hidden');
         }
 
-        function verifyAdminPin() {
-            const pin = document.getElementById('adminPinInput').value;
-            if (pin === ADMIN_PIN) {
-                isAdminAuthenticated = true;
-                document.getElementById('adminAuthStep').classList.add('hidden');
-                document.getElementById('adminDashboardStep').classList.remove('hidden');
-                document.getElementById('authErrorMsg').classList.add('hidden');
-                renderManageToolsList();
-                showToast('Log masuk Admin Berjaya', 'success');
-            } else {
-                document.getElementById('authErrorMsg').classList.remove('hidden');
+        // Tiada lagi PIN admin. Status admin datang terus daripada Firebase/Firestore.
+        window.isCurrentUserAdmin = function() {
+            return !!(window.currentTeacher && window.currentTeacher.role === 'admin');
+        };
+
+        function updateAdminVisibility() {
+            const isAdmin = window.isCurrentUserAdmin();
+            const headerBtn = document.getElementById('adminHeaderBtn');
+            const mobileBtn = document.getElementById('adminMobileBtn');
+
+            if (headerBtn) headerBtn.classList.toggle('hidden', !isAdmin);
+            if (mobileBtn) {
+                mobileBtn.classList.toggle('hidden', !isAdmin);
+                mobileBtn.classList.toggle('flex', isAdmin);
             }
+
+            if (!isAdmin) closeAdminModal();
         }
 
         function switchAdminTab(tab) {
@@ -1257,6 +1265,8 @@
                 });
                 setLoggedIn(user, snap.data());
                 renderFirebaseTeacherHeader();
+                updateAdminVisibility();
+                updateAdminVisibility();
                 closeTeacherLoginModal();
                 showToast(`Selamat datang, ${window.currentTeacher.displayName}!`, 'success');
             } catch (err) {
@@ -1271,6 +1281,10 @@
 
         window.firebaseLogoutTeacher = async function() {
             try { await signOut(auth); } catch (e) { console.error(e); }
+            window.currentTeacher = null;
+            window.loggedInTeacher = null;
+            loggedInTeacher = null;
+            if (typeof updateAdminVisibility === 'function') updateAdminVisibility();
         };
 
         window.logoutTeacher = window.firebaseLogoutTeacher;
@@ -1332,6 +1346,7 @@
                 window.loggedInTeacher = null;
                 window.currentTeacher = null;
                 renderFirebaseTeacherHeader();
+                updateAdminVisibility();
                 return;
             }
             try {
