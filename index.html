@@ -70,7 +70,6 @@
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.3/papaparse.min.js"></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between pb-20 md:pb-6">
 
@@ -1605,26 +1604,96 @@
         loadToolsFromFirebase();
     
 // ============================================================
-// BULK TEACHER CSV IMPORT
+// BULK TEACHER CSV IMPORT - NATIVE PARSER
+// Tidak bergantung kepada CDN / Papa Parse
 // ============================================================
+
+function parseCsvLine(line) {
+    const cells = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+
+        if (ch === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+        } else if (ch === ',' && !inQuotes) {
+            cells.push(current.trim());
+            current = '';
+        } else {
+            current += ch;
+        }
+    }
+
+    cells.push(current.trim());
+    return cells;
+}
+
+function parseCsvText(text) {
+    text = String(text || '').replace(/^\uFEFF/, '');
+
+    const lines = text
+        .split(/\r?\n/)
+        .filter(line => line.trim() !== '');
+
+    if (!lines.length) return [];
+
+    const headers = parseCsvLine(lines[0]).map(h =>
+        String(h || '').trim()
+    );
+
+    return lines.slice(1).map(line => {
+        const values = parseCsvLine(line);
+        const row = {};
+
+        headers.forEach((header, index) => {
+            row[header] = values[index] ?? '';
+        });
+
+        return row;
+    });
+}
 
 function normalizeTeacherCsvRow(row) {
     const clean = {};
+
     Object.keys(row || {}).forEach(k => {
-        const key = String(k).trim().toLowerCase().replace(/[\s._-]+/g, '');
-        clean[key] = typeof row[k] === 'string' ? row[k].trim() : row[k];
+        const key = String(k)
+            .trim()
+            .toLowerCase()
+            .replace(/[\s._-]+/g, '');
+
+        clean[key] = typeof row[k] === 'string'
+            ? row[k].trim()
+            : row[k];
     });
 
     const email = String(
-        clean.email || clean.gmail || clean.googleemail || clean.emailgoogle || ''
+        clean.email ||
+        clean.gmail ||
+        clean.googleemail ||
+        clean.emailgoogle ||
+        ''
     ).trim().toLowerCase();
 
     const displayName = String(
-        clean.displayname || clean.nama || clean.namaguru || clean.name || ''
+        clean.displayname ||
+        clean.nama ||
+        clean.namaguru ||
+        clean.name ||
+        ''
     ).trim();
 
     let role = String(
-        clean.role || clean.peranan || 'teacher'
+        clean.role ||
+        clean.peranan ||
+        'teacher'
     ).trim().toLowerCase();
 
     if (role === 'guru') role = 'teacher';
@@ -1637,13 +1706,17 @@ function showTeacherImportResult(message, type = 'info') {
     const el = document.getElementById('teacherImportResult');
     if (!el) return;
 
-    el.className = `mt-3 text-xs rounded-xl px-3 py-2 ${
-        type === 'success'
-            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
-            : type === 'error'
-                ? 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300'
-                : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-    }`;
+    const classes = {
+        success:
+            'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300',
+        error:
+            'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300',
+        info:
+            'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+    };
+
+    el.className =
+        `mt-3 text-xs rounded-xl px-3 py-2 ${classes[type] || classes.info}`;
 
     el.textContent = message;
 }
@@ -1653,116 +1726,118 @@ async function importTeachersCsv() {
     const file = input?.files?.[0];
 
     if (!file) {
-        showTeacherImportResult('Sila pilih fail CSV terlebih dahulu.', 'error');
+        showTeacherImportResult(
+            'Sila pilih fail CSV terlebih dahulu.',
+            'error'
+        );
         return;
     }
 
     if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
-        showTeacherImportResult('Hanya Admin boleh mengimport guru.', 'error');
+        showTeacherImportResult(
+            'Hanya Admin boleh mengimport guru.',
+            'error'
+        );
         return;
     }
 
-    if (!window.Papa) {
-        showTeacherImportResult('CSV parser belum dimuatkan. Refresh halaman dan cuba lagi.', 'error');
-        return;
-    }
+    showTeacherImportResult(
+        'Sedang membaca fail CSV...',
+        'info'
+    );
 
-    showTeacherImportResult('Sedang membaca fail CSV...', 'info');
+    try {
+        const text = await file.text();
+        const rawRows = parseCsvText(text);
 
-    window.Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        transformHeader: h => String(h || '').trim(),
-        complete: async (results) => {
-            try {
-                const rows = (results.data || [])
-                    .map(normalizeTeacherCsvRow)
-                    .filter(r => r.email);
+        const rows = rawRows
+            .map(normalizeTeacherCsvRow)
+            .filter(row => row.email);
 
-                if (!rows.length) {
-                    showTeacherImportResult(
-                        'Tiada email ditemui. Pastikan CSV mempunyai lajur "email".',
-                        'error'
-                    );
-                    return;
-                }
-
-                const invalid = rows.filter(r => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email));
-
-                if (invalid.length) {
-                    showTeacherImportResult(
-                        `${invalid.length} baris mempunyai email tidak sah. Import dibatalkan.`,
-                        'error'
-                    );
-                    return;
-                }
-
-                const unique = [];
-                const seen = new Set();
-
-                rows.forEach(r => {
-                    if (!seen.has(r.email)) {
-                        seen.add(r.email);
-                        unique.push(r);
-                    }
-                });
-
-                let added = 0;
-                let updated = 0;
-                let failed = 0;
-
-                for (const teacher of unique) {
-                    try {
-                        const ref = doc(db, TEACHERS, teacher.email);
-                        const existing = await getDoc(ref);
-
-                        const payload = {
-                            active: true,
-                            displayName: teacher.displayName || existing.data()?.displayName || teacher.email.split('@')[0],
-                            role: teacher.role,
-                            importedAt: serverTimestamp()
-                        };
-
-                        if (existing.exists()) {
-                            await updateDoc(ref, payload);
-                            updated++;
-                        } else {
-                            await setDoc(ref, payload);
-                            added++;
-                        }
-                    } catch (err) {
-                        console.error('Import teacher gagal:', teacher.email, err);
-                        failed++;
-                    }
-                }
-
-                showTeacherImportResult(
-                    `Import selesai: ${added} ditambah, ${updated} dikemas kini, ${failed} gagal.`,
-                    failed ? 'info' : 'success'
-                );
-
-                input.value = '';
-
-                if (typeof loadTeachers === 'function') {
-                    await loadTeachers();
-                }
-
-            } catch (err) {
-                console.error(err);
-                showTeacherImportResult(
-                    'Import gagal. Sila semak format CSV dan Firestore Rules.',
-                    'error'
-                );
-            }
-        },
-        error: (error) => {
-            console.error(error);
+        if (!rows.length) {
             showTeacherImportResult(
-                'Gagal membaca fail CSV.',
+                'Tiada email ditemui. Pastikan CSV mempunyai lajur "email".',
                 'error'
             );
+            return;
         }
-    });
+
+        const invalid = rows.filter(row =>
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)
+        );
+
+        if (invalid.length) {
+            showTeacherImportResult(
+                `${invalid.length} baris mempunyai email tidak sah. Import dibatalkan.`,
+                'error'
+            );
+            return;
+        }
+
+        const unique = [];
+        const seen = new Set();
+
+        rows.forEach(row => {
+            if (!seen.has(row.email)) {
+                seen.add(row.email);
+                unique.push(row);
+            }
+        });
+
+        let added = 0;
+        let updated = 0;
+        let failed = 0;
+
+        for (const teacher of unique) {
+            try {
+                const ref = doc(db, TEACHERS, teacher.email);
+                const existing = await getDoc(ref);
+
+                const payload = {
+                    active: true,
+                    displayName:
+                        teacher.displayName ||
+                        existing.data()?.displayName ||
+                        teacher.email.split('@')[0],
+                    role: teacher.role
+                };
+
+                if (existing.exists()) {
+                    await updateDoc(ref, payload);
+                    updated++;
+                } else {
+                    await setDoc(ref, payload);
+                    added++;
+                }
+            } catch (error) {
+                console.error(
+                    'Import teacher gagal:',
+                    teacher.email,
+                    error
+                );
+                failed++;
+            }
+        }
+
+        showTeacherImportResult(
+            `Import selesai: ${added} ditambah, ${updated} dikemas kini, ${failed} gagal.`,
+            failed ? 'info' : 'success'
+        );
+
+        input.value = '';
+
+        if (typeof loadTeachers === 'function') {
+            await loadTeachers();
+        }
+
+    } catch (error) {
+        console.error('CSV Import Error:', error);
+
+        showTeacherImportResult(
+            'Gagal membaca fail CSV. Pastikan fail menggunakan format CSV biasa.',
+            'error'
+        );
+    }
 }
 
 function downloadTeacherCsvTemplate() {
@@ -1772,19 +1847,27 @@ guru1@moe-dl.edu.my,Cikgu Ali,teacher
 guru2@moe-dl.edu.my,Cikgu Siti,teacher
 `;
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(
+        [csv],
+        { type: 'text/csv;charset=utf-8;' }
+    );
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
 
     a.href = url;
     a.download = 'template_guru_hub_tool_ict.csv';
+
     document.body.appendChild(a);
     a.click();
     a.remove();
+
     URL.revokeObjectURL(url);
 }
 
 window.importTeachersCsv = importTeachersCsv;
+window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
+
 window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
 </script>
