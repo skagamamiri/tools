@@ -884,7 +884,7 @@
 
             <div id="loginErrorAlert" class="hidden mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold text-left"></div>
 
-            <button id="googleLoginModalBtn" onclick="loginWithGoogle()" class="w-full py-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-500 hover:shadow-md text-slate-800 dark:text-white font-bold text-sm transition flex items-center justify-center space-x-3">
+            <button type="button" id="googleLoginModalBtn" onclick="loginWithGoogle()" class="w-full py-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-500 hover:shadow-md text-slate-800 dark:text-white font-bold text-sm transition flex items-center justify-center space-x-3">
                 <i class="fa-brands fa-google text-red-500 text-base"></i>
                 <span>Teruskan dengan Google</span>
             </button>
@@ -1754,7 +1754,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
         import {
-            getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged
+            getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
         import {
             getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
@@ -1981,129 +1981,233 @@
 
         window.renderFirebaseTeacherHeader = renderFirebaseTeacherHeader;
 
-        window.loginWithGoogle = async function() {
-            const modalBtn = document.getElementById('googleLoginModalBtn');
-            const error = document.getElementById('loginErrorAlert');
+        // ============================================================
+        // GOOGLE LOGIN — POPUP + REDIRECT FALLBACK
+        // ============================================================
 
-            if (error) error.classList.add('hidden');
+        async function finishGoogleLogin(user) {
+            const email = (user.email || '').toLowerCase().trim();
 
-            if (modalBtn) {
-                modalBtn.disabled = true;
-                modalBtn.innerHTML =
-                    '<i class="fa-solid fa-spinner fa-spin text-brand-600"></i>' +
-                    '<span>Membuka Google...</span>';
+            if (!email) {
+                await signOut(auth);
+                throw new Error('Google tidak memulangkan alamat email.');
             }
 
+            // WHITELIST: teachers/{email}
+            const ref = doc(db, TEACHERS, email);
+            const snap = await getDoc(ref);
+
+            if (!snap.exists()) {
+                await signOut(auth);
+                throw new Error(
+                    `Akaun ${email} belum didaftarkan dalam whitelist guru. Sila hubungi Guru ICT.`
+                );
+            }
+
+            const teacherData = snap.data();
+
+            if (teacherData.active !== true) {
+                await signOut(auth);
+                throw new Error(
+                    'Akaun guru anda telah dinyahaktifkan. Sila hubungi Guru ICT.'
+                );
+            }
+
+            // Jika UID sudah disimpan, pastikan akaun Google sama.
+            // Jika UID belum ada (rekod lama), login masih dibenarkan.
+            if (teacherData.uid && teacherData.uid !== user.uid) {
+                await signOut(auth);
+                throw new Error(
+                    'Akaun Google ini tidak sepadan dengan rekod guru.'
+                );
+            }
+
+            // Simpan UID hanya jika rekod guru belum mempunyai UID.
+            // Ini memudahkan rekod whitelist lama dinaik taraf secara automatik.
+            if (!teacherData.uid) {
+                try {
+                    await setDoc(ref, {
+                        uid: user.uid,
+                        photoURL: user.photoURL || '',
+                        lastLoginAt: serverTimestamp()
+                    }, { merge: true });
+                } catch (uidError) {
+                    console.warn('UID tidak dapat disimpan:', uidError);
+                }
+            } else {
+                try {
+                    await setDoc(ref, {
+                        photoURL: user.photoURL || '',
+                        lastLoginAt: serverTimestamp()
+                    }, { merge: true });
+                } catch (profileError) {
+                    console.warn('Maklumat profil tidak dapat dikemas kini:', profileError);
+                }
+            }
+
+            setLoggedIn(user, { ...teacherData, uid: teacherData.uid || user.uid });
+            renderFirebaseTeacherHeader();
+            updateAdminVisibility();
+            await loadToolsFromFirebase();
+            closeTeacherLoginModal();
+            showToast(`Selamat datang, ${window.currentTeacher.displayName}!`, 'success');
+
+            // Login log tidak menghalang login jika logging gagal.
             try {
-                // Redirect lebih stabil untuk telefon/mobile dan mengelakkan
-                // popup browser daripada disekat.
-                sessionStorage.setItem('skamis_auth_pending', '1');
-                await signInWithRedirect(auth, provider);
+                await setDoc(doc(collection(db, LOGIN_LOGS)), {
+                    uid: user.uid,
+                    email,
+                    displayName: user.displayName || teacherData.displayName || 'Guru',
+                    loginAt: serverTimestamp()
+                });
+            } catch (logErr) {
+                console.warn('Login berjaya tetapi loginLogs gagal direkodkan:', logErr);
+            }
+        }
+
+        function showGoogleLoginError(err) {
+            console.error('Google Login Error:', err);
+
+            const error = document.getElementById('loginErrorAlert');
+            const modalBtn = document.getElementById('googleLoginModalBtn');
+
+            let msg = err?.message || 'Log masuk Google gagal. Sila cuba lagi.';
+
+            switch (err?.code) {
+                case 'auth/unauthorized-domain':
+                    msg = 'Domain skagamamiri.github.io belum didaftarkan di Firebase Authentication → Settings → Authorized domains.';
+                    break;
+
+                case 'auth/operation-not-allowed':
+                    msg = 'Google Sign-In belum diaktifkan di Firebase Authentication.';
+                    break;
+
+                case 'auth/popup-blocked':
+                    msg = 'Popup Google telah disekat browser. Cuba sekali lagi atau benarkan popup untuk laman ini.';
+                    break;
+
+                case 'auth/popup-closed-by-user':
+                    msg = 'Tetingkap Google ditutup sebelum login selesai.';
+                    break;
+
+                case 'auth/cancelled-popup-request':
+                    msg = 'Permintaan login Google dibatalkan. Sila cuba lagi.';
+                    break;
+
+                case 'auth/network-request-failed':
+                    msg = 'Masalah rangkaian. Semak sambungan Internet dan cuba lagi.';
+                    break;
+
+                case 'auth/internal-error':
+                    msg = 'Firebase mengalami ralat dalaman. Refresh halaman dan cuba lagi.';
+                    break;
+            }
+
+            if (error) {
+                error.classList.remove('hidden');
+                error.innerHTML =
+                    `<i class="fa-solid fa-circle-exclamation mr-1.5"></i>${escapeHtml(msg)}`;
+            }
+
+            if (modalBtn) {
+                modalBtn.disabled = false;
+                modalBtn.innerHTML =
+                    '<i class="fa-brands fa-google text-red-500 text-base"></i>' +
+                    '<span>Teruskan dengan Google</span>';
+            }
+        }
+
+        function setGoogleButtonLoading(text = 'Membuka Google...') {
+            const modalBtn = document.getElementById('googleLoginModalBtn');
+            if (!modalBtn) return;
+            modalBtn.disabled = true;
+            modalBtn.innerHTML =
+                '<i class="fa-solid fa-spinner fa-spin text-brand-600"></i>' +
+                `<span>${escapeHtml(text)}</span>`;
+        }
+
+        window.loginWithGoogle = async function() {
+            const error = document.getElementById('loginErrorAlert');
+            if (error) error.classList.add('hidden');
+
+            setGoogleButtonLoading('Membuka Google...');
+
+            try {
+                // Pastikan sesi login kekal selepas browser ditutup.
+                await setPersistence(auth, browserLocalPersistence);
+
+                const isMobile =
+                    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+                /*
+                 * Telefon/tablet:
+                 * gunakan redirect kerana popup lebih mudah disekat.
+                 *
+                 * Desktop:
+                 * gunakan popup seperti kebanyakan laman web moden.
+                 * Jika popup disekat, fallback kepada redirect.
+                 */
+                if (isMobile) {
+                    sessionStorage.setItem('skamis_auth_pending', '1');
+                    await signInWithRedirect(auth, provider);
+                    return;
+                }
+
+                try {
+                    const result = await signInWithPopup(auth, provider);
+
+                    if (!result?.user) {
+                        throw new Error('Google tidak memulangkan akaun pengguna.');
+                    }
+
+                    await finishGoogleLogin(result.user);
+
+                } catch (popupErr) {
+                    console.warn('Popup Google gagal:', popupErr);
+
+                    // Popup disekat → terus gunakan redirect.
+                    if (
+                        popupErr?.code === 'auth/popup-blocked' ||
+                        popupErr?.code === 'auth/operation-not-supported-in-this-environment'
+                    ) {
+                        sessionStorage.setItem('skamis_auth_pending', '1');
+                        setGoogleButtonLoading('Membuka Google...');
+                        await signInWithRedirect(auth, provider);
+                        return;
+                    }
+
+                    throw popupErr;
+                }
+
             } catch (err) {
-                console.error('Google Redirect Login:', err);
-
                 sessionStorage.removeItem('skamis_auth_pending');
-
-                let msg = err.message || 'Log masuk Google gagal. Sila cuba lagi.';
-
-                if (err.code === 'auth/unauthorized-domain') {
-                    msg = 'Domain laman ini belum didaftarkan dalam Firebase Authentication → Settings → Authorized domains.';
-                } else if (err.code === 'auth/operation-not-allowed') {
-                    msg = 'Google Sign-In belum diaktifkan dalam Firebase Authentication.';
-                } else if (err.code === 'auth/operation-not-supported-in-this-environment') {
-                    msg = 'Login Google tidak disokong dalam persekitaran browser ini.';
-                }
-
-                if (error) {
-                    error.classList.remove('hidden');
-                    error.innerHTML =
-                        `<i class="fa-solid fa-circle-exclamation mr-1.5"></i>${escapeHtml(msg)}`;
-                }
-
-                if (modalBtn) {
-                    modalBtn.disabled = false;
-                    modalBtn.innerHTML =
-                        '<i class="fa-brands fa-google text-red-500 text-base"></i>' +
-                        '<span>Teruskan dengan Google</span>';
-                }
+                showGoogleLoginError(err);
             }
         };
 
-        // Proses keputusan selepas Google redirect kembali ke laman.
+        // Proses keputusan selepas Google redirect kembali ke GitHub Pages.
         (async function handleGoogleRedirectResult() {
             try {
                 const result = await getRedirectResult(auth);
 
                 if (!result || !result.user) return;
 
-                const user = result.user;
-                const email = (user.email || '').toLowerCase().trim();
+                setGoogleButtonLoading('Menyemak akaun...');
 
-                if (!email) {
-                    await signOut(auth);
-                    throw new Error('Google tidak memulangkan alamat email.');
-                }
-
-                const ref = doc(db, TEACHERS, email);
-                const snap = await getDoc(ref);
-
-                if (!snap.exists() || snap.data().active !== true) {
-                    await signOut(auth);
-                    throw new Error(
-                        'Akaun anda belum didaftarkan dalam whitelist guru atau tidak aktif. Sila hubungi Guru ICT.'
-                    );
-                }
-
-                if (snap.data().uid && snap.data().uid !== user.uid) {
-                    await signOut(auth);
-                    throw new Error('Akaun Google ini tidak sepadan dengan rekod guru.');
-                }
-
-                setLoggedIn(user, snap.data());
-                renderFirebaseTeacherHeader();
-                updateAdminVisibility();
-                await loadToolsFromFirebase();
-                closeTeacherLoginModal();
-                showToast(`Selamat datang, ${window.currentTeacher.displayName}!`, 'success');
-
-                try {
-                    await setDoc(doc(collection(db, LOGIN_LOGS)), {
-                        uid: user.uid,
-                        email,
-                        displayName: user.displayName || 'Guru',
-                        loginAt: serverTimestamp()
-                    });
-                } catch (logErr) {
-                    console.warn('Login berjaya tetapi loginLogs gagal direkodkan:', logErr);
-                }
+                await finishGoogleLogin(result.user);
 
             } catch (err) {
                 if (err?.code === 'auth/no-auth-event') return;
 
-                console.error('Google Redirect Result:', err);
-                const error = document.getElementById('loginErrorAlert');
-
-                if (error) {
-                    error.classList.remove('hidden');
-                    error.innerHTML =
-                        `<i class="fa-solid fa-circle-exclamation mr-1.5"></i>${escapeHtml(
-                            err.message || 'Log masuk Google gagal.'
-                        )}`;
-                }
-
-                const modalBtn = document.getElementById('googleLoginModalBtn');
-                if (modalBtn) {
-                    modalBtn.disabled = false;
-                    modalBtn.innerHTML =
-                        '<i class="fa-brands fa-google text-red-500 text-base"></i>' +
-                        '<span>Teruskan dengan Google</span>';
-                }
+                sessionStorage.removeItem('skamis_auth_pending');
+                showGoogleLoginError(err);
             } finally {
                 sessionStorage.removeItem('skamis_auth_pending');
             }
         })();
 
         window.logoutTeacher = window.firebaseLogoutTeacher;
+
 
         window.addTeacherToFirebase = async function() {
             if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
@@ -3072,16 +3176,6 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             }
         });
 
-        // Jika baru kembali dari Google, berikan sedikit maklum balas visual.
-        if (sessionStorage.getItem('skamis_auth_pending') === '1') {
-            const pendingBtn = document.getElementById('googleLoginModalBtn');
-            if (pendingBtn) {
-                pendingBtn.disabled = true;
-                pendingBtn.innerHTML =
-                    '<i class="fa-solid fa-spinner fa-spin text-brand-600"></i>' +
-                    '<span>Sedang memproses log masuk Google...</span>';
-            }
-        }
 </script>
 
 </body>
