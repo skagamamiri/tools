@@ -7,355 +7,370 @@
 <title>Tempahan Bilik Khas • Hub Tool ICT</title>
 <link rel="icon" href="data:,">
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-  import {
-    getAuth,
-    onAuthStateChanged,
-    GoogleAuthProvider,
-    signInWithPopup
-  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-  import {
-    getFirestore,
-    collection,
-    addDoc,
-    getDocs,
-    query,
-    where,
-    orderBy,
-    Timestamp,
-    doc,
-    getDoc,
-    deleteDoc,
-    runTransaction
-  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-            apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE",
-            authDomain: "skamis-hubtool.firebaseapp.com",
-            projectId: "skamis-hubtool",
-            storageBucket: "skamis-hubtool.firebasestorage.app",
-            messagingSenderId: "236769370780",
-            appId: "1:236769370780:web:9dfa07d772a721ecfe0359"
-        };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  const ROOMS = [
-    "Dewan Ibnu Khaldun",
-    "Makmal Komputer",
-    "Bengkel RBT",
-    "Bilik Muzik",
-    "Bilik Mesyuarat"
-  ];
-
-  const $ = (id) => document.getElementById(id);
-
-  let currentUser = null;
-  let currentTeacher = null;
-  let allBookingsForDate = [];
-  let currentDate = "";
-
-  function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, ch => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[ch]));
-  }
-
-  function todayMY() {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,"0");
-    const day = String(d.getDate()).padStart(2,"0");
-    return `${y}-${m}-${day}`;
-  }
-
-  function formatDateMY(dateStr) {
-    if (!dateStr) return "-";
-    const [y,m,d] = dateStr.split("-");
-    return `${d}/${m}/${y}`;
-  }
-
-  function formatTime(tsOrString) {
-    if (!tsOrString) return "-";
-    if (typeof tsOrString === "string") return tsOrString;
-    if (tsOrString.toDate) {
-      return tsOrString.toDate().toLocaleTimeString("ms-MY", {
-        hour: "2-digit", minute: "2-digit", hour12: false
-      });
+  window.addEventListener("error", (event) => {
+    if (event.error) {
+      console.error(event.error);
     }
-    return "-";
-  }
+  });
 
-  function timeToMinutes(v) {
-    const [h,m] = String(v).split(":").map(Number);
-    return (h * 60) + m;
-  }
+  try {
 
-  function overlaps(aStart, aEnd, bStart, bEnd) {
-    return timeToMinutes(aStart) < timeToMinutes(bEnd)
-      && timeToMinutes(aEnd) > timeToMinutes(bStart);
-  }
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+      import {
+        getAuth,
+        onAuthStateChanged,
+        GoogleAuthProvider,
+        signInWithPopup
+      } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        getDocs,
+        query,
+        where,
+        orderBy,
+        Timestamp,
+        doc,
+        getDoc,
+        deleteDoc,
+        runTransaction
+      } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-  function showToast(message, type="info") {
-    const el = $("toast");
-    el.textContent = message;
-    el.className = `toast show ${type}`;
-    clearTimeout(window.__toastTimer);
-    window.__toastTimer = setTimeout(() => {
-      el.className = "toast";
-    }, 3200);
-  }
+      const firebaseConfig = {
+                apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE",
+                authDomain: "skamis-hubtool.firebaseapp.com",
+                projectId: "skamis-hubtool",
+                storageBucket: "skamis-hubtool.firebasestorage.app",
+                messagingSenderId: "236769370780",
+                appId: "1:236769370780:web:9dfa07d772a721ecfe0359"
+            };
 
-  async function getTeacherProfile(user) {
-    const ref = doc(db, "teachers", user.email);
-    const snap = await getDoc(ref);
-    if (!snap.exists() || snap.data().active !== true) {
-      throw new Error("Akaun anda tidak disenaraikan sebagai guru aktif.");
-    }
-    return snap.data();
-  }
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
 
-  async function loadBookings(dateStr) {
-    currentDate = dateStr;
-    $("selectedDateLabel").textContent = formatDateMY(dateStr);
-    $("loading").classList.remove("hidden");
-    $("bookingList").innerHTML = "";
+      const ROOMS = [
+        "Dewan Ibnu Khaldun",
+        "Makmal Komputer",
+        "Bengkel RBT",
+        "Bilik Muzik",
+        "Bilik Mesyuarat"
+      ];
 
-    try {
-      const q = query(
-        collection(db, "roomBookings"),
-        where("date", "==", dateStr)
-      );
-      const snap = await getDocs(q);
-      allBookingsForDate = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
-      renderRoomStatus();
-      renderBookingList();
-    } catch (error) {
-      console.error(error);
-      allBookingsForDate = [];
-      $("bookingList").innerHTML = `
-        <div class="empty error">
-          <strong>Gagal memuatkan tempahan.</strong>
-          <span>${escapeHtml(error.message)}</span>
-        </div>`;
-      renderRoomStatus();
-    } finally {
-      $("loading").classList.add("hidden");
-    }
-  }
+      const $ = (id) => document.getElementById(id);
 
-  function renderRoomStatus() {
-    const container = $("roomStatus");
-    container.innerHTML = ROOMS.map(room => {
-      const bookings = allBookingsForDate.filter(b => b.room === room);
-      const booked = bookings.length > 0;
-      const first = bookings[0];
-      return `
-        <div class="room-card ${booked ? "booked" : "available"}">
-          <div class="room-icon">▦</div>
-          <div class="room-info">
-            <strong>${escapeHtml(room)}</strong>
-            <span>${booked
-              ? `${bookings.length} tempahan • ${formatTime(first.startTime)}–${formatTime(first.endTime)}`
-              : "Tersedia"}</span>
-          </div>
-          <span class="status-pill ${booked ? "red" : "green"}">${booked ? "Ditempah" : "Tersedia"}</span>
-        </div>`;
-    }).join("");
-  }
+      let currentUser = null;
+      let currentTeacher = null;
+      let allBookingsForDate = [];
+      let currentDate = "";
 
-  function renderBookingList() {
-    const list = $("bookingList");
-    if (!allBookingsForDate.length) {
-      list.innerHTML = `
-        <div class="empty">
-          <div class="empty-icon">✓</div>
-          <strong>Tiada bilik ditempah</strong>
-          <span>Semua bilik khas masih tersedia pada tarikh ini.</span>
-        </div>`;
-      return;
-    }
-
-    list.innerHTML = allBookingsForDate.map(b => `
-      <article class="booking-item">
-        <div class="booking-time">
-          <strong>${escapeHtml(b.startTime)}–${escapeHtml(b.endTime)}</strong>
-          <span>${escapeHtml(b.room)}</span>
-        </div>
-        <div class="booking-detail">
-          <strong>${escapeHtml(b.purpose || "Kegunaan bilik")}</strong>
-          <span>Tempah oleh: ${escapeHtml(b.displayName || b.email || "-")}</span>
-        </div>
-        ${currentUser && (b.uid === currentUser.uid || currentTeacher?.role === "admin")
-          ? `<button class="delete-btn" data-id="${escapeHtml(b.id)}" title="Batalkan tempahan">Batalkan</button>`
-          : ""}
-      </article>
-    `).join("");
-
-    list.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", () => cancelBooking(btn.dataset.id));
-    });
-  }
-
-  function setFormDefaults() {
-    $("bookingDate").value = currentDate || todayMY();
-    $("startTime").value = "08:00";
-    $("endTime").value = "09:00";
-  }
-
-  async function submitBooking(event) {
-    event.preventDefault();
-
-    if (!currentUser || !currentTeacher) {
-      showToast("Sila log masuk dahulu.", "error");
-      return;
-    }
-
-    const room = $("room").value;
-    const date = $("bookingDate").value;
-    const startTime = $("startTime").value;
-    const endTime = $("endTime").value;
-    const purpose = $("purpose").value.trim();
-
-    if (!room || !date || !startTime || !endTime || !purpose) {
-      showToast("Sila lengkapkan semua maklumat.", "error");
-      return;
-    }
-
-    if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
-      showToast("Masa tamat mesti selepas masa mula.", "error");
-      return;
-    }
-
-    if (date < todayMY()) {
-      showToast("Tarikh tempahan tidak boleh pada tarikh yang telah berlalu.", "error");
-      return;
-    }
-
-    const btn = $("submitBtn");
-    btn.disabled = true;
-    btn.textContent = "Menyemak...";
-
-    try {
-      // Semak pertindihan dalam transaksi untuk mengurangkan risiko
-      // dua guru menempah bilik yang sama pada masa yang sama.
-      const q = query(
-        collection(db, "roomBookings"),
-        where("date", "==", date)
-      );
-      const existing = await getDocs(q);
-
-      const conflict = existing.docs
-        .map(d => d.data())
-        .filter(b => b.room === room)
-        .some(b => overlaps(startTime, endTime, b.startTime, b.endTime));
-
-      if (conflict) {
-        showToast("Bilik tersebut sudah ditempah pada waktu berkenaan.", "error");
-        return;
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, ch => ({
+          "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+        }[ch]));
       }
 
-      await addDoc(collection(db, "roomBookings"), {
-        room,
-        date,
-        startTime,
-        endTime,
-        purpose,
-        uid: currentUser.uid,
-        email: currentUser.email,
-        displayName: currentTeacher.displayName || currentUser.displayName || currentUser.email,
-        createdAt: Timestamp.now()
+      function todayMY() {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth()+1).padStart(2,"0");
+        const day = String(d.getDate()).padStart(2,"0");
+        return `${y}-${m}-${day}`;
+      }
+
+      function formatDateMY(dateStr) {
+        if (!dateStr) return "-";
+        const [y,m,d] = dateStr.split("-");
+        return `${d}/${m}/${y}`;
+      }
+
+      function formatTime(tsOrString) {
+        if (!tsOrString) return "-";
+        if (typeof tsOrString === "string") return tsOrString;
+        if (tsOrString.toDate) {
+          return tsOrString.toDate().toLocaleTimeString("ms-MY", {
+            hour: "2-digit", minute: "2-digit", hour12: false
+          });
+        }
+        return "-";
+      }
+
+      function timeToMinutes(v) {
+        const [h,m] = String(v).split(":").map(Number);
+        return (h * 60) + m;
+      }
+
+      function overlaps(aStart, aEnd, bStart, bEnd) {
+        return timeToMinutes(aStart) < timeToMinutes(bEnd)
+          && timeToMinutes(aEnd) > timeToMinutes(bStart);
+      }
+
+      function showToast(message, type="info") {
+        const el = $("toast");
+        el.textContent = message;
+        el.className = `toast show ${type}`;
+        clearTimeout(window.__toastTimer);
+        window.__toastTimer = setTimeout(() => {
+          el.className = "toast";
+        }, 3200);
+      }
+
+      async function getTeacherProfile(user) {
+        const ref = doc(db, "teachers", user.email);
+        const snap = await getDoc(ref);
+        if (!snap.exists() || snap.data().active !== true) {
+          throw new Error("Akaun anda tidak disenaraikan sebagai guru aktif.");
+        }
+        return snap.data();
+      }
+
+      async function loadBookings(dateStr) {
+        currentDate = dateStr;
+        $("selectedDateLabel").textContent = formatDateMY(dateStr);
+        $("loading").classList.remove("hidden");
+        $("bookingList").innerHTML = "";
+
+        try {
+          const q = query(
+            collection(db, "roomBookings"),
+            where("date", "==", dateStr)
+          );
+          const snap = await getDocs(q);
+          allBookingsForDate = snap.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
+          renderRoomStatus();
+          renderBookingList();
+        } catch (error) {
+          console.error(error);
+          allBookingsForDate = [];
+          $("bookingList").innerHTML = `
+            <div class="empty error">
+              <strong>Gagal memuatkan tempahan.</strong>
+              <span>${escapeHtml(error.message)}</span>
+            </div>`;
+          renderRoomStatus();
+        } finally {
+          $("loading").classList.add("hidden");
+        }
+      }
+
+      function renderRoomStatus() {
+        const container = $("roomStatus");
+        container.innerHTML = ROOMS.map(room => {
+          const bookings = allBookingsForDate.filter(b => b.room === room);
+          const booked = bookings.length > 0;
+          const first = bookings[0];
+          return `
+            <div class="room-card ${booked ? "booked" : "available"}">
+              <div class="room-icon">▦</div>
+              <div class="room-info">
+                <strong>${escapeHtml(room)}</strong>
+                <span>${booked
+                  ? `${bookings.length} tempahan • ${formatTime(first.startTime)}–${formatTime(first.endTime)}`
+                  : "Tersedia"}</span>
+              </div>
+              <span class="status-pill ${booked ? "red" : "green"}">${booked ? "Ditempah" : "Tersedia"}</span>
+            </div>`;
+        }).join("");
+      }
+
+      function renderBookingList() {
+        const list = $("bookingList");
+        if (!allBookingsForDate.length) {
+          list.innerHTML = `
+            <div class="empty">
+              <div class="empty-icon">✓</div>
+              <strong>Tiada bilik ditempah</strong>
+              <span>Semua bilik khas masih tersedia pada tarikh ini.</span>
+            </div>`;
+          return;
+        }
+
+        list.innerHTML = allBookingsForDate.map(b => `
+          <article class="booking-item">
+            <div class="booking-time">
+              <strong>${escapeHtml(b.startTime)}–${escapeHtml(b.endTime)}</strong>
+              <span>${escapeHtml(b.room)}</span>
+            </div>
+            <div class="booking-detail">
+              <strong>${escapeHtml(b.purpose || "Kegunaan bilik")}</strong>
+              <span>Tempah oleh: ${escapeHtml(b.displayName || b.email || "-")}</span>
+            </div>
+            ${currentUser && (b.uid === currentUser.uid || currentTeacher?.role === "admin")
+              ? `<button class="delete-btn" data-id="${escapeHtml(b.id)}" title="Batalkan tempahan">Batalkan</button>`
+              : ""}
+          </article>
+        `).join("");
+
+        list.querySelectorAll(".delete-btn").forEach(btn => {
+          btn.addEventListener("click", () => cancelBooking(btn.dataset.id));
+        });
+      }
+
+      function setFormDefaults() {
+        $("bookingDate").value = currentDate || todayMY();
+        $("startTime").value = "08:00";
+        $("endTime").value = "09:00";
+      }
+
+      async function submitBooking(event) {
+        event.preventDefault();
+
+        if (!currentUser || !currentTeacher) {
+          showToast("Sila log masuk dahulu.", "error");
+          return;
+        }
+
+        const room = $("room").value;
+        const date = $("bookingDate").value;
+        const startTime = $("startTime").value;
+        const endTime = $("endTime").value;
+        const purpose = $("purpose").value.trim();
+
+        if (!room || !date || !startTime || !endTime || !purpose) {
+          showToast("Sila lengkapkan semua maklumat.", "error");
+          return;
+        }
+
+        if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
+          showToast("Masa tamat mesti selepas masa mula.", "error");
+          return;
+        }
+
+        if (date < todayMY()) {
+          showToast("Tarikh tempahan tidak boleh pada tarikh yang telah berlalu.", "error");
+          return;
+        }
+
+        const btn = $("submitBtn");
+        btn.disabled = true;
+        btn.textContent = "Menyemak...";
+
+        try {
+          // Semak pertindihan dalam transaksi untuk mengurangkan risiko
+          // dua guru menempah bilik yang sama pada masa yang sama.
+          const q = query(
+            collection(db, "roomBookings"),
+            where("date", "==", date)
+          );
+          const existing = await getDocs(q);
+
+          const conflict = existing.docs
+            .map(d => d.data())
+            .filter(b => b.room === room)
+            .some(b => overlaps(startTime, endTime, b.startTime, b.endTime));
+
+          if (conflict) {
+            showToast("Bilik tersebut sudah ditempah pada waktu berkenaan.", "error");
+            return;
+          }
+
+          await addDoc(collection(db, "roomBookings"), {
+            room,
+            date,
+            startTime,
+            endTime,
+            purpose,
+            uid: currentUser.uid,
+            email: currentUser.email,
+            displayName: currentTeacher.displayName || currentUser.displayName || currentUser.email,
+            createdAt: Timestamp.now()
+          });
+
+          $("bookingForm").reset();
+          $("bookingDate").value = date;
+          $("startTime").value = "08:00";
+          $("endTime").value = "09:00";
+          $("purpose").value = "";
+
+          showToast("Tempahan bilik berjaya disimpan.", "success");
+          await loadBookings(date);
+        } catch (error) {
+          console.error(error);
+          showToast(error.message || "Gagal menyimpan tempahan.", "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Tempah Bilik";
+        }
+      }
+
+      async function cancelBooking(id) {
+        if (!confirm("Batalkan tempahan ini?")) return;
+
+        try {
+          await deleteDoc(doc(db, "roomBookings", id));
+          showToast("Tempahan telah dibatalkan.", "success");
+          await loadBookings(currentDate);
+        } catch (error) {
+          console.error(error);
+          showToast(error.message || "Gagal membatalkan tempahan.", "error");
+        }
+      }
+
+      function showLogin() {
+        $("loginScreen").classList.remove("hidden");
+        $("app").classList.add("hidden");
+      }
+
+      function showApp() {
+        $("loginScreen").classList.add("hidden");
+        $("app").classList.remove("hidden");
+      }
+
+      $("googleLoginBtn").addEventListener("click", async () => {
+        try {
+          await signInWithPopup(auth, new GoogleAuthProvider());
+        } catch (error) {
+          console.error(error);
+          showToast(error.message || "Gagal log masuk Google.", "error");
+        }
       });
 
-      $("bookingForm").reset();
-      $("bookingDate").value = date;
-      $("startTime").value = "08:00";
-      $("endTime").value = "09:00";
-      $("purpose").value = "";
+      $("logoutBtn").addEventListener("click", async () => {
+        const { signOut } = await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js");
+        await signOut(auth);
+      });
 
-      showToast("Tempahan bilik berjaya disimpan.", "success");
-      await loadBookings(date);
-    } catch (error) {
-      console.error(error);
-      showToast(error.message || "Gagal menyimpan tempahan.", "error");
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Tempah Bilik";
-    }
+      $("bookingForm").addEventListener("submit", submitBooking);
+      $("bookingDate").addEventListener("change", e => loadBookings(e.target.value));
+
+      onAuthStateChanged(auth, async user => {
+        currentUser = user;
+        if (!user) {
+          currentTeacher = null;
+          showLogin();
+          return;
+        }
+
+        try {
+          currentTeacher = await getTeacherProfile(user);
+          $("userName").textContent = currentTeacher.displayName || user.displayName || user.email;
+          $("userRole").textContent = currentTeacher.role === "admin"
+            ? "ADMIN"
+            : currentTeacher.role === "pentadbir"
+              ? "PENTADBIR"
+              : "GURU";
+
+          showApp();
+          const d = todayMY();
+          $("bookingDate").value = d;
+          await loadBookings(d);
+        } catch (error) {
+          console.error(error);
+          await (await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js")).signOut(auth);
+          showLogin();
+          showToast(error.message, "error");
+        }
+      });
+  } catch (error) {
+    console.error("Tool initialization error:", error);
+    const boot = document.getElementById("bootError");
+    const text = document.getElementById("bootErrorText");
+    if (boot) boot.classList.remove("hidden");
+    if (text) text.textContent = error?.message || "Ralat semasa memulakan Firebase.";
   }
-
-  async function cancelBooking(id) {
-    if (!confirm("Batalkan tempahan ini?")) return;
-
-    try {
-      await deleteDoc(doc(db, "roomBookings", id));
-      showToast("Tempahan telah dibatalkan.", "success");
-      await loadBookings(currentDate);
-    } catch (error) {
-      console.error(error);
-      showToast(error.message || "Gagal membatalkan tempahan.", "error");
-    }
-  }
-
-  function showLogin() {
-    $("loginScreen").classList.remove("hidden");
-    $("app").classList.add("hidden");
-  }
-
-  function showApp() {
-    $("loginScreen").classList.add("hidden");
-    $("app").classList.remove("hidden");
-  }
-
-  $("googleLoginBtn").addEventListener("click", async () => {
-    try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch (error) {
-      console.error(error);
-      showToast(error.message || "Gagal log masuk Google.", "error");
-    }
-  });
-
-  $("logoutBtn").addEventListener("click", async () => {
-    const { signOut } = await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js");
-    await signOut(auth);
-  });
-
-  $("bookingForm").addEventListener("submit", submitBooking);
-  $("bookingDate").addEventListener("change", e => loadBookings(e.target.value));
-
-  onAuthStateChanged(auth, async user => {
-    currentUser = user;
-    if (!user) {
-      currentTeacher = null;
-      showLogin();
-      return;
-    }
-
-    try {
-      currentTeacher = await getTeacherProfile(user);
-      $("userName").textContent = currentTeacher.displayName || user.displayName || user.email;
-      $("userRole").textContent = currentTeacher.role === "admin"
-        ? "ADMIN"
-        : currentTeacher.role === "pentadbir"
-          ? "PENTADBIR"
-          : "GURU";
-
-      showApp();
-      const d = todayMY();
-      $("bookingDate").value = d;
-      await loadBookings(d);
-    } catch (error) {
-      console.error(error);
-      await (await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js")).signOut(auth);
-      showLogin();
-      showToast(error.message, "error");
-    }
-  });
 </script>
 
 <style>
@@ -386,7 +401,13 @@
     padding:22px max(20px,calc((100vw - 1180px)/2));
   }
   .top-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; }
-  .brand { display:flex; align-items:center; gap:14px; }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .back-btn {
+    width:40px;height:40px;border-radius:12px;border:1px solid #ffffff35;
+    background:#ffffff14;color:#fff;font-size:20px;font-weight:900;
+    display:grid;place-items:center;flex:0 0 auto;
+  }
+  .back-btn:hover { background:#ffffff24; }
   .brand-icon {
     width:52px;height:52px;border-radius:16px;background:#fff;
     display:grid;place-items:center;color:var(--green);font-size:25px;font-weight:900;
@@ -516,9 +537,22 @@
     .room-info strong { font-size:12px; }
     .status-pill { font-size:8px; }
   }
+
+  .boot-error {
+    position: fixed; left: 16px; right: 16px; top: 16px; z-index: 9999;
+    padding: 14px 16px; border-radius: 14px; background: #fff0f2;
+    border: 1px solid #ffd0d8; color: #b4233c; box-shadow: 0 10px 30px #0002;
+    display:flex; flex-direction:column; gap:4px; font-size:12px;
+  }
+  .boot-error strong { font-size:13px; }
+
 </style>
 </head>
 <body>
+<div id="bootError" class="boot-error hidden">
+  <strong>Tool tidak dapat dimuatkan.</strong>
+  <span id="bootErrorText">Sila refresh halaman.</span>
+</div>
 
 <section id="loginScreen">
   <div class="login-card">
@@ -533,6 +567,7 @@
   <header class="top">
     <div class="top-inner">
       <div class="brand">
+        <button type="button" class="back-btn" onclick="history.back()" title="Kembali">←</button>
         <div class="brand-icon">▦</div>
         <div>
           <div class="eyebrow">Hub Tool ICT • SK Agama (MIS) Miri</div>
