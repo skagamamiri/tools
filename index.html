@@ -579,12 +579,6 @@
                 </div>
 
                 <div id="erphAdminPanel" class="hidden border-t border-slate-200 dark:border-slate-800 pt-5">
-                <div id="erphReviewerSelectorWrapEmbedded" class="mb-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 p-3">
-                    <div class="text-[9px] uppercase tracking-widest text-emerald-600 font-extrabold mb-1">Penyemak</div>
-                    <select id="erphReviewerSelectEmbedded" onchange="document.getElementById('erphReviewerSelect').value=this.value; changeErphReviewer()"
-                            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
-                    </select>
-                </div>
 
                     <div class="flex items-center justify-between gap-3 mb-3">
                         <div>
@@ -610,7 +604,7 @@
     </div>
 
     <!-- Fullscreen Semakan RPH Pentadbir -->
-    <div id="erphReviewModal" class="fixed inset-0 z-[85] hidden bg-slate-50 dark:bg-slate-950 flex flex-col">
+    <div id="erphReviewModal" class="fixed inset-0 z-[85] hidden bg-slate-50 dark:bg-slate-950 flex flex-col pointer-events-auto">
         <div class="h-14 sm:h-16 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-5 shadow-sm">
             <div class="flex items-center gap-2.5 min-w-0">
                 <button onclick="closeErphReviewer()" type="button"
@@ -661,8 +655,8 @@
                             <div class="text-[9px] uppercase tracking-widest text-emerald-600 font-extrabold">Penyemak</div>
                             <div class="text-xs text-slate-500 mt-0.5">Pilih penyemak untuk melihat guru yang ditugaskan sahaja.</div>
                         </div>
-                        <select id="erphReviewerSelect" onchange="changeErphReviewer()"
-                                class="w-full sm:w-80 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                        <select id="erphReviewerSelect" onchange="changeErphReviewer()" tabindex="0"
+                                class="relative z-[120] w-full sm:w-80 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
                         </select>
                     </div>
                 </div>
@@ -3253,11 +3247,6 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
             ).join('');
 
-            const embeddedSelect = document.getElementById('erphReviewerSelectEmbedded');
-            if (embeddedSelect) {
-                embeddedSelect.innerHTML = select.innerHTML;
-            }
-
             const currentName = window.currentTeacher?.displayName || '';
             const matching = ERPH_REVIEWER_NAMES.find(
                 n => normalisePersonName(n) === normalisePersonName(currentName)
@@ -3267,10 +3256,6 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             // Admin boleh memilih mana-mana penyemak.
             if (matching) {
                 select.value = matching;
-            }
-
-            if (embeddedSelect) {
-                embeddedSelect.value = select.value;
             }
 
             wrap.classList.remove('hidden');
