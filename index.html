@@ -347,77 +347,9 @@
             font-weight: 700;
         }
 
-    
-        /* =========================================================
-           PWA INSTALL BANNER / BUTTON
-           ========================================================= */
-        #pwaInstallBanner {
-            position: fixed;
-            left: 16px;
-            right: 16px;
-            bottom: 82px;
-            z-index: 60;
-            display: none;
-        }
-
-        .pwa-install-card {
-            max-width: 520px;
-            margin: 0 auto;
-            background: rgba(15,23,42,.96);
-            color: white;
-            border: 1px solid rgba(255,255,255,.10);
-            border-radius: 20px;
-            padding: 12px 14px;
-            box-shadow: 0 20px 45px rgba(2,8,23,.28);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-        }
-
-        .pwa-install-btn {
-            background: linear-gradient(135deg,#16a34a,#22c55e);
-            color: white;
-            border: 0;
-            border-radius: 12px;
-            padding: 9px 13px;
-            font-size: 11px;
-            font-weight: 800;
-            white-space: nowrap;
-        }
-
-        .pwa-dismiss-btn {
-            color: #94a3b8;
-            background: transparent;
-            border: 0;
-            padding: 7px;
-        }
-
     </style>
-
-    <!-- PWA / Add to Home Screen -->
-    <link rel="manifest" href="./manifest.webmanifest">
-    <meta name="theme-color" content="#16a34a">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Hub Tool ICT">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="./icon-192.png">
-
 </head>
-
-    <!-- PWA install prompt -->
-    <div id="pwaInstallBanner" aria-live="polite">
-        <div class="pwa-install-card flex items-center gap-3">
-            <img src="./icon-192.png" alt="Hub Tool ICT" class="w-11 h-11 rounded-xl bg-white p-1 shrink-0">
-            <div class="min-w-0 flex-1">
-                <div class="text-xs font-extrabold">Pasang Hub Tool ICT</div>
-                <div class="text-[10px] text-slate-400 mt-0.5">Tambah ke skrin utama untuk akses seperti aplikasi.</div>
-            </div>
-            <button id="pwaInstallBtn" class="pwa-install-btn">Pasang</button>
-            <button id="pwaDismissBtn" class="pwa-dismiss-btn" aria-label="Tutup">✕</button>
-        </div>
-    </div>
-
-    <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between pb-20 md:pb-6">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between pb-20 md:pb-6">
 
     <!-- Top Header Navigation -->
     <header class="sticky top-0 z-30 glass-card border-b border-slate-200/80 dark:border-slate-800/80 px-4 py-3 shadow-sm">
@@ -537,6 +469,95 @@
         </div>
 
     </main>
+
+
+    <!-- eRPH Mingguan Modal -->
+    <div id="erphModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full sm:max-w-3xl max-h-[94vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div class="px-5 py-4 bg-gradient-to-r from-emerald-700 to-teal-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-file-signature text-lg"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="text-[9px] uppercase tracking-widest text-emerald-100 font-bold">Pengurusan eRPH</div>
+                        <h3 class="font-heading font-extrabold text-lg truncate">Penghantaran eRPH Mingguan</h3>
+                    </div>
+                </div>
+                <button onclick="closeErphModal()" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-5 sm:p-6 space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-950/50">
+                        <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Minggu</div>
+                        <div id="erphWeekLabel" class="font-heading font-extrabold text-slate-800 dark:text-white mt-1">-</div>
+                        <div id="erphWeekRange" class="text-[10px] text-slate-500 mt-1">-</div>
+                    </div>
+                    <div id="erphStatusCard" class="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-950/50">
+                        <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Status</div>
+                        <div id="erphStatusBadge" class="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-200 text-slate-600 text-xs font-extrabold">
+                            <i class="fa-solid fa-circle-question"></i> Belum Hantar
+                        </div>
+                        <div id="erphSubmittedAt" class="text-[10px] text-slate-500 mt-2">Belum ada penghantaran minggu ini.</div>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/20 p-4">
+                    <div class="flex gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-emerald-800 dark:text-emerald-300">Cara menghantar eRPH</div>
+                            <ol class="text-[11px] text-emerald-800/80 dark:text-emerald-200/80 mt-1 space-y-1 list-decimal list-inside leading-relaxed">
+                                <li>Buka Google Sheet eRPH anda.</li>
+                                <li>Salin pautan Google Sheet tersebut.</li>
+                                <li>Paste pautan di ruangan di bawah.</li>
+                                <li>Tekan <strong>Hantar eRPH</strong>.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">Pautan Google Sheet eRPH</label>
+                    <div class="relative">
+                        <i class="fa-brands fa-google absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600"></i>
+                        <input id="erphLinkInput" type="url"
+                               placeholder="https://docs.google.com/spreadsheets/d/..."
+                               class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1.5">Pastikan pautan Google Sheet boleh dibuka oleh pihak sekolah jika diperlukan.</p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <button id="erphSubmitBtn" onclick="submitErphWeekly()" class="flex-1 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold transition">
+                        <i class="fa-solid fa-paper-plane mr-1.5"></i>Hantar eRPH
+                    </button>
+                    <button id="erphOpenLinkBtn" onclick="openSubmittedErphLink()" class="hidden sm:w-auto px-5 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                        <i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i>Buka Pautan
+                    </button>
+                </div>
+
+                <div id="erphAdminPanel" class="hidden border-t border-slate-200 dark:border-slate-800 pt-5">
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Admin</div>
+                            <h4 class="font-heading font-extrabold text-sm text-slate-800 dark:text-white">Pemantauan eRPH Minggu Ini</h4>
+                        </div>
+                        <button onclick="loadErphAdminSummary()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300">
+                            <i class="fa-solid fa-rotate-right mr-1"></i>Semak
+                        </button>
+                    </div>
+                    <div id="erphAdminStats" class="grid grid-cols-3 gap-2 mb-3"></div>
+                    <div id="erphAdminList" class="max-h-72 overflow-y-auto space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Interactive HTML Tool Modal Viewer -->
     <div id="htmlModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4">
@@ -876,7 +897,21 @@
 
     <script>
         // Default Pre-loaded Tools
+        const ERPH_TOOL = {
+            id: 'tool_erph_mingguan',
+            title: 'Penghantaran eRPH Mingguan',
+            category: 'PENTADBIRAN',
+            desc: 'Hantar pautan Google Sheet eRPH setiap minggu dan semak status penghantaran.',
+            type: 'ERPH',
+            url: '',
+            htmlCode: '',
+            icon: 'fa-solid fa-file-signature',
+            isPinned: true,
+            order: 1
+        };
+
         const INITIAL_TOOLS = [
+            ERPH_TOOL,
             {
                 id: 'tool_delima',
                 title: 'DELIMa KPM 2.0',
@@ -1143,7 +1178,9 @@
             const tool = tools.find(t => t.id === id);
             if (!tool) return;
 
-            if (tool.type === 'URL') {
+            if (tool.type === 'ERPH') {
+                openErphModal();
+            } else if (tool.type === 'URL') {
                 window.open(tool.url, '_blank');
             } else if (tool.type === 'HTML') {
                 activeHtmlTool = tool;
@@ -1219,8 +1256,11 @@
                 if(tool.category === 'PDP') { catBadgeColor = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'; catLabel = 'PdP & Kelas'; }
                 if(tool.category === 'GRAFIK') { catBadgeColor = 'bg-purple-500/10 text-purple-600 dark:text-purple-400'; catLabel = 'Reka Bentuk'; }
                 if(tool.category === 'HTML') { catBadgeColor = 'bg-amber-500/10 text-amber-600 dark:text-amber-400'; catLabel = 'HTML Widget'; }
+                if(tool.type === 'ERPH') { catBadgeColor = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'; catLabel = 'Pengurusan eRPH'; }
 
-                const typeBadge = tool.type === 'HTML' 
+                const typeBadge = tool.type === 'ERPH'
+                    ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"><i class="fa-solid fa-file-signature mr-1"></i>eRPH</span>`
+                    : tool.type === 'HTML' 
                     ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20"><i class="fa-solid fa-code mr-1"></i>HTML</span>`
                     : `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-tech-500/10 text-tech-600 border border-tech-500/20"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>Pautan URL</span>`;
 
@@ -1252,8 +1292,8 @@
 
                     <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
                         <button onclick="launchTool('${tool.id}')" class="w-full py-2 px-3 rounded-xl bg-slate-900 dark:bg-slate-100 hover:bg-brand-600 dark:hover:bg-brand-500 text-white dark:text-slate-900 dark:hover:text-white text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-sm">
-                            <span>Launch Tool</span>
-                            <i class="fa-solid ${tool.type === 'HTML' ? 'fa-play text-[10px]' : 'fa-arrow-right text-[10px]'}"></i>
+                            <span>${tool.type === 'ERPH' ? 'Hantar eRPH' : 'Launch Tool'}</span>
+                            <i class="fa-solid ${tool.type === 'ERPH' ? 'fa-paper-plane text-[10px]' : (tool.type === 'HTML' ? 'fa-play text-[10px]' : 'fa-arrow-right text-[10px]')}"></i>
                         </button>
                     </div>
                 `;
@@ -1665,6 +1705,7 @@
         
         const LOGIN_LOGS = 'loginLogs';
         const TOOLS = 'tools';
+        const ERPH_SUBMISSIONS = 'erphSubmissions';
         // Akses tidak lagi bergantung kepada domain.
         // Firebase teachers collection ialah whitelist tunggal.
 
@@ -1707,11 +1748,37 @@
                         return loadToolsFromFirebase();
                     }
 
-                    window.setToolsFromFirebase([]);
+                    window.setToolsFromFirebase([ERPH_TOOL]);
                     return;
                 }
 
                 const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                loaded.sort((a, b) => {
+                    const ao = Number.isFinite(a.order) ? a.order : 9999;
+                    const bo = Number.isFinite(b.order) ? b.order : 9999;
+                    return ao - bo || String(a.title || '').localeCompare(String(b.title || ''));
+                });
+
+                // eRPH ialah tool terbina dalam. Pastikan ia terus kelihatan
+                // walaupun Admin belum membuka app selepas versi baharu dipasang.
+                if (!loaded.some(t => t.id === ERPH_TOOL.id)) {
+                    loaded.push(ERPH_TOOL);
+                }
+
+                // Jika pengguna ialah Admin, simpan tool eRPH ke Firestore
+                // supaya ia turut wujud dalam senarai tool rasmi.
+                if (window.currentTeacher && window.currentTeacher.role === 'admin') {
+                    try {
+                        const erphRef = doc(db, TOOLS, ERPH_TOOL.id);
+                        const erphSnap = await getDoc(erphRef);
+                        if (!erphSnap.exists()) {
+                            await setDoc(erphRef, ERPH_TOOL);
+                        }
+                    } catch (e) {
+                        console.warn('Gagal menyediakan tool eRPH:', e);
+                    }
+                }
+
                 loaded.sort((a, b) => {
                     const ao = Number.isFinite(a.order) ? a.order : 9999;
                     const bo = Number.isFinite(b.order) ? b.order : 9999;
@@ -2326,71 +2393,309 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         };
 
 
-        /* =========================================================
-           PWA INSTALL SUPPORT
-           ========================================================= */
-        (() => {
-            let deferredPrompt = null;
+        // ============================================================
+        // eRPH MINGGUAN
+        // ============================================================
 
-            const banner = () => document.getElementById('pwaInstallBanner');
-            const installBtn = () => document.getElementById('pwaInstallBtn');
-            const dismissBtn = () => document.getElementById('pwaDismissBtn');
+        function getMalaysiaDateParts() {
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Kuala_Lumpur',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).formatToParts(new Date());
 
-            const isStandalone = () =>
-                window.matchMedia('(display-mode: standalone)').matches ||
-                window.navigator.standalone === true;
+            const map = {};
+            parts.forEach(p => { if (p.type !== 'literal') map[p.type] = p.value; });
 
-            const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-
-            const showBanner = () => {
-                if (!isStandalone() && banner()) {
-                    banner().style.display = 'block';
-                }
+            return {
+                year: Number(map.year),
+                month: Number(map.month),
+                day: Number(map.day)
             };
+        }
 
-            window.addEventListener('beforeinstallprompt', event => {
-                event.preventDefault();
-                deferredPrompt = event;
-                showBanner();
-            });
+        function getErphWeekInfo() {
+            const p = getMalaysiaDateParts();
+            const date = new Date(Date.UTC(p.year, p.month - 1, p.day));
+            const day = date.getUTCDay(); // 0 Sun
+            const diffToMonday = day === 0 ? -6 : 1 - day;
 
-            installBtn()?.addEventListener('click', async () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    await deferredPrompt.userChoice;
-                    deferredPrompt = null;
-                    if (banner()) banner().style.display = 'none';
+            const monday = new Date(date);
+            monday.setUTCDate(date.getUTCDate() + diffToMonday);
+
+            const sunday = new Date(monday);
+            sunday.setUTCDate(monday.getUTCDate() + 6);
+
+            const pad = n => String(n).padStart(2, '0');
+            const weekKey = `${monday.getUTCFullYear()}-${pad(monday.getUTCMonth() + 1)}-${pad(monday.getUTCDate())}`;
+
+            const fmt = d => new Intl.DateTimeFormat('ms-MY', {
+                timeZone: 'Asia/Kuala_Lumpur',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            }).format(d);
+
+            return {
+                key: weekKey,
+                monday,
+                sunday,
+                label: `Minggu bermula ${fmt(monday)}`,
+                range: `${fmt(monday)} – ${fmt(sunday)}`
+            };
+        }
+
+        function getErphSubmissionId(email, weekKey) {
+            return `${weekKey}__${encodeURIComponent(String(email).toLowerCase())}`;
+        }
+
+        function formatErphTimestamp(ts) {
+            if (!ts) return '';
+            try {
+                const d = typeof ts.toDate === 'function' ? ts.toDate() : new Date(ts);
+                return new Intl.DateTimeFormat('ms-MY', {
+                    timeZone: 'Asia/Kuala_Lumpur',
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                }).format(d);
+            } catch {
+                return '';
+            }
+        }
+
+        async function openErphModal() {
+            const teacher = window.currentTeacher;
+            if (!teacher) {
+                openTeacherLoginModal();
+                showToast('Sila log masuk dengan Google terlebih dahulu.', 'info');
+                return;
+            }
+
+            const modal = document.getElementById('erphModal');
+            if (!modal) return;
+
+            modal.classList.remove('hidden');
+
+            const info = getErphWeekInfo();
+            document.getElementById('erphWeekLabel').textContent = info.label;
+            document.getElementById('erphWeekRange').textContent = info.range;
+
+            const adminPanel = document.getElementById('erphAdminPanel');
+            adminPanel.classList.toggle('hidden', teacher.role !== 'admin');
+
+            await loadMyErphSubmission();
+
+            if (teacher.role === 'admin') {
+                loadErphAdminSummary();
+            }
+        }
+
+        function closeErphModal() {
+            const modal = document.getElementById('erphModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function loadMyErphSubmission() {
+            const teacher = window.currentTeacher;
+            if (!teacher) return;
+
+            const info = getErphWeekInfo();
+            const ref = doc(
+                db,
+                ERPH_SUBMISSIONS,
+                getErphSubmissionId(teacher.email, info.key)
+            );
+
+            const input = document.getElementById('erphLinkInput');
+            const badge = document.getElementById('erphStatusBadge');
+            const submittedAt = document.getElementById('erphSubmittedAt');
+            const openBtn = document.getElementById('erphOpenLinkBtn');
+            const statusCard = document.getElementById('erphStatusCard');
+
+            try {
+                const snap = await getDoc(ref);
+
+                if (snap.exists()) {
+                    const data = snap.data();
+                    input.value = data.sheetUrl || '';
+
+                    badge.className = 'mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-extrabold';
+                    badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Dah Hantar';
+
+                    submittedAt.textContent =
+                        `Dihantar: ${formatErphTimestamp(data.submittedAt) || 'Tarikh tidak tersedia'}`;
+
+                    statusCard.classList.add('border-emerald-200', 'dark:border-emerald-900/50');
+
+                    openBtn.classList.remove('hidden');
+                    openBtn.dataset.url = data.sheetUrl || '';
+                    openBtn.classList.add('sm:inline-block');
+
+                } else {
+                    input.value = '';
+                    badge.className = 'mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-extrabold';
+                    badge.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Belum Hantar';
+                    submittedAt.textContent = 'Belum ada penghantaran minggu ini.';
+                    statusCard.classList.remove('border-emerald-200', 'dark:border-emerald-900/50');
+                    openBtn.classList.add('hidden');
+                    openBtn.dataset.url = '';
+                }
+            } catch (e) {
+                console.error('Gagal membaca eRPH:', e);
+                showToast('Gagal menyemak status eRPH. Semak Firestore Rules.', 'info');
+            }
+        }
+
+        async function submitErphWeekly() {
+            const teacher = window.currentTeacher;
+            if (!teacher) {
+                openTeacherLoginModal();
+                return;
+            }
+
+            const input = document.getElementById('erphLinkInput');
+            const btn = document.getElementById('erphSubmitBtn');
+            const url = String(input.value || '').trim();
+
+            if (!/^https:\/\/docs\.google\.com\/spreadsheets\/d\//i.test(url)) {
+                showToast('Sila masukkan pautan Google Sheet yang sah.', 'info');
+                input.focus();
+                return;
+            }
+
+            const info = getErphWeekInfo();
+            const id = getErphSubmissionId(teacher.email, info.key);
+            const ref = doc(db, ERPH_SUBMISSIONS, id);
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Menyimpan...';
+
+            try {
+                const existing = await getDoc(ref);
+
+                await setDoc(ref, {
+                    email: teacher.email.toLowerCase(),
+                    uid: teacher.uid,
+                    displayName: teacher.displayName || 'Guru',
+                    sheetUrl: url,
+                    weekKey: info.key,
+                    weekStart: info.key,
+                    updatedAt: serverTimestamp(),
+                    submittedAt: existing.exists() ? (existing.data().submittedAt || serverTimestamp()) : serverTimestamp()
+                }, { merge: true });
+
+                showToast(
+                    existing.exists()
+                        ? 'Pautan eRPH berjaya dikemas kini.'
+                        : 'eRPH minggu ini berjaya dihantar.',
+                    'success'
+                );
+
+                await loadMyErphSubmission();
+
+                if (teacher.role === 'admin') {
+                    await loadErphAdminSummary();
+                }
+            } catch (e) {
+                console.error('Gagal hantar eRPH:', e);
+                showToast('Gagal menghantar eRPH. Semak Firestore Rules.', 'info');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-1.5"></i>Hantar / Kemaskini eRPH';
+            }
+        }
+
+        function openSubmittedErphLink() {
+            const btn = document.getElementById('erphOpenLinkBtn');
+            const url = btn?.dataset?.url || '';
+            if (url) window.open(url, '_blank', 'noopener,noreferrer');
+        }
+
+        async function loadErphAdminSummary() {
+            const teacher = window.currentTeacher;
+            if (!teacher || teacher.role !== 'admin') return;
+
+            const list = document.getElementById('erphAdminList');
+            const stats = document.getElementById('erphAdminStats');
+            if (!list || !stats) return;
+
+            list.innerHTML = '<div class="text-xs text-slate-400 text-center py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Memuatkan...</div>';
+
+            try {
+                const week = getErphWeekInfo();
+                const teachersSnap = await getDocs(collection(db, TEACHERS));
+                const submissionsSnap = await getDocs(collection(db, ERPH_SUBMISSIONS));
+
+                const submissions = {};
+                submissionsSnap.docs.forEach(d => {
+                    const data = d.data();
+                    if (data.weekKey === week.key && data.email) {
+                        submissions[String(data.email).toLowerCase()] = data;
+                    }
+                });
+
+                const teachers = teachersSnap.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .filter(t => t.active !== false)
+                    .sort((a, b) =>
+                        String(a.displayName || a.email || a.id)
+                            .localeCompare(String(b.displayName || b.email || b.id))
+                    );
+
+                const submitted = teachers.filter(t => submissions[String(t.email || t.id).toLowerCase()]);
+                const pending = teachers.length - submitted.length;
+
+                stats.innerHTML = `
+                    <div class="rounded-2xl bg-emerald-500/10 border border-emerald-500/10 p-3 text-center">
+                        <div class="text-lg font-heading font-extrabold text-emerald-600">${submitted.length}</div>
+                        <div class="text-[9px] text-slate-500 font-bold">DAH HANTAR</div>
+                    </div>
+                    <div class="rounded-2xl bg-amber-500/10 border border-amber-500/10 p-3 text-center">
+                        <div class="text-lg font-heading font-extrabold text-amber-600">${pending}</div>
+                        <div class="text-[9px] text-slate-500 font-bold">BELUM</div>
+                    </div>
+                    <div class="rounded-2xl bg-sky-500/10 border border-sky-500/10 p-3 text-center">
+                        <div class="text-lg font-heading font-extrabold text-sky-600">${teachers.length}</div>
+                        <div class="text-[9px] text-slate-500 font-bold">AKTIF</div>
+                    </div>
+                `;
+
+                if (!teachers.length) {
+                    list.innerHTML = '<div class="text-xs text-slate-400 text-center py-4">Tiada guru aktif.</div>';
                     return;
                 }
 
-                // iPhone/iPad: Safari does not expose beforeinstallprompt.
-                if (isIOS) {
-                    alert('Untuk iPhone/iPad: tekan butang Kongsi (□↑) di Safari, kemudian pilih “Add to Home Screen / Tambah ke Skrin Utama”.');
-                }
-            });
+                list.innerHTML = teachers.map(t => {
+                    const email = String(t.email || t.id).toLowerCase();
+                    const sub = submissions[email];
+                    const name = escapeHtml(t.displayName || email.split('@')[0]);
 
-            dismissBtn()?.addEventListener('click', () => {
-                if (banner()) banner().style.display = 'none';
-                localStorage.setItem('pwaInstallDismissed', '1');
-            });
+                    return `
+                        <div class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-3">
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-slate-800 dark:text-white truncate">${name}</div>
+                                <div class="text-[9px] text-slate-400 truncate">${escapeHtml(email)}</div>
+                            </div>
+                            ${sub
+                                ? `<button onclick="window.open('${escapeHtml(sub.sheetUrl)}','_blank','noopener,noreferrer')" class="shrink-0 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-extrabold"><i class="fa-solid fa-circle-check mr-1"></i>Dah Hantar</button>`
+                                : `<span class="shrink-0 px-2.5 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-extrabold"><i class="fa-solid fa-clock mr-1"></i>Belum</span>`
+                            }
+                        </div>
+                    `;
+                }).join('');
 
-            // Register service worker.
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('./sw.js')
-                        .catch(err => console.warn('PWA service worker:', err));
-                });
+            } catch (e) {
+                console.error('Gagal memuatkan pemantauan eRPH:', e);
+                list.innerHTML = '<div class="text-xs text-rose-500 text-center py-4">Gagal memuatkan data. Semak Firestore Rules.</div>';
             }
+        }
 
-            // Show a manual install prompt on iOS after login/visit.
-            window.addEventListener('load', () => {
-                if (!localStorage.getItem('pwaInstallDismissed') && !isStandalone()) {
-                    setTimeout(() => {
-                        if (isIOS || deferredPrompt) showBanner();
-                    }, 1800);
-                }
-            });
-        })();
+        window.openErphModal = openErphModal;
+        window.closeErphModal = closeErphModal;
+        window.submitErphWeekly = submitErphWeekly;
+        window.openSubmittedErphLink = openSubmittedErphLink;
+        window.loadErphAdminSummary = loadErphAdminSummary;
 
 </script>
 
