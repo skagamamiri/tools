@@ -1754,7 +1754,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
         import {
-            getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+            getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
         import {
             getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
@@ -1984,28 +1984,87 @@
         window.loginWithGoogle = async function() {
             const modalBtn = document.getElementById('googleLoginModalBtn');
             const error = document.getElementById('loginErrorAlert');
+
             if (error) error.classList.add('hidden');
-            if (modalBtn) { modalBtn.disabled = true; modalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-brand-600"></i><span>Sedang log masuk...</span>'; }
+
+            if (modalBtn) {
+                modalBtn.disabled = true;
+                modalBtn.innerHTML =
+                    '<i class="fa-solid fa-spinner fa-spin text-brand-600"></i>' +
+                    '<span>Membuka Google...</span>';
+            }
+
             try {
-                const result = await signInWithPopup(auth, provider);
+                // Redirect lebih stabil untuk telefon/mobile dan mengelakkan
+                // popup browser daripada disekat.
+                sessionStorage.setItem('skamis_auth_pending', '1');
+                await signInWithRedirect(auth, provider);
+            } catch (err) {
+                console.error('Google Redirect Login:', err);
+
+                sessionStorage.removeItem('skamis_auth_pending');
+
+                let msg = err.message || 'Log masuk Google gagal. Sila cuba lagi.';
+
+                if (err.code === 'auth/unauthorized-domain') {
+                    msg = 'Domain laman ini belum didaftarkan dalam Firebase Authentication → Settings → Authorized domains.';
+                } else if (err.code === 'auth/operation-not-allowed') {
+                    msg = 'Google Sign-In belum diaktifkan dalam Firebase Authentication.';
+                } else if (err.code === 'auth/operation-not-supported-in-this-environment') {
+                    msg = 'Login Google tidak disokong dalam persekitaran browser ini.';
+                }
+
+                if (error) {
+                    error.classList.remove('hidden');
+                    error.innerHTML =
+                        `<i class="fa-solid fa-circle-exclamation mr-1.5"></i>${escapeHtml(msg)}`;
+                }
+
+                if (modalBtn) {
+                    modalBtn.disabled = false;
+                    modalBtn.innerHTML =
+                        '<i class="fa-brands fa-google text-red-500 text-base"></i>' +
+                        '<span>Teruskan dengan Google</span>';
+                }
+            }
+        };
+
+        // Proses keputusan selepas Google redirect kembali ke laman.
+        (async function handleGoogleRedirectResult() {
+            try {
+                const result = await getRedirectResult(auth);
+
+                if (!result || !result.user) return;
+
                 const user = result.user;
                 const email = (user.email || '').toLowerCase().trim();
-                // Akses ditentukan sepenuhnya oleh dokumen teachers/{email}.
-                // Tiada lagi whitelist berdasarkan domain sahaja.
+
+                if (!email) {
+                    await signOut(auth);
+                    throw new Error('Google tidak memulangkan alamat email.');
+                }
+
                 const ref = doc(db, TEACHERS, email);
                 const snap = await getDoc(ref);
-                if (!snap.exists() || snap.data().active === false) {
+
+                if (!snap.exists() || snap.data().active !== true) {
                     await signOut(auth);
-                    throw new Error('Akaun anda belum didaftarkan atau telah dinyahaktifkan. Sila hubungi Guru ICT.');
+                    throw new Error(
+                        'Akaun anda belum didaftarkan dalam whitelist guru atau tidak aktif. Sila hubungi Guru ICT.'
+                    );
                 }
+
                 if (snap.data().uid && snap.data().uid !== user.uid) {
                     await signOut(auth);
                     throw new Error('Akaun Google ini tidak sepadan dengan rekod guru.');
                 }
-                // Login utama tidak bergantung kepada loginLogs.
-                // Jika Rules loginLogs bermasalah, guru yang telah disahkan
-                // dalam teachers/{email} tetap boleh masuk.
+
                 setLoggedIn(user, snap.data());
+                renderFirebaseTeacherHeader();
+                updateAdminVisibility();
+                await loadToolsFromFirebase();
+                closeTeacherLoginModal();
+                showToast(`Selamat datang, ${window.currentTeacher.displayName}!`, 'success');
 
                 try {
                     await setDoc(doc(collection(db, LOGIN_LOGS)), {
@@ -2018,43 +2077,31 @@
                     console.warn('Login berjaya tetapi loginLogs gagal direkodkan:', logErr);
                 }
 
-                renderFirebaseTeacherHeader();
-                updateAdminVisibility();
-                await loadToolsFromFirebase();
-                updateAdminVisibility();
-                closeTeacherLoginModal();
-                showToast(`Selamat datang, ${window.currentTeacher.displayName}!`, 'success');
             } catch (err) {
-                console.error('Google Login:', err);
+                if (err?.code === 'auth/no-auth-event') return;
 
-                let msg = err.message || 'Log masuk Google gagal. Sila cuba lagi.';
+                console.error('Google Redirect Result:', err);
+                const error = document.getElementById('loginErrorAlert');
 
-                if (err.code === 'auth/popup-blocked') {
-                    msg = 'Popup Google disekat oleh browser. Benarkan popup untuk laman Hub Tool ICT dan cuba lagi.';
-                } else if (err.code === 'auth/popup-closed-by-user') {
-                    msg = 'Tetingkap Google ditutup sebelum proses log masuk selesai.';
-                } else if (err.code === 'auth/unauthorized-domain') {
-                    msg = 'Domain laman ini belum didaftarkan dalam Firebase Authentication → Settings → Authorized domains.';
-                } else if (err.code === 'auth/operation-not-allowed') {
-                    msg = 'Google Sign-In belum diaktifkan dalam Firebase Authentication.';
+                if (error) {
+                    error.classList.remove('hidden');
+                    error.innerHTML =
+                        `<i class="fa-solid fa-circle-exclamation mr-1.5"></i>${escapeHtml(
+                            err.message || 'Log masuk Google gagal.'
+                        )}`;
                 }
 
-                // Pastikan mesej whitelist daripada blok di atas kekal tepat.
-                
-                if (error) { error.classList.remove('hidden'); error.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1.5"></i>${escapeHtml(msg)}`; }
-                showToast(msg, 'info');
+                const modalBtn = document.getElementById('googleLoginModalBtn');
+                if (modalBtn) {
+                    modalBtn.disabled = false;
+                    modalBtn.innerHTML =
+                        '<i class="fa-brands fa-google text-red-500 text-base"></i>' +
+                        '<span>Teruskan dengan Google</span>';
+                }
             } finally {
-                if (modalBtn) { modalBtn.disabled = false; modalBtn.innerHTML = '<i class="fa-brands fa-google text-red-500 text-base"></i><span>Teruskan dengan Google</span>'; }
+                sessionStorage.removeItem('skamis_auth_pending');
             }
-        };
-
-        window.firebaseLogoutTeacher = async function() {
-            try { await signOut(auth); } catch (e) { console.error(e); }
-            window.currentTeacher = null;
-            window.loggedInTeacher = null;
-            loggedInTeacher = null;
-            if (typeof updateAdminVisibility === 'function') updateAdminVisibility();
-        };
+        })();
 
         window.logoutTeacher = window.firebaseLogoutTeacher;
 
@@ -3024,6 +3071,17 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 }
             }
         });
+
+        // Jika baru kembali dari Google, berikan sedikit maklum balas visual.
+        if (sessionStorage.getItem('skamis_auth_pending') === '1') {
+            const pendingBtn = document.getElementById('googleLoginModalBtn');
+            if (pendingBtn) {
+                pendingBtn.disabled = true;
+                pendingBtn.innerHTML =
+                    '<i class="fa-solid fa-spinner fa-spin text-brand-600"></i>' +
+                    '<span>Sedang memproses log masuk Google...</span>';
+            }
+        }
 </script>
 
 </body>
