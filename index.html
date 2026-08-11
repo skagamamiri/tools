@@ -3243,6 +3243,13 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             const select = document.getElementById('erphReviewerSelect');
             if (!wrap || !select) return;
 
+            // PENTING:
+            // Jangan reset pilihan pengguna setiap kali loadErphAdminSummary()
+            // dipanggil. Versi sebelumnya menetapkan semula kepada nama penyemak
+            // yang sedang login, menyebabkan dropdown nampak boleh dibuka tetapi
+            // pilihan lain terus kembali kepada Sapri.
+            const previousSelection = select.value;
+
             select.innerHTML = ERPH_REVIEWER_NAMES.map(name =>
                 `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
             ).join('');
@@ -3252,16 +3259,29 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 n => normalisePersonName(n) === normalisePersonName(currentName)
             );
 
-            // Jika pengguna ialah salah seorang penyemak, pilih namanya sendiri.
-            // Admin boleh memilih mana-mana penyemak.
-            if (matching) {
+            const previousStillExists = ERPH_REVIEWER_NAMES.some(
+                n => normalisePersonName(n) === normalisePersonName(previousSelection)
+            );
+
+            if (previousStillExists) {
+                select.value = previousSelection;
+            } else if (matching) {
+                // Penyemak yang sedang login dipilih secara automatik pada kali pertama.
                 select.value = matching;
+            } else {
+                select.value = ERPH_REVIEWER_NAMES[0] || '';
             }
 
             wrap.classList.remove('hidden');
         }
 
         window.changeErphReviewer = function() {
+            const select = document.getElementById('erphReviewerSelect');
+            if (!select) return;
+
+            // Simpan pilihan semasa sebelum Firestore dimuatkan.
+            window.selectedErphReviewer = select.value;
+
             loadErphAdminSummary();
         };
 
@@ -3279,7 +3299,10 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 renderReviewerSelector();
 
                 const reviewerSelect = document.getElementById('erphReviewerSelect');
-                const selectedReviewer = reviewerSelect?.value || ERPH_REVIEWER_NAMES[0];
+                const selectedReviewer =
+                    window.selectedErphReviewer ||
+                    reviewerSelect?.value ||
+                    ERPH_REVIEWER_NAMES[0];
 
                 const week = getErphWeekInfo();
                 const adminWeekCode = document.getElementById('erphAdminWeekCode');
