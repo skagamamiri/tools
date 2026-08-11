@@ -347,9 +347,77 @@
             font-weight: 700;
         }
 
+    
+        /* =========================================================
+           PWA INSTALL BANNER / BUTTON
+           ========================================================= */
+        #pwaInstallBanner {
+            position: fixed;
+            left: 16px;
+            right: 16px;
+            bottom: 82px;
+            z-index: 60;
+            display: none;
+        }
+
+        .pwa-install-card {
+            max-width: 520px;
+            margin: 0 auto;
+            background: rgba(15,23,42,.96);
+            color: white;
+            border: 1px solid rgba(255,255,255,.10);
+            border-radius: 20px;
+            padding: 12px 14px;
+            box-shadow: 0 20px 45px rgba(2,8,23,.28);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+
+        .pwa-install-btn {
+            background: linear-gradient(135deg,#16a34a,#22c55e);
+            color: white;
+            border: 0;
+            border-radius: 12px;
+            padding: 9px 13px;
+            font-size: 11px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .pwa-dismiss-btn {
+            color: #94a3b8;
+            background: transparent;
+            border: 0;
+            padding: 7px;
+        }
+
     </style>
+
+    <!-- PWA / Add to Home Screen -->
+    <link rel="manifest" href="./manifest.webmanifest">
+    <meta name="theme-color" content="#16a34a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Hub Tool ICT">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between pb-20 md:pb-6">
+
+    <!-- PWA install prompt -->
+    <div id="pwaInstallBanner" aria-live="polite">
+        <div class="pwa-install-card flex items-center gap-3">
+            <img src="./icon-192.png" alt="Hub Tool ICT" class="w-11 h-11 rounded-xl bg-white p-1 shrink-0">
+            <div class="min-w-0 flex-1">
+                <div class="text-xs font-extrabold">Pasang Hub Tool ICT</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Tambah ke skrin utama untuk akses seperti aplikasi.</div>
+            </div>
+            <button id="pwaInstallBtn" class="pwa-install-btn">Pasang</button>
+            <button id="pwaDismissBtn" class="pwa-dismiss-btn" aria-label="Tutup">✕</button>
+        </div>
+    </div>
+
+    <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between pb-20 md:pb-6">
 
     <!-- Top Header Navigation -->
     <header class="sticky top-0 z-30 glass-card border-b border-slate-200/80 dark:border-slate-800/80 px-4 py-3 shadow-sm">
@@ -2256,6 +2324,73 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 container.appendChild(msg);
             }
         };
+
+
+        /* =========================================================
+           PWA INSTALL SUPPORT
+           ========================================================= */
+        (() => {
+            let deferredPrompt = null;
+
+            const banner = () => document.getElementById('pwaInstallBanner');
+            const installBtn = () => document.getElementById('pwaInstallBtn');
+            const dismissBtn = () => document.getElementById('pwaDismissBtn');
+
+            const isStandalone = () =>
+                window.matchMedia('(display-mode: standalone)').matches ||
+                window.navigator.standalone === true;
+
+            const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+
+            const showBanner = () => {
+                if (!isStandalone() && banner()) {
+                    banner().style.display = 'block';
+                }
+            };
+
+            window.addEventListener('beforeinstallprompt', event => {
+                event.preventDefault();
+                deferredPrompt = event;
+                showBanner();
+            });
+
+            installBtn()?.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    await deferredPrompt.userChoice;
+                    deferredPrompt = null;
+                    if (banner()) banner().style.display = 'none';
+                    return;
+                }
+
+                // iPhone/iPad: Safari does not expose beforeinstallprompt.
+                if (isIOS) {
+                    alert('Untuk iPhone/iPad: tekan butang Kongsi (□↑) di Safari, kemudian pilih “Add to Home Screen / Tambah ke Skrin Utama”.');
+                }
+            });
+
+            dismissBtn()?.addEventListener('click', () => {
+                if (banner()) banner().style.display = 'none';
+                localStorage.setItem('pwaInstallDismissed', '1');
+            });
+
+            // Register service worker.
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js')
+                        .catch(err => console.warn('PWA service worker:', err));
+                });
+            }
+
+            // Show a manual install prompt on iOS after login/visit.
+            window.addEventListener('load', () => {
+                if (!localStorage.getItem('pwaInstallDismissed') && !isStandalone()) {
+                    setTimeout(() => {
+                        if (isIOS || deferredPrompt) showBanner();
+                    }, 1800);
+                }
+            });
+        })();
 
 </script>
 
