@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="ms" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
@@ -2002,14 +2002,22 @@
                     await signOut(auth);
                     throw new Error('Akaun Google ini tidak sepadan dengan rekod guru.');
                 }
-                // Jangan menulis semula dokumen teachers ketika login.
-                // Rules hanya membenarkan admin mengubah data guru.
-                // Maklumat login direkodkan secara berasingan dalam loginLogs.
-                await setDoc(doc(collection(db, LOGIN_LOGS)), {
-                    uid: user.uid, email, displayName: user.displayName || 'Guru', loginAt: serverTimestamp()
-                });
+                // Login utama tidak bergantung kepada loginLogs.
+                // Jika Rules loginLogs bermasalah, guru yang telah disahkan
+                // dalam teachers/{email} tetap boleh masuk.
                 setLoggedIn(user, snap.data());
-                // Login berjaya tanpa memerlukan permission update pada teachers.
+
+                try {
+                    await setDoc(doc(collection(db, LOGIN_LOGS)), {
+                        uid: user.uid,
+                        email,
+                        displayName: user.displayName || 'Guru',
+                        loginAt: serverTimestamp()
+                    });
+                } catch (logErr) {
+                    console.warn('Login berjaya tetapi loginLogs gagal direkodkan:', logErr);
+                }
+
                 renderFirebaseTeacherHeader();
                 updateAdminVisibility();
                 await loadToolsFromFirebase();
@@ -2017,8 +2025,22 @@
                 closeTeacherLoginModal();
                 showToast(`Selamat datang, ${window.currentTeacher.displayName}!`, 'success');
             } catch (err) {
-                console.error(err);
-                const msg = err.message || 'Log masuk Google gagal. Sila cuba lagi.';
+                console.error('Google Login:', err);
+
+                let msg = err.message || 'Log masuk Google gagal. Sila cuba lagi.';
+
+                if (err.code === 'auth/popup-blocked') {
+                    msg = 'Popup Google disekat oleh browser. Benarkan popup untuk laman Hub Tool ICT dan cuba lagi.';
+                } else if (err.code === 'auth/popup-closed-by-user') {
+                    msg = 'Tetingkap Google ditutup sebelum proses log masuk selesai.';
+                } else if (err.code === 'auth/unauthorized-domain') {
+                    msg = 'Domain laman ini belum didaftarkan dalam Firebase Authentication → Settings → Authorized domains.';
+                } else if (err.code === 'auth/operation-not-allowed') {
+                    msg = 'Google Sign-In belum diaktifkan dalam Firebase Authentication.';
+                }
+
+                // Pastikan mesej whitelist daripada blok di atas kekal tepat.
+                
                 if (error) { error.classList.remove('hidden'); error.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1.5"></i>${escapeHtml(msg)}`; }
                 showToast(msg, 'info');
             } finally {
@@ -2200,7 +2222,23 @@
                 await loadToolsFromFirebase();
             } catch (e) {
                 console.error('Auth state error:', e);
-                await signOut(auth);
+
+                // Jika pemeriksaan whitelist gagal kerana rangkaian/Firestore,
+                // jangan paksa sign-out secara senyap. Paparkan semula login
+                // supaya pengguna tahu apa yang berlaku.
+                window.currentTeacher = null;
+                window.loggedInTeacher = null;
+                loggedInTeacher = null;
+                renderFirebaseTeacherHeader();
+                updateAdminVisibility();
+
+                const loginError = document.getElementById('loginErrorAlert');
+                if (loginError) {
+                    loginError.classList.remove('hidden');
+                    loginError.innerHTML =
+                        '<i class="fa-solid fa-circle-exclamation mr-1.5"></i>' +
+                        'Gagal menyemak akses guru. Sila cuba semula.';
+                }
             }
         });
 
