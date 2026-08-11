@@ -119,7 +119,8 @@ async function getTeacherProfile(user) {
 
 async function loadBookings(dateStr) {
   currentDate = dateStr;
-  $("selectedDateLabel").textContent = formatDateMY(dateStr);
+  if ($("bookingDate")) $("bookingDate").value = dateStr;
+  if ($("statusDate")) $("statusDate").value = dateStr;
   $("loading").classList.remove("hidden");
   $("bookingList").innerHTML = "";
 
@@ -327,6 +328,7 @@ $("logoutBtn").addEventListener("click", async () => {
 
 $("bookingForm").addEventListener("submit", submitBooking);
 $("bookingDate").addEventListener("change", e => loadBookings(e.target.value));
+$("statusDate").addEventListener("change", e => loadBookings(e.target.value));
 
 onAuthStateChanged(auth, async user => {
   currentUser = user;
@@ -348,6 +350,7 @@ onAuthStateChanged(auth, async user => {
     showApp();
     const d = todayMY();
     $("bookingDate").value = d;
+    $("statusDate").value = d;
     await loadBookings(d);
   } catch (error) {
     console.error(error);
@@ -427,6 +430,17 @@ onAuthStateChanged(auth, async user => {
   }
   .card-head { padding:20px 22px 10px; }
   .card-head h2 { margin:0;font-size:18px; }
+  .status-head {
+    display:flex; align-items:center; justify-content:space-between; gap:18px;
+  }
+  .status-date-picker { flex:0 0 190px; }
+  .status-date-picker label {
+    display:block; font-size:10px; font-weight:900; color:#526174;
+  }
+  .status-date-picker input {
+    margin-top:5px; padding:9px 10px; border-radius:11px; background:#fff;
+  }
+
   .card-head p { margin:5px 0 0;color:var(--muted);font-size:12px; }
   .form { padding:18px 22px 22px;display:grid;gap:13px; }
   label { font-size:11px;font-weight:800;color:#526174; }
@@ -512,6 +526,9 @@ onAuthStateChanged(auth, async user => {
   }
   .footer { text-align:center;color:#91a0ae;font-size:11px;padding:25px; }
   @media(max-width:850px) {
+    .status-head { align-items:stretch; flex-direction:column; }
+    .status-date-picker { width:100%; flex-basis:auto; }
+
     .top { padding:18px 16px; }
     .top-inner { align-items:flex-start; }
     .userbox .user-text { display:none; }
@@ -625,9 +642,15 @@ onAuthStateChanged(auth, async user => {
 
       <section>
         <div class="card">
-          <div class="card-head">
-            <h2>Status Bilik</h2>
-            <p>Paparan tempahan untuk <strong id="selectedDateLabel">-</strong></p>
+          <div class="card-head status-head">
+            <div>
+              <h2>Status Bilik</h2>
+              <p>Pilih tarikh untuk melihat status bilik.</p>
+            </div>
+            <div class="status-date-picker">
+              <label for="statusDate">Tarikh Semakan</label>
+              <input id="statusDate" type="date">
+            </div>
           </div>
           <div id="loading" class="empty hidden" style="min-height:120px;border:0;">
             Memuatkan jadual...
@@ -651,14 +674,6 @@ onAuthStateChanged(auth, async user => {
 
 <div id="toast" class="toast"></div>
 
-<script>
-  // Paparkan label tarikh kedua tanpa bergantung pada Firebase module.
-  document.addEventListener("change", (e) => {
-    if (e.target.id === "bookingDate") {
-      const el = document.getElementById("selectedDateLabel2");
-      if (el) el.textContent = e.target.value ? "• " + e.target.value.split("-").reverse().join("/") : "";
-    }
-  });
-</script>
+
 </body>
 </html>
