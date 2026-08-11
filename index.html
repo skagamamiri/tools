@@ -267,52 +267,84 @@
 
     
         /* =========================================================
-           BOTTOM NAV — ACTIVE STATE FIX
-           Active tab uses icon/text + top indicator only.
-           No green background.
+           MOBILE BOTTOM NAV — CLEAN ACTIVE STATE
            ========================================================= */
-        .bottom-nav-item {
-            position: relative;
-            background: transparent !important;
-            border-radius: 0 !important;
-            transition: color .2s ease, transform .2s ease;
+        .mobile-bottom-nav {
+            background: rgba(255,255,255,.94);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow: 0 -8px 30px rgba(15,23,42,.08);
         }
 
-        .bottom-nav-item::before {
+        .dark .mobile-bottom-nav {
+            background: rgba(15,23,42,.94);
+        }
+
+        .mobile-nav-item {
+            position: relative !important;
+            min-width: 72px;
+            min-height: 52px;
+            padding: 5px 10px 6px !important;
+            border-radius: 12px !important;
+            background: transparent !important;
+            background-image: none !important;
+            box-shadow: none !important;
+            outline: none !important;
+            color: #64748b !important;
+            -webkit-tap-highlight-color: transparent !important;
+            transition: color .2s ease, transform .15s ease !important;
+        }
+
+        .dark .mobile-nav-item {
+            color: #94a3b8 !important;
+        }
+
+        .mobile-nav-item::before {
             content: "";
             position: absolute;
-            top: 0;
+            top: -8px;
             left: 22%;
             right: 22%;
             height: 3px;
             border-radius: 0 0 999px 999px;
             background: transparent;
-            transition: all .2s ease;
+            transition: background .2s ease, transform .2s ease;
         }
 
-        .bottom-nav-item.active,
-        .bottom-nav-item[aria-current="page"] {
+        .mobile-nav-item.active {
             background: transparent !important;
-            color: #16a34a !important;
+            background-image: none !important;
             box-shadow: none !important;
+            color: #16a34a !important;
         }
 
-        .bottom-nav-item.active::before,
-        .bottom-nav-item[aria-current="page"]::before {
+        .mobile-nav-item.active::before {
             background: #16a34a;
         }
 
-        .bottom-nav-item.active i,
-        .bottom-nav-item[aria-current="page"] i {
+        .mobile-nav-item.active i {
             color: #16a34a !important;
         }
 
-        .bottom-nav-item:hover {
-            background: rgba(22,163,74,.045) !important;
+        .mobile-nav-item:focus,
+        .mobile-nav-item:focus-visible,
+        .mobile-nav-item:active {
+            background: transparent !important;
+            background-image: none !important;
+            box-shadow: none !important;
+            outline: none !important;
         }
 
-        .bottom-nav-item:active {
-            transform: scale(.97);
+        .mobile-nav-item:active {
+            transform: scale(.96);
+        }
+
+        .mobile-nav-label {
+            display: block;
+            margin-top: 3px;
+            font-size: 10px;
+            line-height: 1;
+            font-weight: 700;
         }
 
     </style>
@@ -751,18 +783,20 @@
     </div>
 
     <!-- Bottom Mobile Menu Bar -->
-    <div class="md:hidden fixed bottom-0 left-0 right-0 glass-card border-t border-slate-200 dark:border-slate-800 px-6 py-2 z-20 flex justify-around items-center">
-        <button onclick="setCategory('ALL')" class="flex flex-col items-center text-slate-600 dark:text-slate-300 focus:text-brand-600">
+    <div class="mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 border-t border-slate-200 dark:border-slate-800 px-4 py-2 z-20 flex justify-around items-center">
+        <button id="mobileNavHome" type="button" onclick="setCategory('ALL')" class="mobile-nav-item active flex flex-col items-center">
             <i class="fa-solid fa-house text-base"></i>
-            <span class="text-[10px] mt-0.5 font-medium">Utama</span>
+            <span class="mobile-nav-label">Utama</span>
         </button>
-        <button onclick="setCategory('FAV')" class="flex flex-col items-center text-slate-600 dark:text-slate-300 focus:text-brand-600">
+
+        <button id="mobileNavFav" type="button" onclick="setCategory('FAV')" class="mobile-nav-item flex flex-col items-center">
             <i class="fa-solid fa-bookmark text-base text-rose-500"></i>
-            <span class="text-[10px] mt-0.5 font-medium">Kegemaran</span>
+            <span class="mobile-nav-label">Kegemaran</span>
         </button>
-        <button id="adminMobileBtn" onclick="toggleAdminModal()" class="hidden flex-col items-center text-slate-600 dark:text-slate-300 focus:text-brand-600">
+
+        <button id="adminMobileBtn" type="button" onclick="toggleAdminModal()" class="mobile-nav-item hidden flex-col items-center">
             <i class="fa-solid fa-user-gear text-base text-tech-500"></i>
-            <span class="text-[10px] mt-0.5 font-medium">Admin</span>
+            <span class="mobile-nav-label">Admin</span>
         </button>
     </div>
 
@@ -1169,9 +1203,18 @@
                 chip.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
             });
 
-            if (event && event.currentTarget) {
-                event.currentTarget.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
-                event.currentTarget.classList.add('bg-brand-600', 'text-white', 'shadow-sm', 'shadow-brand-600/30');
+            // Bottom mobile navigation: active state tanpa background hijau.
+            const mobileHome = document.getElementById('mobileNavHome');
+            const mobileFav = document.getElementById('mobileNavFav');
+
+            [mobileHome, mobileFav].forEach(btn => {
+                if (btn) btn.classList.remove('active');
+            });
+
+            if (cat === 'FAV') {
+                if (mobileFav) mobileFav.classList.add('active');
+            } else {
+                if (mobileHome) mobileHome.classList.add('active');
             }
 
             const titles = {
