@@ -347,7 +347,13 @@
             font-weight: 700;
         }
 
-    </style>
+    
+        /* FULLSCREEN TOOL VIEWER */
+        #htmlModal { overscroll-behavior: none; }
+        body.tool-viewer-open { overflow: hidden !important; }
+        #htmlSandboxFrame { min-height: 0; }
+
+</style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between pb-20 md:pb-6">
 
@@ -559,33 +565,45 @@
         </div>
     </div>
 
-    <!-- Interactive HTML Tool Modal Viewer -->
-    <div id="htmlModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4">
-        <div class="w-full sm:max-w-4xl h-[92vh] sm:h-[85vh] bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom duration-200">
-            <!-- Modal Header -->
-            <div class="px-4 py-3 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700/80 flex items-center justify-between">
-                <div class="flex items-center space-x-2.5 truncate">
-                    <span id="htmlModalIcon" class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm font-bold">
-                        <i class="fa-solid fa-code"></i>
-                    </span>
-                    <div class="truncate">
-                        <h4 id="htmlModalTitle" class="font-heading font-bold text-sm text-slate-900 dark:text-white truncate">Tajuk Widget HTML</h4>
-                        <p class="text-[10px] text-slate-400">Mod HTML Interaktif</p>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="reloadHtmlTool()" class="p-2 text-slate-500 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-xs" title="Muat Semula Widget">
-                        <i class="fa-solid fa-rotate-right"></i>
-                    </button>
-                    <button onclick="closeHtmlModal()" class="p-2 text-slate-500 hover:text-rose-500 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-xs" title="Tutup">
-                        <i class="fa-solid fa-xmark text-base"></i>
-                    </button>
+    <!-- Fullscreen Tool Viewer -->
+    <div id="htmlModal" class="fixed inset-0 z-[70] hidden bg-white dark:bg-slate-950 flex flex-col">
+        <div class="h-14 sm:h-16 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-5 shadow-sm">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <button onclick="closeHtmlModal()" type="button" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-emerald-500 hover:text-white transition shrink-0" title="Kembali">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <span id="htmlModalIcon" class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm shrink-0">
+                    <i class="fa-solid fa-toolbox"></i>
+                </span>
+                <div class="min-w-0">
+                    <h4 id="htmlModalTitle" class="font-heading font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate">Tool</h4>
+                    <p id="htmlModalSubtitle" class="text-[9px] sm:text-[10px] text-slate-400 truncate">Hub Tool ICT • SK Agama (MIS) Miri</p>
                 </div>
             </div>
-            
-            <!-- Sandbox Content Area -->
-            <div class="flex-grow w-full bg-slate-50 dark:bg-slate-950 relative">
-                <iframe id="htmlSandboxFrame" class="w-full h-full border-none" sandbox="allow-scripts allow-modals allow-forms allow-same-origin"></iframe>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="reloadHtmlTool()" type="button" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-500 hover:text-white transition" title="Muat semula">
+                    <i class="fa-solid fa-rotate-right text-xs"></i>
+                </button>
+                <button id="openExternalToolBtn" onclick="openExternalActiveTool()" type="button" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-sky-500 hover:text-white transition" title="Buka di tab baharu">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                </button>
+            </div>
+        </div>
+        <div class="flex-grow min-h-0 w-full bg-slate-50 dark:bg-slate-950 relative">
+            <iframe id="htmlSandboxFrame" class="w-full h-full border-none block"
+                    sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                    referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            <div id="toolFrameError" class="hidden absolute inset-0 bg-white dark:bg-slate-950 items-center justify-center p-6">
+                <div class="max-w-md text-center">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                    </div>
+                    <h4 class="font-heading font-extrabold text-slate-900 dark:text-white">Tool tidak boleh dipaparkan di sini</h4>
+                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">Sesetengah laman luar tidak membenarkan paparan melalui iframe. Gunakan butang <strong>Buka di tab baharu</strong>.</p>
+                    <button onclick="openExternalActiveTool()" class="mt-4 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold">
+                        <i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i>Buka Tool
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1180,31 +1198,76 @@
 
             if (tool.type === 'ERPH') {
                 openErphModal();
-            } else if (tool.type === 'URL') {
-                window.open(tool.url, '_blank');
-            } else if (tool.type === 'HTML') {
-                activeHtmlTool = tool;
-                document.getElementById('htmlModalTitle').innerText = tool.title;
-                
-                // Inject HTML Code into iframe sandbox
-                const iframe = document.getElementById('htmlSandboxFrame');
-                iframe.srcdoc = tool.htmlCode || '<html><body><p>Tiada kod HTML disediakan.</p></body></html>';
-
-                document.getElementById('htmlModal').classList.remove('hidden');
+            } else if (tool.type === 'URL' || tool.type === 'HTML') {
+                openFullscreenTool(tool);
             }
         }
 
+        function openFullscreenTool(tool) {
+            activeHtmlTool = tool;
+
+            const modal = document.getElementById('htmlModal');
+            const title = document.getElementById('htmlModalTitle');
+            const subtitle = document.getElementById('htmlModalSubtitle');
+            const iframe = document.getElementById('htmlSandboxFrame');
+            const errorBox = document.getElementById('toolFrameError');
+            const externalBtn = document.getElementById('openExternalToolBtn');
+
+            title.textContent = tool.title || 'Tool ICT';
+            subtitle.textContent = tool.type === 'URL'
+                ? 'Pautan URL • Hub Tool ICT'
+                : 'Aplikasi HTML • Hub Tool ICT';
+
+            errorBox.classList.add('hidden');
+            errorBox.classList.remove('flex');
+            externalBtn.classList.toggle('hidden', !tool.url);
+
+            if (tool.type === 'URL') {
+                iframe.srcdoc = '';
+                iframe.src = tool.url || 'about:blank';
+            } else {
+                iframe.removeAttribute('src');
+                iframe.srcdoc = tool.htmlCode || '<html><body style="font-family:sans-serif;padding:24px"><p>Tiada kod HTML disediakan.</p></body></html>';
+            }
+
+            modal.classList.remove('hidden');
+            document.body.classList.add('tool-viewer-open');
+            window.scrollTo(0, 0);
+        }
+
         function reloadHtmlTool() {
-            if (activeHtmlTool) {
-                const iframe = document.getElementById('htmlSandboxFrame');
-                iframe.srcdoc = activeHtmlTool.htmlCode;
-                showToast('Muat semula widget...', 'info');
+            if (!activeHtmlTool) return;
+
+            const iframe = document.getElementById('htmlSandboxFrame');
+
+            if (activeHtmlTool.type === 'URL') {
+                iframe.src = activeHtmlTool.url || 'about:blank';
+            } else {
+                iframe.removeAttribute('src');
+                iframe.srcdoc = activeHtmlTool.htmlCode || '<html><body><p>Tiada kod HTML disediakan.</p></body></html>';
+            }
+
+            showToast('Tool dimuat semula.', 'info');
+        }
+
+        function openExternalActiveTool() {
+            if (!activeHtmlTool) return;
+
+            if (activeHtmlTool.url) {
+                window.open(activeHtmlTool.url, '_blank', 'noopener,noreferrer');
+            } else {
+                showToast('Tool HTML ini berjalan terus dalam Hub Tool ICT.', 'info');
             }
         }
 
         function closeHtmlModal() {
-            document.getElementById('htmlModal').classList.add('hidden');
-            document.getElementById('htmlSandboxFrame').srcdoc = '';
+            const modal = document.getElementById('htmlModal');
+            const iframe = document.getElementById('htmlSandboxFrame');
+
+            modal.classList.add('hidden');
+            iframe.srcdoc = '';
+            iframe.removeAttribute('src');
+            document.body.classList.remove('tool-viewer-open');
             activeHtmlTool = null;
         }
 
@@ -2697,6 +2760,14 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         window.openSubmittedErphLink = openSubmittedErphLink;
         window.loadErphAdminSummary = loadErphAdminSummary;
 
+
+        // ESC = kembali daripada fullscreen tool.
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const viewer = document.getElementById('htmlModal');
+                if (viewer && !viewer.classList.contains('hidden')) closeHtmlModal();
+            }
+        });
 </script>
 
 </body>
