@@ -579,6 +579,13 @@
                 </div>
 
                 <div id="erphAdminPanel" class="hidden border-t border-slate-200 dark:border-slate-800 pt-5">
+                <div id="erphReviewerSelectorWrapEmbedded" class="mb-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 p-3">
+                    <div class="text-[9px] uppercase tracking-widest text-emerald-600 font-extrabold mb-1">Penyemak</div>
+                    <select id="erphReviewerSelectEmbedded" onchange="document.getElementById('erphReviewerSelect').value=this.value; changeErphReviewer()"
+                            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                    </select>
+                </div>
+
                     <div class="flex items-center justify-between gap-3 mb-3">
                         <div>
                             <div class="text-[9px] uppercase tracking-wider text-emerald-600 font-bold">Pentadbir • Semakan RPH</div>
@@ -630,7 +637,7 @@
                 <div class="mb-5">
                     <div class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Hub Tool ICT • SK Agama (MIS) Miri</div>
                     <h2 class="font-heading font-extrabold text-xl sm:text-2xl text-slate-900 dark:text-white mt-1">Semakan eRPH Mingguan</h2>
-                    <p class="text-xs text-slate-500 mt-1">Semak pautan eRPH guru dan pentadbir, pilih gred/markah dan simpan ulasan.</p>
+                    <p class="text-xs text-slate-500 mt-1">Semak pautan eRPH guru mengikut penyemak, pilih gred/markah dan simpan ulasan.</p>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
@@ -648,10 +655,22 @@
                     </div>
                 </div>
 
+                <div id="erphReviewerSelectorWrap" class="mb-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 p-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                            <div class="text-[9px] uppercase tracking-widest text-emerald-600 font-extrabold">Penyemak</div>
+                            <div class="text-xs text-slate-500 mt-0.5">Pilih penyemak untuk melihat guru yang ditugaskan sahaja.</div>
+                        </div>
+                        <select id="erphReviewerSelect" onchange="changeErphReviewer()"
+                                class="w-full sm:w-80 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                        </select>
+                    </div>
+                </div>
+
                 <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                     <div class="px-4 sm:px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <div>
-                            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Senarai Guru & Pentadbir</div>
+                            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Senarai Guru Yang Disemak</div>
                             <h4 class="font-heading font-extrabold text-sm text-slate-900 dark:text-white">eRPH <span id="reviewWeekCode">Minggu Ini</span></h4>
                         </div>
                         <span id="reviewerRoleBadge" class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[9px] font-extrabold">PENTADBIR</span>
@@ -3201,6 +3220,66 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             if (url) window.open(url, '_blank', 'noopener,noreferrer');
         }
 
+        // ============================================================
+        // PEMBAHAGIAN GURU MENGIKUT PENYEMAK
+        // ============================================================
+        const ERPH_REVIEW_ASSIGNMENTS = {"Sapri bin Paee": ["Nur Hidayah binti Abdul Latip", "Aisya Humaira Tan", "Clement Kok Thai Wei", "Dorothy David Ibau", "Fauzia binti Etayi Kandi Hassan", "Helmi bin Tambi", "Mohamad Nazimi bin Abdul Rahman", "Mohd. Sabri bin Mura", "Sharon Ibah ak Sanggah", "Muhammad Saifullah bin Suhaimi", "Nurul Asmafiqa binti Rahman"], "Fauzia binti Etayi Kandi Hassan": ["Sapri bin Paee", "Aileen Koh Ai Ling", "Dayang Fatimah binti Awang Muhammad Daud", "Devinis Sylvin ak Simon", "Haslina Faten binti Hasbi", "Haslinda binti Arsat", "Liew Siew Mui", "Martha ak Chalie", "Aireen Natasha bin Che Buyong", "Nadzaty akmar Abdullah", "Veronica Catherine ak Nohan", "Razreena binti Amin", "Najihah binti Khairudin", "Anis Najla binti Mohamad"], "Mohamad Nazimi bin Abdul Rahman": ["Abdullah bin Mohammad", "Azwandy bin Tuah", "Dyg. Noraishikin Bt Abg. Ahmad Masuine", "Masiah binti Masaid", "Mohd Solahuddin bin Che Pa", "Ahmad Bashir bin Mohd Ibrahim", "Rozana binti Rahmat (j-QAF)", "Siti Nurfauziana binti Bakri", "Wailie bin Hamdin", "Zulhadi bin Nayan", "Rosnani binti Timbang", "Mohammad Zulsyafiq bin Mohd. Zaki", "Nur Rafeeah binti Hasbol", "Ainun Mardhiah binti Mohd Suazhar"], "Helmi bin Tambi": ["Dygku Nurhazrin binti Awgku Sanusi", "Hafizawati binti Abdul Aziz", "Mary ak Lipa", "Mohammad Amir Ashraf bin Samawi", "Norismaliza binti Ali Basah", "Sifwandi bin Othman", "Abu Suffian bin Mat", "Hanis Nabihah binti Harun", "Mohamad Amizul bin Abu Bakeri", "Mohamad Azwan bin Mohamed", "Zulhilmi bin Puasa", "Amyliazita Empang Lawai", "Mohammad Faizul bin Wili"]};
+
+        const ERPH_REVIEWER_NAMES = Object.keys(ERPH_REVIEW_ASSIGNMENTS);
+
+        function normalisePersonName(name) {
+            return String(name || '')
+                .trim()
+                .replace(/\\s+/g, ' ')
+                .toLowerCase();
+        }
+
+        function getAssignedTeacherNames(reviewerName) {
+            return ERPH_REVIEW_ASSIGNMENTS[reviewerName] || [];
+        }
+
+        function teacherBelongsToReviewer(teacher, reviewerName) {
+            const assigned = getAssignedTeacherNames(reviewerName)
+                .map(normalisePersonName);
+            return assigned.includes(normalisePersonName(teacher.displayName));
+        }
+
+        function renderReviewerSelector() {
+            const wrap = document.getElementById('erphReviewerSelectorWrap');
+            const select = document.getElementById('erphReviewerSelect');
+            if (!wrap || !select) return;
+
+            select.innerHTML = ERPH_REVIEWER_NAMES.map(name =>
+                `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
+            ).join('');
+
+            const embeddedSelect = document.getElementById('erphReviewerSelectEmbedded');
+            if (embeddedSelect) {
+                embeddedSelect.innerHTML = select.innerHTML;
+            }
+
+            const currentName = window.currentTeacher?.displayName || '';
+            const matching = ERPH_REVIEWER_NAMES.find(
+                n => normalisePersonName(n) === normalisePersonName(currentName)
+            );
+
+            // Jika pengguna ialah salah seorang penyemak, pilih namanya sendiri.
+            // Admin boleh memilih mana-mana penyemak.
+            if (matching) {
+                select.value = matching;
+            }
+
+            if (embeddedSelect) {
+                embeddedSelect.value = select.value;
+            }
+
+            wrap.classList.remove('hidden');
+        }
+
+        window.changeErphReviewer = function() {
+            loadErphAdminSummary();
+        };
+
         async function loadErphAdminSummary() {
             const teacher = window.currentTeacher;
             if (!teacher || !['admin', 'pentadbir'].includes(teacher.role)) return;
@@ -3212,6 +3291,11 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             list.innerHTML = '<div class="text-xs text-slate-400 text-center py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Memuatkan...</div>';
 
             try {
+                renderReviewerSelector();
+
+                const reviewerSelect = document.getElementById('erphReviewerSelect');
+                const selectedReviewer = reviewerSelect?.value || ERPH_REVIEWER_NAMES[0];
+
                 const week = getErphWeekInfo();
                 const adminWeekCode = document.getElementById('erphAdminWeekCode');
                 const reviewWeekCode = document.getElementById('reviewWeekCode');
@@ -3232,7 +3316,11 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
                 const teachers = teachersSnap.docs
                     .map(d => ({ id: d.id, ...d.data() }))
-                    .filter(t => t.active !== false && ['teacher', 'pentadbir'].includes(t.role))
+                    .filter(t =>
+                        t.active !== false &&
+                        ['teacher', 'pentadbir'].includes(t.role) &&
+                        teacherBelongsToReviewer(t, selectedReviewer)
+                    )
                     .sort((a, b) =>
                         String(a.displayName || a.email || a.id)
                             .localeCompare(String(b.displayName || b.email || b.id))
@@ -3347,6 +3435,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
             modal.classList.remove('hidden');
             document.body.classList.add('erph-viewer-open');
+            renderReviewerSelector();
             loadErphAdminSummary();
         }
 
