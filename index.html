@@ -69,6 +69,156 @@
         .ios-shadow {
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
         }
+    
+        /* =========================================================
+           HUB TOOL ICT — PREMIUM ADMIN UI
+           ========================================================= */
+        .admin-modal-shell {
+            background:
+                radial-gradient(circle at 10% 0%, rgba(34,197,94,.12), transparent 32%),
+                radial-gradient(circle at 90% 0%, rgba(14,165,233,.10), transparent 30%),
+                rgba(15,23,42,.96);
+            box-shadow:
+                0 30px 80px rgba(2,8,23,.45),
+                0 0 0 1px rgba(255,255,255,.06);
+        }
+
+        .admin-topbar {
+            background:
+                linear-gradient(135deg, rgba(15,23,42,.98), rgba(20,83,45,.94));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .admin-topbar::after {
+            content: "";
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            right: -60px;
+            top: -100px;
+            border-radius: 999px;
+            background: rgba(34,197,94,.16);
+            filter: blur(12px);
+        }
+
+        .admin-brand-icon {
+            background: linear-gradient(135deg,#22c55e,#0ea5e9);
+            box-shadow: 0 10px 28px rgba(34,197,94,.22);
+        }
+
+        .admin-tabbar {
+            background: rgba(15,23,42,.94);
+            border-color: rgba(148,163,184,.12) !important;
+        }
+
+        .admin-tabbar button {
+            position: relative;
+            transition: all .2s ease;
+        }
+
+        .admin-tabbar button:hover {
+            background: rgba(255,255,255,.035);
+        }
+
+        .admin-content {
+            background:
+                linear-gradient(180deg, rgba(15,23,42,.96), rgba(2,6,23,.98));
+        }
+
+        .admin-section-card {
+            background: rgba(15,23,42,.72);
+            border: 1px solid rgba(148,163,184,.14);
+            box-shadow: 0 12px 30px rgba(2,8,23,.16);
+        }
+
+        .admin-input {
+            background: rgba(30,41,59,.72) !important;
+            border-color: rgba(148,163,184,.18) !important;
+            color: #e2e8f0 !important;
+            min-height: 42px;
+        }
+
+        .admin-input::placeholder {
+            color: #64748b;
+        }
+
+        .admin-input:focus {
+            border-color: rgba(34,197,94,.65) !important;
+            box-shadow: 0 0 0 3px rgba(34,197,94,.10);
+        }
+
+        .admin-primary-btn {
+            background: linear-gradient(135deg,#16a34a,#22c55e);
+            box-shadow: 0 8px 22px rgba(34,197,94,.18);
+        }
+
+        .admin-primary-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 28px rgba(34,197,94,.24);
+        }
+
+        .admin-stat-card {
+            background: linear-gradient(145deg, rgba(30,41,59,.86), rgba(15,23,42,.88));
+            border: 1px solid rgba(148,163,184,.12);
+            box-shadow: 0 10px 26px rgba(2,8,23,.16);
+        }
+
+        .admin-stat-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .teacher-card {
+            background: linear-gradient(145deg, rgba(30,41,59,.92), rgba(15,23,42,.94));
+            border: 1px solid rgba(148,163,184,.13);
+            box-shadow: 0 8px 22px rgba(2,8,23,.13);
+            transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+        }
+
+        .teacher-card:hover {
+            transform: translateY(-1px);
+            border-color: rgba(34,197,94,.28);
+            box-shadow: 0 14px 28px rgba(2,8,23,.22);
+        }
+
+        .teacher-avatar {
+            background: linear-gradient(135deg, rgba(34,197,94,.18), rgba(14,165,233,.18));
+            border: 1px solid rgba(34,197,94,.18);
+        }
+
+        .admin-scroll::-webkit-scrollbar {
+            width: 7px;
+        }
+
+        .admin-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .admin-scroll::-webkit-scrollbar-thumb {
+            background: rgba(100,116,139,.38);
+            border-radius: 999px;
+        }
+
+        .import-zone {
+            background:
+                radial-gradient(circle at 100% 0%, rgba(14,165,233,.10), transparent 35%),
+                rgba(15,23,42,.72);
+            border: 1px dashed rgba(34,197,94,.45);
+        }
+
+        .section-eyebrow {
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            font-size: 9px;
+            font-weight: 800;
+            color: #64748b;
+        }
+
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between pb-20 md:pb-6">
@@ -225,11 +375,11 @@
 
     <!-- Admin Backend Modal -->
     <div id="adminModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-        <div class="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto">
+        <div class="admin-modal-shell w-full max-w-5xl rounded-[28px] border border-slate-700/40 overflow-hidden my-auto">
             
             <!-- Admin Access Step -->
-            <div id="adminAuthStep" class="p-6 text-center">
-                <div class="w-12 h-12 bg-amber-500/10 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600 dark:text-amber-400 mx-auto mb-3">
+            <div id="adminAuthStep" class="p-8 text-center bg-slate-950">
+                <div class="admin-brand-icon w-14 h-14 rounded-2xl flex items-center justify-center text-white mx-auto mb-4">
                     <i class="fa-solid fa-user-shield text-xl"></i>
                 </div>
                 <h3 class="font-heading font-bold text-lg text-slate-900 dark:text-white">Akses Panel Admin</h3>
@@ -240,25 +390,34 @@
             </div>
 
             <!-- Admin Dashboard Content -->
-            <div id="adminDashboardStep" class="hidden flex flex-col max-h-[85vh]">
+            <div id="adminDashboardStep" class="hidden flex flex-col max-h-[92vh]">
                 <!-- Header -->
-                <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-                        <h3 class="font-heading font-bold text-base text-slate-900 dark:text-white">Panel Pentadbir Guru ICT</h3>
+                <div class="admin-topbar px-6 py-5 border-b border-white/10 flex items-center justify-between">
+                    <div class="relative z-10 flex items-center gap-3 min-w-0">
+                        <div class="admin-brand-icon w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0">
+                            <i class="fa-solid fa-user-gear text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span class="section-eyebrow !text-emerald-300">Unit ICT • SKAMIS</span>
+                            </div>
+                            <h3 class="font-heading font-extrabold text-lg text-white truncate">Panel Pentadbir Guru ICT</h3>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Urus tool, akses guru dan data portal dalam satu tempat.</p>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="exportDataJSON()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300" title="Muat Turun Backup JSON">
-                            <i class="fa-solid fa-download mr-1"></i>Eksport
+                    <div class="relative z-10 flex items-center gap-2 shrink-0">
+                        <button onclick="exportDataJSON()" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white text-[11px] font-bold transition" title="Muat Turun Backup JSON">
+                            <i class="fa-solid fa-download mr-1.5"></i>Eksport
                         </button>
-                        <button onclick="closeAdminModal()" class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                            <i class="fa-solid fa-xmark text-lg"></i>
+                        <button onclick="closeAdminModal()" class="w-9 h-9 rounded-xl bg-white/5 hover:bg-rose-500/15 text-slate-300 hover:text-rose-300 border border-white/10 transition">
+                            <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- Tabs Admin -->
-                <div class="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold overflow-x-auto no-scrollbar">
+                <div class="admin-tabbar flex border-b text-xs font-semibold overflow-x-auto no-scrollbar px-2">
                     <button id="tabBtnAdd" onclick="switchAdminTab('ADD')" class="flex-1 min-w-[120px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center">
                         <i class="fa-solid fa-plus-circle mr-1.5"></i>Tambah Tool
                     </button>
@@ -271,7 +430,7 @@
                 </div>
 
                 <!-- Tab Content Body -->
-                <div class="p-5 overflow-y-auto space-y-4 flex-grow">
+                <div class="admin-content admin-scroll p-5 sm:p-6 overflow-y-auto space-y-5 flex-grow">
                     
                     <!-- Form Tambah Tool -->
                     <form id="addToolForm" onsubmit="handleSaveTool(event)" class="space-y-4">
@@ -280,11 +439,11 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tajuk Tool / Nama Aplikasi <span class="text-rose-500">*</span></label>
-                                <input type="text" id="toolTitle" required placeholder="Contoh: Pemutar Nama Murid" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                                <input type="text" id="toolTitle" required placeholder="Contoh: Pemutar Nama Murid" class="admin-input w-full px-3 py-2.5 rounded-xl border text-xs focus:ring-2 focus:ring-brand-500 outline-none transition">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Kategori <span class="text-rose-500">*</span></label>
-                                <select id="toolCategory" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                                <select id="toolCategory" required class="admin-input w-full px-3 py-2.5 rounded-xl border text-xs focus:ring-2 focus:ring-brand-500 outline-none transition">
                                     <option value="PDP">PdP & Kelas</option>
                                     <option value="PENTADBIRAN">Pengurusan & KPM</option>
                                     <option value="GRAFIK">Reka Bentuk & Grafik</option>
@@ -348,29 +507,36 @@
                     </div>
 
                     <!-- Firebase Teacher Access Management View -->
-                    <div id="manageTeachersView" class="hidden space-y-4">
-                        <div class="p-4 rounded-xl bg-brand-50/50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40">
-                            <div class="text-[11px] text-slate-600 dark:text-slate-300 mb-3">
-                                <i class="fa-solid fa-shield-halved text-brand-600 mr-1"></i>
-                                <strong>Whitelist Firebase:</strong> hanya email yang tersenarai di sini dan mempunyai <code>active = true</code> boleh menggunakan portal.
+                    <div id="manageTeachersView" class="hidden space-y-5">
+                        <div class="admin-section-card rounded-2xl p-5 relative overflow-hidden">
+                            <div class="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-emerald-500/10 blur-2xl"></div>
+                            <div class="relative flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="section-eyebrow !text-emerald-400">Access Control</span>
+                                        <span class="text-[9px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-300 font-bold">FIREBASE WHITELIST</span>
+                                    </div>
+                                    <h4 class="font-heading font-extrabold text-base text-white mt-1">Pengurusan Akses Guru</h4>
+                                    <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                        Hanya email yang tersenarai dalam <code class="text-emerald-300">teachers</code> dan mempunyai
+                                        <code class="text-emerald-300">active = true</code> boleh log masuk ke portal.
+                                    </p>
+                                </div>
                             </div>
-                            <h4 class="font-bold text-xs text-brand-800 dark:text-brand-300 flex items-center">
-                                <i class="fa-solid fa-cloud mr-2 text-base"></i>Pengurusan Akses Guru (Firebase)
-                            </h4>
-                            <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-1">
-                                Daftarkan email Google guru yang dibenarkan menggunakan Hub Tool ICT. Hanya email yang tersenarai dan <code>active = true</code> boleh log masuk.
-                            </p>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
-                            <input type="email" id="teacherEmailInput" placeholder="email Google guru" class="sm:col-span-2 w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                            <input type="email" id="teacherEmailInput" placeholder="email Google guru" class="admin-input sm:col-span-2 w-full px-3 py-2.5 rounded-xl border text-xs focus:ring-2 focus:ring-brand-500 outline-none transition">
                             <input type="text" id="teacherNameInput" placeholder="Nama guru" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
                             <select id="teacherRoleInput" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
                                 <option value="teacher">Guru</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>
-                        <div class="mt-4 p-4 rounded-2xl border border-dashed border-brand-300 dark:border-brand-700 bg-brand-50/40 dark:bg-brand-900/10">
+                        <div class="import-zone p-5 rounded-2xl">
                             <div class="flex items-start justify-between gap-3 flex-wrap">
                                 <div>
                                     <div class="font-bold text-sm text-slate-800 dark:text-white">
@@ -394,7 +560,7 @@
                         </div>
 
                         <div class="flex items-center gap-2">
-                            <button onclick="addTeacherToFirebase()" class="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold text-xs hover:bg-brand-700 transition">
+                            <button onclick="addTeacherToFirebase()" class="admin-primary-btn px-4 py-2.5 rounded-xl text-white font-bold text-xs transition">
                                 <i class="fa-solid fa-user-plus mr-1"></i>Daftar Guru
                             </button>
                             <button onclick="refreshTeacherList()" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -402,11 +568,48 @@
                             </button>
                         </div>
 
-                        <div class="mt-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Guru Berdaftar (<span id="teacherCount">0</span>)</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="admin-stat-card rounded-2xl p-4 flex items-center gap-3">
+                                <div class="admin-stat-icon bg-sky-500/10 text-sky-400"><i class="fa-solid fa-users"></i></div>
+                                <div>
+                                    <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Jumlah Guru</div>
+                                    <div id="teacherCountTop" class="font-heading font-extrabold text-xl text-white">0</div>
+                                </div>
                             </div>
-                            <div id="teacherIdList" class="max-h-64 overflow-y-auto space-y-1.5 border border-slate-200 dark:border-slate-800 p-2 rounded-xl bg-slate-50 dark:bg-slate-900/50">
+                            <div class="admin-stat-card rounded-2xl p-4 flex items-center gap-3">
+                                <div class="admin-stat-icon bg-emerald-500/10 text-emerald-400"><i class="fa-solid fa-user-check"></i></div>
+                                <div>
+                                    <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Aktif</div>
+                                    <div id="teacherActiveCount" class="font-heading font-extrabold text-xl text-white">0</div>
+                                </div>
+                            </div>
+                            <div class="admin-stat-card rounded-2xl p-4 flex items-center gap-3">
+                                <div class="admin-stat-icon bg-amber-500/10 text-amber-400"><i class="fa-solid fa-user-shield"></i></div>
+                                <div>
+                                    <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Admin</div>
+                                    <div id="teacherAdminCount" class="font-heading font-extrabold text-xl text-white">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-1 flex items-center justify-between gap-3 flex-wrap">
+                            <div>
+                                <div class="section-eyebrow">Directory</div>
+                                <div class="text-sm font-heading font-extrabold text-white">Senarai Guru</div>
+                            </div>
+                            <div class="relative w-full sm:w-64">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                                <input id="teacherSearchInput" type="search" oninput="filterTeacherList(this.value)"
+                                       placeholder="Cari nama atau email..."
+                                       class="admin-input w-full pl-9 pr-3 py-2.5 rounded-xl border text-xs outline-none">
+                            </div>
+                        </div>
+
+                        <div class="mt-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-slate-300">Guru Berdaftar (<span id="teacherCount">0</span>)</span>
+                            </div>
+                            <div id="teacherIdList" class="admin-scroll max-h-[380px] overflow-y-auto space-y-2 p-1 rounded-2xl">
                                 <p class="text-xs text-slate-400 text-center py-3">Tekan “Muat Semula” untuk melihat senarai.</p>
                             </div>
                         </div>
@@ -1510,52 +1713,69 @@
                 const snap = await getDocs(collection(db, TEACHERS));
                 const docs = snap.docs.sort((a,b) => (a.id || '').localeCompare(b.id || ''));
                 if (count) count.textContent = docs.length;
-                if (!docs.length) { container.innerHTML = '<p class="text-xs text-slate-400 text-center py-3">Tiada guru berdaftar.</p>'; return; }
+
+                const activeCount = docs.filter(d => d.data().active !== false).length;
+                const adminCount = docs.filter(d => d.data().role === 'admin').length;
+
+                const countTop = document.getElementById('teacherCountTop');
+                const activeTop = document.getElementById('teacherActiveCount');
+                const adminTop = document.getElementById('teacherAdminCount');
+
+                if (countTop) countTop.textContent = docs.length;
+                if (activeTop) activeTop.textContent = activeCount;
+                if (adminTop) adminTop.textContent = adminCount;
+
+                if (!docs.length) {
+                    container.innerHTML = '<div class="admin-section-card rounded-2xl p-8 text-center"><i class="fa-solid fa-users-slash text-slate-600 text-2xl mb-2"></i><p class="text-xs text-slate-500">Tiada guru berdaftar.</p></div>';
+                    return;
+                }
+
                 container.innerHTML = '';
                 docs.forEach(d => {
                     const x = d.data();
                     const email = d.id;
                     const row = document.createElement('div');
-                    row.className = 'p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 space-y-2';
+                    row.dataset.search = `${String(x.displayName || '').toLowerCase()} ${email.toLowerCase()} ${String(x.role || '').toLowerCase()}`;
+                    row.className = 'teacher-card rounded-2xl p-4 space-y-3';
 
                     const top = document.createElement('div');
-                    top.className = 'flex items-start justify-between gap-2';
+                    top.className = 'flex items-start justify-between gap-3';
                     const info = document.createElement('div');
                     info.className = 'min-w-0';
                     const name = document.createElement('div');
-                    name.className = 'font-semibold text-slate-800 dark:text-slate-200 text-xs truncate';
-                    name.innerHTML = `<i class="fa-solid fa-user mr-1.5 text-brand-500"></i>${escapeHtml(x.displayName || 'Nama belum ditetapkan')}`;
+                    name.className = 'font-heading font-extrabold text-slate-100 text-sm truncate';
+                    name.innerHTML = `<span class="teacher-avatar inline-flex w-8 h-8 rounded-xl items-center justify-center mr-2 align-middle text-emerald-400"><i class="fa-solid fa-user text-xs"></i></span>${escapeHtml(x.displayName || 'Nama belum ditetapkan')}`;
                     const mail = document.createElement('div');
-                    mail.className = 'text-[9px] text-slate-400 truncate';
+                    mail.className = 'text-[10px] text-slate-500 truncate mt-1 pl-10';
                     mail.textContent = email;
                     info.appendChild(name); info.appendChild(mail);
 
                     const status = document.createElement('span');
-                    status.className = x.active === false ? 'text-[8px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 font-bold whitespace-nowrap' : 'text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-bold whitespace-nowrap';
+                    status.className = x.active === false ? 'text-[9px] px-2 py-1 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/10 font-bold whitespace-nowrap' : 'text-[9px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/10 font-bold whitespace-nowrap';
                     status.textContent = x.active === false ? 'TIDAK AKTIF' : 'AKTIF';
                     top.appendChild(info); top.appendChild(status); row.appendChild(top);
 
                     const controls = document.createElement('div');
-                    controls.className = 'grid grid-cols-1 sm:grid-cols-4 gap-2';
+                    controls.className = 'grid grid-cols-1 sm:grid-cols-4 gap-2 pt-1';
 
                     const nameInput = document.createElement('input');
                     nameInput.type = 'text'; nameInput.value = x.displayName || ''; nameInput.placeholder = 'Nama guru';
-                    nameInput.className = 'sm:col-span-2 w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-[10px] outline-none';
+                    nameInput.className = 'admin-input sm:col-span-2 w-full px-3 py-2 rounded-xl border text-[10px] outline-none';
 
                     const roleSelect = document.createElement('select');
-                    roleSelect.className = 'w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-[10px] outline-none';
+                    roleSelect.className = 'admin-input w-full px-3 py-2 rounded-xl border text-[10px] outline-none';
                     roleSelect.innerHTML = '<option value="teacher">Guru</option><option value="admin">Admin</option>';
                     roleSelect.value = x.role === 'admin' ? 'admin' : 'teacher';
 
                     const saveBtn = document.createElement('button');
-                    saveBtn.type = 'button'; saveBtn.className = 'px-2.5 py-1.5 rounded-lg bg-brand-600 text-white text-[10px] font-semibold hover:bg-brand-700';
+                    saveBtn.type = 'button'; saveBtn.className = 'admin-primary-btn px-3 py-2 rounded-xl text-white text-[10px] font-bold transition';
                     saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i>Simpan';
                     saveBtn.onclick = () => updateTeacherAccess(email, { displayName: nameInput.value.trim(), role: roleSelect.value, active: x.active !== false });
 
                     controls.appendChild(nameInput); controls.appendChild(roleSelect); controls.appendChild(saveBtn); row.appendChild(controls);
 
                     const actions = document.createElement('div');
-                    actions.className = 'flex items-center justify-between pt-1';
+                    actions.className = 'flex items-center justify-between pt-2 border-t border-white/5';
                     const toggleBtn = document.createElement('button');
                     toggleBtn.type = 'button'; toggleBtn.className = 'text-[10px] font-semibold ' + (x.active === false ? 'text-emerald-600' : 'text-amber-600');
                     toggleBtn.innerHTML = x.active === false ? '<i class="fa-solid fa-user-check mr-1"></i>Aktifkan' : '<i class="fa-solid fa-user-slash mr-1"></i>Nyahaktifkan';
@@ -1869,6 +2089,33 @@ window.importTeachersCsv = importTeachersCsv;
 window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
 window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
+
+
+        window.filterTeacherList = function(query) {
+            const q = String(query || '').trim().toLowerCase();
+            const container = document.getElementById('teacherIdList');
+            if (!container) return;
+
+            const cards = Array.from(container.children);
+            let visible = 0;
+
+            cards.forEach(card => {
+                const match = !q || String(card.dataset.search || '').includes(q);
+                card.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+
+            const empty = document.getElementById('teacherSearchEmpty');
+            if (empty) empty.remove();
+
+            if (q && visible === 0 && cards.length) {
+                const msg = document.createElement('div');
+                msg.id = 'teacherSearchEmpty';
+                msg.className = 'admin-section-card rounded-2xl p-6 text-center';
+                msg.innerHTML = '<i class="fa-solid fa-magnifying-glass text-slate-600 text-xl mb-2"></i><p class="text-xs text-slate-500">Tiada guru sepadan dengan carian.</p>';
+                container.appendChild(msg);
+            }
+        };
 
 </script>
 
