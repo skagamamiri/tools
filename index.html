@@ -353,7 +353,8 @@
         body.tool-viewer-open { overflow: hidden !important; }
         #htmlSandboxFrame { min-height: 0; }
 
-</style>
+        body.erph-viewer-open { overflow: hidden !important; }
+    </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between pb-20 md:pb-6">
 
@@ -477,25 +478,35 @@
     </main>
 
 
-    <!-- eRPH Mingguan Modal -->
-    <div id="erphModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="w-full sm:max-w-3xl max-h-[94vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800">
-            <div class="px-5 py-4 bg-gradient-to-r from-emerald-700 to-teal-600 text-white flex items-center justify-between">
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-                        <i class="fa-solid fa-file-signature text-lg"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <div class="text-[9px] uppercase tracking-widest text-emerald-100 font-bold">Pengurusan eRPH</div>
-                        <h3 class="font-heading font-extrabold text-lg truncate">Penghantaran eRPH Mingguan</h3>
-                    </div>
-                </div>
-                <button onclick="closeErphModal()" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 transition">
-                    <i class="fa-solid fa-xmark"></i>
+    <!-- eRPH Mingguan Fullscreen -->
+    <div id="erphModal" class="fixed inset-0 z-[75] hidden bg-slate-50 dark:bg-slate-950 flex flex-col">
+        <div class="h-14 sm:h-16 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-5 shadow-sm">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <button onclick="closeErphModal()" type="button" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-emerald-500 hover:text-white transition shrink-0" title="Kembali">
+                    <i class="fa-solid fa-arrow-left"></i>
                 </button>
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-file-signature"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-[8px] sm:text-[9px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-extrabold">Pengurusan eRPH</div>
+                    <h3 class="font-heading font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate">Penghantaran eRPH Mingguan</h3>
+                </div>
             </div>
+            <button onclick="loadMyErphSubmission()" type="button" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-500 hover:text-white transition" title="Semak status">
+                <i class="fa-solid fa-rotate-right text-xs"></i>
+            </button>
+        </div>
 
-            <div class="p-5 sm:p-6 space-y-5">
+        <div class="flex-grow min-h-0 overflow-y-auto">
+            <div class="max-w-5xl mx-auto w-full p-4 sm:p-6 lg:p-8">
+                <div class="mb-5">
+                    <div class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Hub Tool ICT • SK Agama (MIS) Miri</div>
+                    <h2 class="font-heading font-extrabold text-xl sm:text-2xl text-slate-900 dark:text-white mt-1">Penghantaran eRPH Mingguan</h2>
+                    <p class="text-xs text-slate-500 mt-1">Hantar pautan Google Sheet eRPH dan semak status penghantaran anda.</p>
+                </div>
+                <div class="space-y-5">
+                    
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-950/50">
                         <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Minggu</div>
@@ -566,6 +577,12 @@
     </div>
 
     <!-- Fullscreen Tool Viewer -->
+    
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="htmlModal" class="fixed inset-0 z-[70] hidden bg-white dark:bg-slate-950 flex flex-col">
         <div class="h-14 sm:h-16 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-5 shadow-sm">
             <div class="flex items-center gap-2.5 min-w-0">
@@ -2539,6 +2556,8 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             if (!modal) return;
 
             modal.classList.remove('hidden');
+            document.body.classList.add('erph-viewer-open');
+            window.scrollTo(0, 0);
 
             const info = getErphWeekInfo();
             document.getElementById('erphWeekLabel').textContent = info.label;
@@ -2557,6 +2576,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         function closeErphModal() {
             const modal = document.getElementById('erphModal');
             if (modal) modal.classList.add('hidden');
+            document.body.classList.remove('erph-viewer-open');
         }
 
         async function loadMyErphSubmission() {
@@ -2766,6 +2786,20 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             if (e.key === 'Escape') {
                 const viewer = document.getElementById('htmlModal');
                 if (viewer && !viewer.classList.contains('hidden')) closeHtmlModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const htmlViewer = document.getElementById('htmlModal');
+                if (htmlViewer && !htmlViewer.classList.contains('hidden')) {
+                    closeHtmlModal();
+                    return;
+                }
+                const erphViewer = document.getElementById('erphModal');
+                if (erphViewer && !erphViewer.classList.contains('hidden')) {
+                    closeErphModal();
+                }
             }
         });
 </script>
