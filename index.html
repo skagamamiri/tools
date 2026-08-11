@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="ms" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
@@ -399,6 +399,12 @@
                     <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
                 </button>
 
+                <!-- Semakan RPH Pentadbir -->
+                <button id="reviewRphHeaderBtn" onclick="openErphReviewer()" class="hidden px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition flex items-center space-x-1.5 shadow-sm">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    <span class="hidden sm:inline">Semakan RPH</span>
+                </button>
+
                 <!-- Admin Button -->
                 <button id="adminHeaderBtn" onclick="toggleAdminModal()" class="hidden px-3 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold hover:opacity-90 transition flex items-center space-x-1.5 shadow-sm">
                     <i class="fa-solid fa-user-gear"></i>
@@ -575,8 +581,8 @@
                 <div id="erphAdminPanel" class="hidden border-t border-slate-200 dark:border-slate-800 pt-5">
                     <div class="flex items-center justify-between gap-3 mb-3">
                         <div>
-                            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Admin</div>
-                            <h4 class="font-heading font-extrabold text-sm text-slate-800 dark:text-white">Pemantauan eRPH <span id="erphAdminWeekCode">Minggu Ini</span></h4>
+                            <div class="text-[9px] uppercase tracking-wider text-emerald-600 font-bold">Pentadbir • Semakan RPH</div>
+                            <h4 class="font-heading font-extrabold text-sm text-slate-800 dark:text-white">Semakan eRPH <span id="erphAdminWeekCode">Minggu Ini</span></h4>
                         </div>
                         <button onclick="loadErphAdminSummary()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300">
                             <i class="fa-solid fa-rotate-right mr-1"></i>Semak
@@ -591,6 +597,128 @@
 
     <!-- Fullscreen Tool Viewer -->
     
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Semakan RPH Pentadbir -->
+    <div id="erphReviewModal" class="fixed inset-0 z-[85] hidden bg-slate-50 dark:bg-slate-950 flex flex-col">
+        <div class="h-14 sm:h-16 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-5 shadow-sm">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <button onclick="closeErphReviewer()" type="button"
+                        class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-emerald-500 hover:text-white transition shrink-0">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-[8px] uppercase tracking-widest text-emerald-600 font-extrabold">Pentadbir</div>
+                    <h3 class="font-heading font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate">Semakan eRPH Guru</h3>
+                </div>
+            </div>
+            <button onclick="loadErphAdminSummary()" type="button"
+                    class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-500 hover:text-white transition"
+                    title="Muat semula">
+                <i class="fa-solid fa-rotate-right text-xs"></i>
+            </button>
+        </div>
+
+        <div class="flex-grow min-h-0 overflow-y-auto">
+            <div class="max-w-6xl mx-auto w-full p-4 sm:p-6 lg:p-8">
+                <div class="mb-5">
+                    <div class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Hub Tool ICT • SK Agama (MIS) Miri</div>
+                    <h2 class="font-heading font-extrabold text-xl sm:text-2xl text-slate-900 dark:text-white mt-1">Semakan eRPH Mingguan</h2>
+                    <p class="text-xs text-slate-500 mt-1">Semak pautan eRPH guru, pilih gred/markah dan simpan ulasan.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                    <div id="reviewStatSubmitted" class="rounded-2xl bg-emerald-500/10 border border-emerald-500/10 p-4">
+                        <div class="text-2xl font-heading font-extrabold text-emerald-600">0</div>
+                        <div class="text-[9px] text-slate-500 font-bold uppercase">Dah Hantar</div>
+                    </div>
+                    <div id="reviewStatReviewed" class="rounded-2xl bg-sky-500/10 border border-sky-500/10 p-4">
+                        <div class="text-2xl font-heading font-extrabold text-sky-600">0</div>
+                        <div class="text-[9px] text-slate-500 font-bold uppercase">Dah Dinilai</div>
+                    </div>
+                    <div id="reviewStatPending" class="rounded-2xl bg-amber-500/10 border border-amber-500/10 p-4">
+                        <div class="text-2xl font-heading font-extrabold text-amber-600">0</div>
+                        <div class="text-[9px] text-slate-500 font-bold uppercase">Belum Dinilai</div>
+                    </div>
+                </div>
+
+                <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <div class="px-4 sm:px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div>
+                            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Senarai Guru</div>
+                            <h4 class="font-heading font-extrabold text-sm text-slate-900 dark:text-white">eRPH <span id="reviewWeekCode">Minggu Ini</span></h4>
+                        </div>
+                        <span id="reviewerRoleBadge" class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[9px] font-extrabold">PENTADBIR</span>
+                    </div>
+                    <div id="reviewerList" class="p-3 sm:p-5 space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialog penilaian eRPH -->
+    <div id="erphGradeModal" class="fixed inset-0 z-[95] hidden bg-slate-950/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="w-full max-w-xl rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+            <div class="px-5 py-4 bg-emerald-600 text-white flex items-center justify-between">
+                <div>
+                    <div class="text-[9px] uppercase tracking-widest text-emerald-100 font-bold">Penilaian eRPH</div>
+                    <h3 id="gradeTeacherName" class="font-heading font-extrabold text-base">Nama Guru</h3>
+                    <p id="gradeTeacherEmail" class="text-[10px] text-emerald-100 mt-0.5"></p>
+                </div>
+                <button onclick="closeErphGradeModal()" type="button" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-4">
+                <div class="flex flex-wrap gap-2">
+                    <a id="gradeOpenSheetBtn" href="#" target="_blank" rel="noopener noreferrer"
+                       class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold">
+                        <i class="fa-solid fa-table"></i>Buka Google Sheet
+                    </a>
+                    <span id="gradeWeekBadge" class="inline-flex items-center px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 text-xs font-bold">M28</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">Gred</label>
+                        <select id="erphGradeSelect" class="w-full px-3 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="">Belum Dinilai</option>
+                            <option value="A">A — Cemerlang (90–100)</option>
+                            <option value="B">B — Baik (80–89)</option>
+                            <option value="C">C — Memuaskan (70–79)</option>
+                            <option value="D">D — Perlu Penambahbaikan (60–69)</option>
+                            <option value="E">E — Tidak Memuaskan (&lt;60)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">Markah (0–100)</label>
+                        <input id="erphMarkInput" type="number" min="0" max="100" step="1" placeholder="Contoh: 85"
+                               class="w-full px-3 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">Ulasan Pentadbir</label>
+                    <textarea id="erphReviewComment" rows="4" placeholder="Contoh: RPH lengkap dan tersusun. Sila tambah evidens aktiviti murid..."
+                              class="w-full px-3 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="saveErphReview()" type="button" id="saveErphReviewBtn"
+                            class="flex-1 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold">
+                        <i class="fa-solid fa-floppy-disk mr-1.5"></i>Simpan Penilaian
+                    </button>
+                    <button onclick="closeErphGradeModal()" type="button"
+                            class="px-5 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold">
+                        Batal
+                    </button>
                 </div>
             </div>
         </div>
@@ -798,6 +926,7 @@
                             <input type="text" id="teacherNameInput" placeholder="Nama guru" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
                             <select id="teacherRoleInput" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
                                 <option value="teacher">Guru</option>
+                                <option value="pentadbir">Pentadbir</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>
@@ -929,6 +1058,11 @@
         <button id="mobileNavFav" type="button" onclick="setCategory('FAV')" class="mobile-nav-item flex flex-col items-center">
             <i class="fa-solid fa-bookmark text-base text-rose-500"></i>
             <span class="mobile-nav-label">Kegemaran</span>
+        </button>
+
+        <button id="reviewRphMobileBtn" type="button" onclick="openErphReviewer()" class="mobile-nav-item hidden flex-col items-center">
+            <i class="fa-solid fa-clipboard-check text-base text-emerald-500"></i>
+            <span class="mobile-nav-label">Semak RPH</span>
         </button>
 
         <button id="adminMobileBtn" type="button" onclick="toggleAdminModal()" class="mobile-nav-item hidden flex-col items-center">
@@ -1503,8 +1637,23 @@
             return !!(window.currentTeacher && window.currentTeacher.role === 'admin');
         };
 
+        window.isCurrentUserPentadbir = function() {
+            return !!(
+                window.currentTeacher &&
+                ['admin', 'pentadbir'].includes(window.currentTeacher.role)
+            );
+        };
+
+        window.isCurrentUserReviewer = function() {
+            return !!(
+                window.currentTeacher &&
+                ['admin', 'pentadbir'].includes(window.currentTeacher.role)
+            );
+        };
+
         function updateAdminVisibility() {
             const isAdmin = window.isCurrentUserAdmin();
+            const isReviewer = window.isCurrentUserReviewer();
             const headerBtn = document.getElementById('adminHeaderBtn');
             const mobileBtn = document.getElementById('adminMobileBtn');
 
@@ -1512,6 +1661,15 @@
             if (mobileBtn) {
                 mobileBtn.classList.toggle('hidden', !isAdmin);
                 mobileBtn.classList.toggle('flex', isAdmin);
+            }
+
+            const reviewHeaderBtn = document.getElementById('reviewRphHeaderBtn');
+            const reviewMobileBtn = document.getElementById('reviewRphMobileBtn');
+
+            if (reviewHeaderBtn) reviewHeaderBtn.classList.toggle('hidden', !isReviewer);
+            if (reviewMobileBtn) {
+                reviewMobileBtn.classList.toggle('hidden', !isReviewer);
+                reviewMobileBtn.classList.toggle('flex', isReviewer);
             }
 
             if (!isAdmin) closeAdminModal();
@@ -2284,8 +2442,8 @@
 
                     const roleSelect = document.createElement('select');
                     roleSelect.className = 'admin-input w-full px-3 py-2 rounded-xl border text-[10px] outline-none';
-                    roleSelect.innerHTML = '<option value="teacher">Guru</option><option value="admin">Admin</option>';
-                    roleSelect.value = x.role === 'admin' ? 'admin' : 'teacher';
+                    roleSelect.innerHTML = '<option value="teacher">Guru</option><option value="pentadbir">Pentadbir</option><option value="admin">Admin</option>';
+                    roleSelect.value = ['teacher','pentadbir','admin'].includes(x.role) ? x.role : 'teacher';
 
                     const saveBtn = document.createElement('button');
                     saveBtn.type = 'button'; saveBtn.className = 'admin-primary-btn px-3 py-2 rounded-xl text-white text-[10px] font-bold transition';
@@ -2453,7 +2611,8 @@ function normalizeTeacherCsvRow(row) {
     ).trim().toLowerCase();
 
     if (role === 'guru') role = 'teacher';
-    if (role !== 'admin') role = 'teacher';
+    if (role === 'pentadbir' || role === 'penilai' || role === 'reviewer') role = 'pentadbir';
+    if (!['teacher', 'pentadbir', 'admin'].includes(role)) role = 'teacher';
 
     return { email, displayName, role };
 }
@@ -2600,7 +2759,8 @@ function downloadTeacherCsvTemplate() {
     const csv =
 `email,displayName,role
 guru1@moe-dl.edu.my,Cikgu Ali,teacher
-guru2@moe-dl.edu.my,Cikgu Siti,teacher
+pentadbir1@moe-dl.edu.my,Cikgu Aminah,pentadbir
+admin1@moe-dl.edu.my,Cg Sabri,admin
 `;
 
     const blob = new Blob(
@@ -2873,11 +3033,12 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             document.getElementById('erphWeekRange').textContent = info.range;
 
             const adminPanel = document.getElementById('erphAdminPanel');
-            adminPanel.classList.toggle('hidden', teacher.role !== 'admin');
+            const canReview = ['admin', 'pentadbir'].includes(teacher.role);
+            adminPanel.classList.toggle('hidden', !canReview);
 
             await loadMyErphSubmission();
 
-            if (teacher.role === 'admin') {
+            if (canReview) {
                 loadErphAdminSummary();
             }
         }
@@ -2918,6 +3079,29 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     submittedAt.textContent =
                         `Dihantar: ${formatErphTimestamp(data.submittedAt) || 'Tarikh tidak tersedia'}`;
 
+                    const reviewInfo = document.getElementById('erphReviewInfo');
+                    if (reviewInfo) {
+                        if (data.reviewGrade) {
+                            reviewInfo.className = 'mt-3 rounded-2xl bg-sky-500/10 border border-sky-500/20 p-3';
+                            reviewInfo.innerHTML = `
+                                <div class="flex items-center justify-between gap-3">
+                                    <div>
+                                        <div class="text-[9px] uppercase tracking-wider text-sky-600 font-bold">Penilaian Pentadbir</div>
+                                        <div class="text-sm font-heading font-extrabold text-sky-700 dark:text-sky-300 mt-0.5">
+                                            Gred ${escapeHtml(data.reviewGrade)}
+                                            ${data.reviewMark !== null && data.reviewMark !== undefined ? ` • ${escapeHtml(data.reviewMark)}/100` : ''}
+                                        </div>
+                                    </div>
+                                    <i class="fa-solid fa-circle-check text-sky-500"></i>
+                                </div>
+                                ${data.reviewComment ? `<div class="text-[10px] text-slate-600 dark:text-slate-300 mt-2">${escapeHtml(data.reviewComment)}</div>` : ''}
+                            `;
+                        } else {
+                            reviewInfo.className = 'mt-3 rounded-2xl bg-slate-100 dark:bg-slate-800 p-3';
+                            reviewInfo.innerHTML = '<div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Penilaian Pentadbir</div><div class="text-xs text-slate-500 mt-1">Belum dinilai.</div>';
+                        }
+                    }
+
                     statusCard.classList.add('border-emerald-200', 'dark:border-emerald-900/50');
 
                     openBtn.classList.remove('hidden');
@@ -2929,6 +3113,11 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     badge.className = 'mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-extrabold';
                     badge.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Belum Hantar';
                     submittedAt.textContent = 'Belum ada penghantaran minggu ini.';
+                    const reviewInfo = document.getElementById('erphReviewInfo');
+                    if (reviewInfo) {
+                        reviewInfo.className = 'mt-3 rounded-2xl bg-slate-100 dark:bg-slate-800 p-3';
+                        reviewInfo.innerHTML = '<div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Penilaian Pentadbir</div><div class="text-xs text-slate-500 mt-1">Belum dinilai.</div>';
+                    }
                     statusCard.classList.remove('border-emerald-200', 'dark:border-emerald-900/50');
                     openBtn.classList.add('hidden');
                     openBtn.dataset.url = '';
@@ -3014,7 +3203,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
         async function loadErphAdminSummary() {
             const teacher = window.currentTeacher;
-            if (!teacher || teacher.role !== 'admin') return;
+            if (!teacher || !['admin', 'pentadbir'].includes(teacher.role)) return;
 
             const list = document.getElementById('erphAdminList');
             const stats = document.getElementById('erphAdminStats');
@@ -3025,7 +3214,11 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             try {
                 const week = getErphWeekInfo();
                 const adminWeekCode = document.getElementById('erphAdminWeekCode');
+                const reviewWeekCode = document.getElementById('reviewWeekCode');
+
                 if (adminWeekCode) adminWeekCode.textContent = week.isHoliday ? 'CUTI' : week.code;
+                if (reviewWeekCode) reviewWeekCode.textContent = week.isHoliday ? 'CUTI' : week.code;
+
                 const teachersSnap = await getDocs(collection(db, TEACHERS));
                 const submissionsSnap = await getDocs(collection(db, ERPH_SUBMISSIONS));
 
@@ -3033,63 +3226,247 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 submissionsSnap.docs.forEach(d => {
                     const data = d.data();
                     if (data.weekKey === week.key && data.email) {
-                        submissions[String(data.email).toLowerCase()] = data;
+                        submissions[String(data.email).toLowerCase()] = { id: d.id, ...data };
                     }
                 });
 
                 const teachers = teachersSnap.docs
                     .map(d => ({ id: d.id, ...d.data() }))
-                    .filter(t => t.active !== false)
+                    .filter(t => t.active !== false && t.role === 'teacher')
                     .sort((a, b) =>
                         String(a.displayName || a.email || a.id)
                             .localeCompare(String(b.displayName || b.email || b.id))
                     );
 
                 const submitted = teachers.filter(t => submissions[String(t.email || t.id).toLowerCase()]);
-                const pending = teachers.length - submitted.length;
+                const reviewed = submitted.filter(t => {
+                    const s = submissions[String(t.email || t.id).toLowerCase()];
+                    return !!s.reviewGrade;
+                });
+                const pendingReview = submitted.length - reviewed.length;
 
                 stats.innerHTML = `
                     <div class="rounded-2xl bg-emerald-500/10 border border-emerald-500/10 p-3 text-center">
                         <div class="text-lg font-heading font-extrabold text-emerald-600">${submitted.length}</div>
                         <div class="text-[9px] text-slate-500 font-bold">DAH HANTAR</div>
                     </div>
-                    <div class="rounded-2xl bg-amber-500/10 border border-amber-500/10 p-3 text-center">
-                        <div class="text-lg font-heading font-extrabold text-amber-600">${pending}</div>
-                        <div class="text-[9px] text-slate-500 font-bold">BELUM</div>
-                    </div>
                     <div class="rounded-2xl bg-sky-500/10 border border-sky-500/10 p-3 text-center">
-                        <div class="text-lg font-heading font-extrabold text-sky-600">${teachers.length}</div>
-                        <div class="text-[9px] text-slate-500 font-bold">AKTIF</div>
+                        <div class="text-lg font-heading font-extrabold text-sky-600">${reviewed.length}</div>
+                        <div class="text-[9px] text-slate-500 font-bold">DAH DINILAI</div>
+                    </div>
+                    <div class="rounded-2xl bg-amber-500/10 border border-amber-500/10 p-3 text-center">
+                        <div class="text-lg font-heading font-extrabold text-amber-600">${pendingReview}</div>
+                        <div class="text-[9px] text-slate-500 font-bold">BELUM DINILAI</div>
                     </div>
                 `;
 
                 if (!teachers.length) {
                     list.innerHTML = '<div class="text-xs text-slate-400 text-center py-4">Tiada guru aktif.</div>';
-                    return;
+                } else {
+                    list.innerHTML = teachers.map(t => {
+                        const email = String(t.email || t.id).toLowerCase();
+                        const sub = submissions[email];
+                        const name = escapeHtml(t.displayName || email.split('@')[0]);
+
+                        if (!sub) {
+                            return `
+                                <div class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-3">
+                                    <div class="min-w-0">
+                                        <div class="text-xs font-bold text-slate-800 dark:text-white truncate">${name}</div>
+                                        <div class="text-[9px] text-slate-400 truncate">${escapeHtml(email)}</div>
+                                    </div>
+                                    <span class="shrink-0 px-2.5 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 text-[9px] font-extrabold">
+                                        <i class="fa-solid fa-clock mr-1"></i>Belum Hantar
+                                    </span>
+                                </div>
+                            `;
+                        }
+
+                        const grade = sub.reviewGrade || '';
+                        const mark = sub.reviewMark !== undefined && sub.reviewMark !== null ? sub.reviewMark : '';
+                        const reviewedLabel = grade
+                            ? `<span class="px-2 py-1 rounded-lg bg-sky-500/10 text-sky-600 text-[9px] font-extrabold">Gred ${escapeHtml(grade)}${mark !== '' ? ` • ${escapeHtml(mark)}/100` : ''}</span>`
+                            : `<span class="px-2 py-1 rounded-lg bg-amber-500/10 text-amber-600 text-[9px] font-extrabold">Belum Dinilai</span>`;
+
+                        return `
+                            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 p-3">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <div class="text-xs font-bold text-slate-800 dark:text-white truncate">${name}</div>
+                                        <div class="text-[9px] text-slate-400 truncate">${escapeHtml(email)}</div>
+                                    </div>
+                                    ${reviewedLabel}
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2 mt-3">
+                                    <button type="button"
+                                            onclick="window.open('${escapeHtml(sub.sheetUrl)}','_blank','noopener,noreferrer')"
+                                            class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[9px] font-extrabold">
+                                        <i class="fa-solid fa-table mr-1"></i>Buka RPH
+                                    </button>
+                                    <button type="button"
+                                            onclick="openErphGradeModal(${JSON.stringify(sub).replace(/"/g, '&quot;')})"
+                                            class="px-3 py-2 rounded-xl bg-emerald-600 text-white text-[9px] font-extrabold">
+                                        <i class="fa-solid fa-pen-to-square mr-1"></i>${grade ? 'Kemaskini Penilaian' : 'Semak RPH'}
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
                 }
 
-                list.innerHTML = teachers.map(t => {
-                    const email = String(t.email || t.id).toLowerCase();
-                    const sub = submissions[email];
-                    const name = escapeHtml(t.displayName || email.split('@')[0]);
+                // Render the dedicated fullscreen reviewer page as well.
+                const reviewerList = document.getElementById('reviewerList');
+                if (reviewerList) {
+                    reviewerList.innerHTML = list.innerHTML;
+                }
 
-                    return `
-                        <div class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-3">
-                            <div class="min-w-0">
-                                <div class="text-xs font-bold text-slate-800 dark:text-white truncate">${name}</div>
-                                <div class="text-[9px] text-slate-400 truncate">${escapeHtml(email)}</div>
-                            </div>
-                            ${sub
-                                ? `<button onclick="window.open('${escapeHtml(sub.sheetUrl)}','_blank','noopener,noreferrer')" class="shrink-0 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-extrabold"><i class="fa-solid fa-circle-check mr-1"></i>Dah Hantar</button>`
-                                : `<span class="shrink-0 px-2.5 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-extrabold"><i class="fa-solid fa-clock mr-1"></i>Belum</span>`
-                            }
-                        </div>
-                    `;
-                }).join('');
+                const statSubmitted = document.getElementById('reviewStatSubmitted');
+                const statReviewed = document.getElementById('reviewStatReviewed');
+                const statPending = document.getElementById('reviewStatPending');
+                if (statSubmitted) statSubmitted.querySelector('div').textContent = submitted.length;
+                if (statReviewed) statReviewed.querySelector('div').textContent = reviewed.length;
+                if (statPending) statPending.querySelector('div').textContent = pendingReview;
 
             } catch (e) {
                 console.error('Gagal memuatkan pemantauan eRPH:', e);
                 list.innerHTML = '<div class="text-xs text-rose-500 text-center py-4">Gagal memuatkan data. Semak Firestore Rules.</div>';
+                const reviewerList = document.getElementById('reviewerList');
+                if (reviewerList) reviewerList.innerHTML = list.innerHTML;
+            }
+        }
+
+        function openErphReviewer() {
+            const teacher = window.currentTeacher;
+            if (!teacher || !['admin', 'pentadbir'].includes(teacher.role)) {
+                openTeacherLoginModal();
+                return;
+            }
+
+            const modal = document.getElementById('erphReviewModal');
+            if (!modal) return;
+
+            modal.classList.remove('hidden');
+            document.body.classList.add('erph-viewer-open');
+            loadErphAdminSummary();
+        }
+
+        function closeErphReviewer() {
+            const modal = document.getElementById('erphReviewModal');
+            if (modal) modal.classList.add('hidden');
+            document.body.classList.remove('erph-viewer-open');
+        }
+
+        let activeErphReview = null;
+
+        function openErphGradeModal(submission) {
+            const teacher = window.currentTeacher;
+            if (!teacher || !['admin', 'pentadbir'].includes(teacher.role)) {
+                showToast('Akses Pentadbir diperlukan.', 'info');
+                return;
+            }
+
+            activeErphReview = submission;
+
+            document.getElementById('gradeTeacherName').textContent =
+                submission.displayName || submission.email || 'Guru';
+
+            document.getElementById('gradeTeacherEmail').textContent =
+                submission.email || '';
+
+            const linkBtn = document.getElementById('gradeOpenSheetBtn');
+            linkBtn.href = submission.sheetUrl || '#';
+
+            document.getElementById('gradeWeekBadge').textContent =
+                submission.weekCode || submission.weekKey || 'Minggu';
+
+            document.getElementById('erphGradeSelect').value =
+                submission.reviewGrade || '';
+
+            document.getElementById('erphMarkInput').value =
+                submission.reviewMark ?? '';
+
+            document.getElementById('erphReviewComment').value =
+                submission.reviewComment || '';
+
+            const modal = document.getElementById('erphGradeModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeErphGradeModal() {
+            const modal = document.getElementById('erphGradeModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+            activeErphReview = null;
+        }
+
+        async function saveErphReview() {
+            const teacher = window.currentTeacher;
+            if (!teacher || !['admin', 'pentadbir'].includes(teacher.role)) {
+                showToast('Akses Pentadbir diperlukan.', 'info');
+                return;
+            }
+
+            if (!activeErphReview?.id) {
+                showToast('Rekod eRPH tidak ditemui.', 'info');
+                return;
+            }
+
+            const grade = document.getElementById('erphGradeSelect').value;
+            const markRaw = document.getElementById('erphMarkInput').value.trim();
+            const comment = document.getElementById('erphReviewComment').value.trim();
+
+            let mark = null;
+            if (markRaw !== '') {
+                mark = Number(markRaw);
+                if (!Number.isFinite(mark) || mark < 0 || mark > 100) {
+                    showToast('Markah mesti antara 0 hingga 100.', 'info');
+                    return;
+                }
+            }
+
+            if (!grade && mark !== null) {
+                showToast('Sila pilih gred terlebih dahulu.', 'info');
+                return;
+            }
+
+            const btn = document.getElementById('saveErphReviewBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Menyimpan...';
+
+            try {
+                await setDoc(
+                    doc(db, ERPH_SUBMISSIONS, activeErphReview.id),
+                    {
+                        reviewGrade: grade || null,
+                        reviewMark: mark,
+                        reviewComment: comment || '',
+                        reviewStatus: grade ? 'dinilai' : 'belum_dinilai',
+                        reviewedBy: teacher.email,
+                        reviewedByName: teacher.displayName || 'Pentadbir',
+                        reviewedAt: serverTimestamp()
+                    },
+                    { merge: true }
+                );
+
+                showToast(
+                    grade
+                        ? `Penilaian ${grade}${mark !== null ? ` (${mark}/100)` : ''} berjaya disimpan.`
+                        : 'Penilaian dikosongkan.',
+                    'success'
+                );
+
+                closeErphGradeModal();
+                await loadErphAdminSummary();
+
+            } catch (e) {
+                console.error('Gagal menyimpan penilaian eRPH:', e);
+                showToast('Gagal menyimpan penilaian. Semak Firestore Rules.', 'info');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1.5"></i>Simpan Penilaian';
             }
         }
 
@@ -3098,6 +3475,11 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         window.submitErphWeekly = submitErphWeekly;
         window.openSubmittedErphLink = openSubmittedErphLink;
         window.loadErphAdminSummary = loadErphAdminSummary;
+        window.openErphReviewer = openErphReviewer;
+        window.closeErphReviewer = closeErphReviewer;
+        window.openErphGradeModal = openErphGradeModal;
+        window.closeErphGradeModal = closeErphGradeModal;
+        window.saveErphReview = saveErphReview;
 
 
         // ESC = kembali daripada fullscreen tool.
@@ -3115,6 +3497,18 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     closeHtmlModal();
                     return;
                 }
+                const gradeViewer = document.getElementById('erphGradeModal');
+                if (gradeViewer && !gradeViewer.classList.contains('hidden')) {
+                    closeErphGradeModal();
+                    return;
+                }
+
+                const reviewerViewer = document.getElementById('erphReviewModal');
+                if (reviewerViewer && !reviewerViewer.classList.contains('hidden')) {
+                    closeErphReviewer();
+                    return;
+                }
+
                 const erphViewer = document.getElementById('erphModal');
                 if (erphViewer && !erphViewer.classList.contains('hidden')) {
                     closeErphModal();
