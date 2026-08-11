@@ -1115,10 +1115,11 @@
             }
         ];
 
+        window.ERPH_TOOL = ERPH_TOOL;
         window.INITIAL_TOOLS = INITIAL_TOOLS;
 
         // State Variables
-        let tools = [];
+        let tools = Array.isArray(INITIAL_TOOLS) ? [...INITIAL_TOOLS] : [];
         let currentCategory = 'ALL';
         let searchQuery = '';
         let favorites = [];
@@ -1293,7 +1294,7 @@
             const emptyState = document.getElementById('emptyState');
             grid.innerHTML = '';
 
-            let filtered = tools.filter(t => {
+            let filtered = tools.filter(t => t && typeof t === 'object').filter(t => {
                 // Category Filter
                 if (currentCategory === 'FAV') {
                     if (!favorites.includes(t.id)) return false;
@@ -1826,17 +1827,32 @@
                 const snap = await getDocs(collection(db, TOOLS));
 
                 if (snap.empty) {
-                    // Jika admin pertama kali masuk, seed tool asal sekali sahaja.
+                    // Firestore mungkin masih kosong untuk pemasangan baharu.
+                    // Paparkan katalog terbina dalam kepada SEMUA pengguna,
+                    // bukan hanya ERPH dan bukan hanya Admin.
                     if (window.currentTeacher && window.currentTeacher.role === 'admin' && Array.isArray(INITIAL_TOOLS)) {
                         await seedInitialTools();
                         return loadToolsFromFirebase();
                     }
 
-                    window.setToolsFromFirebase([ERPH_TOOL]);
+                    const fallbackCatalogue = Array.isArray(INITIAL_TOOLS) && INITIAL_TOOLS.length
+                        ? INITIAL_TOOLS
+                        : (ERPH_TOOL ? [ERPH_TOOL] : []);
+
+                    window.setToolsFromFirebase(fallbackCatalogue);
                     return;
                 }
 
-                const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const loaded = snap.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .filter(t => t && t.id && t.title);
+
+                // Jika koleksi wujud tetapi kosong/rosak, jangan biarkan katalog kosong.
+                if (!loaded.length) {
+                    window.setToolsFromFirebase(INITIAL_TOOLS);
+                    return;
+                }
+
                 loaded.sort((a, b) => {
                     const ao = Number.isFinite(a.order) ? a.order : 9999;
                     const bo = Number.isFinite(b.order) ? b.order : 9999;
@@ -1845,7 +1861,7 @@
 
                 // eRPH ialah tool terbina dalam. Pastikan ia terus kelihatan
                 // walaupun Admin belum membuka app selepas versi baharu dipasang.
-                if (!loaded.some(t => t.id === ERPH_TOOL.id)) {
+                if (ERPH_TOOL && !loaded.some(t => t.id === ERPH_TOOL.id)) {
                     loaded.push(ERPH_TOOL);
                 }
 
@@ -1878,7 +1894,7 @@
                 // Admin tetap menggunakan Firestore.
                 const fallbackTools = Array.isArray(INITIAL_TOOLS) && INITIAL_TOOLS.length
                     ? INITIAL_TOOLS
-                    : [ERPH_TOOL];
+                    : (ERPH_TOOL ? [ERPH_TOOL] : []);
 
                 window.setToolsFromFirebase(fallbackTools);
                 showToast('Firebase belum memuatkan katalog. Memaparkan tool asal.', 'info');
