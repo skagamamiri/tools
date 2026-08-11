@@ -2658,23 +2658,6 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         // eRPH MINGGUAN
         // ============================================================
 
-        function getMalaysiaDateParts() {
-            const parts = new Intl.DateTimeFormat('en-CA', {
-                timeZone: 'Asia/Kuala_Lumpur',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            }).formatToParts(new Date());
-
-            const map = {};
-            parts.forEach(p => { if (p.type !== 'literal') map[p.type] = p.value; });
-
-            return {
-                year: Number(map.year),
-                month: Number(map.month),
-                day: Number(map.day)
-            };
-        }
 
         // ============================================================
         // KALENDAR eRPH SEKOLAH 2026
