@@ -1759,6 +1759,10 @@
             getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
+        // Shared data from the main script.
+        const ERPH_TOOL = window.ERPH_TOOL;
+        const INITIAL_TOOLS = window.INITIAL_TOOLS || [];
+
         const firebaseConfig = {
             apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE",
             authDomain: "skamis-hubtool.firebaseapp.com",
@@ -1823,7 +1827,7 @@
 
                 if (snap.empty) {
                     // Jika admin pertama kali masuk, seed tool asal sekali sahaja.
-                    if (window.currentTeacher && window.currentTeacher.role === 'admin' && Array.isArray(window.INITIAL_TOOLS)) {
+                    if (window.currentTeacher && window.currentTeacher.role === 'admin' && Array.isArray(INITIAL_TOOLS)) {
                         await seedInitialTools();
                         return loadToolsFromFirebase();
                     }
@@ -1868,7 +1872,16 @@
                 window.setToolsFromFirebase(loaded);
             } catch (err) {
                 console.error('Gagal memuatkan tools dari Firestore:', err);
-                showToast('Gagal memuatkan tool dari Firebase. Semak Firestore Rules.', 'info');
+
+                // Fallback: jangan biarkan halaman utama kosong jika Firestore
+                // gagal/terlambat. Tool asal masih boleh dipaparkan; operasi
+                // Admin tetap menggunakan Firestore.
+                const fallbackTools = Array.isArray(INITIAL_TOOLS) && INITIAL_TOOLS.length
+                    ? INITIAL_TOOLS
+                    : [ERPH_TOOL];
+
+                window.setToolsFromFirebase(fallbackTools);
+                showToast('Firebase belum memuatkan katalog. Memaparkan tool asal.', 'info');
             }
         }
 
