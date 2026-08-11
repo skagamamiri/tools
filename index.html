@@ -265,6 +265,56 @@
             border: 1px solid rgba(148,163,184,.18);
         }
 
+    
+        /* =========================================================
+           BOTTOM NAV — ACTIVE STATE FIX
+           Active tab uses icon/text + top indicator only.
+           No green background.
+           ========================================================= */
+        .bottom-nav-item {
+            position: relative;
+            background: transparent !important;
+            border-radius: 0 !important;
+            transition: color .2s ease, transform .2s ease;
+        }
+
+        .bottom-nav-item::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 22%;
+            right: 22%;
+            height: 3px;
+            border-radius: 0 0 999px 999px;
+            background: transparent;
+            transition: all .2s ease;
+        }
+
+        .bottom-nav-item.active,
+        .bottom-nav-item[aria-current="page"] {
+            background: transparent !important;
+            color: #16a34a !important;
+            box-shadow: none !important;
+        }
+
+        .bottom-nav-item.active::before,
+        .bottom-nav-item[aria-current="page"]::before {
+            background: #16a34a;
+        }
+
+        .bottom-nav-item.active i,
+        .bottom-nav-item[aria-current="page"] i {
+            color: #16a34a !important;
+        }
+
+        .bottom-nav-item:hover {
+            background: rgba(22,163,74,.045) !important;
+        }
+
+        .bottom-nav-item:active {
+            transform: scale(.97);
+        }
+
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between pb-20 md:pb-6">
