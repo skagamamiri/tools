@@ -563,7 +563,7 @@
                     <div class="flex items-center justify-between gap-3 mb-3">
                         <div>
                             <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Admin</div>
-                            <h4 class="font-heading font-extrabold text-sm text-slate-800 dark:text-white">Pemantauan eRPH Minggu Ini</h4>
+                            <h4 class="font-heading font-extrabold text-sm text-slate-800 dark:text-white">Pemantauan eRPH <span id="erphAdminWeekCode">Minggu Ini</span></h4>
                         </div>
                         <button onclick="loadErphAdminSummary()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300">
                             <i class="fa-solid fa-rotate-right mr-1"></i>Semak
@@ -2495,34 +2495,178 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             };
         }
 
+        // ============================================================
+        // KALENDAR eRPH SEKOLAH 2026
+        // Mengikut jadual yang diberikan oleh sekolah.
+        // CUTI tidak dianggap minggu eRPH.
+        // ============================================================
+
+        const ERPH_SCHOOL_WEEKS = [
+            { date: '2026-01-11', code: 'M01' },
+            { date: '2026-01-18', code: 'M02' },
+            { date: '2026-01-25', code: 'M03' },
+            { date: '2026-02-01', code: 'M04' },
+            { date: '2026-02-08', code: 'M05' },
+            { date: '2026-02-15', code: 'M06' },
+            { date: '2026-02-22', code: 'M07' },
+            { date: '2026-03-01', code: 'M08' },
+            { date: '2026-03-08', code: 'M09' },
+            { date: '2026-03-15', code: 'M10' },
+            { date: '2026-03-29', code: 'M11' },
+            { date: '2026-04-05', code: 'M12' },
+            { date: '2026-04-12', code: 'M13' },
+            { date: '2026-04-19', code: 'M14' },
+            { date: '2026-04-26', code: 'M15' },
+            { date: '2026-05-03', code: 'M16' },
+            { date: '2026-05-10', code: 'M17' },
+            { date: '2026-05-17', code: 'M18' },
+            { date: '2026-06-07', code: 'M19' },
+            { date: '2026-06-14', code: 'M20' },
+            { date: '2026-06-21', code: 'M21' },
+            { date: '2026-06-28', code: 'M22' },
+            { date: '2026-07-05', code: 'M23' },
+            { date: '2026-07-12', code: 'M24' },
+            { date: '2026-07-19', code: 'M25' },
+            { date: '2026-07-26', code: 'M26' },
+            { date: '2026-08-02', code: 'M27' },
+            { date: '2026-08-09', code: 'M28' },
+            { date: '2026-08-16', code: 'M29' },
+            { date: '2026-08-23', code: 'M30' },
+            { date: '2026-09-06', code: 'M31' },
+            { date: '2026-09-13', code: 'M32' },
+            { date: '2026-09-20', code: 'M33' },
+            { date: '2026-09-27', code: 'M34' },
+            { date: '2026-10-04', code: 'M35' },
+            { date: '2026-10-11', code: 'M36' },
+            { date: '2026-10-18', code: 'M37' },
+            { date: '2026-10-25', code: 'M38' },
+            { date: '2026-11-01', code: 'M39' },
+            { date: '2026-11-08', code: 'M40' },
+            { date: '2026-11-15', code: 'M41' },
+            { date: '2026-11-22', code: 'M42' },
+            { date: '2026-11-29', code: 'M43' }
+        ];
+
+        const ERPH_CUTI_DATES = [
+            '2026-01-01',
+            '2026-03-22',
+            '2026-05-24',
+            '2026-08-30',
+            '2026-12-06'
+        ];
+
+        function getMalaysiaDateParts() {
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Kuala_Lumpur',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).formatToParts(new Date());
+
+            const map = {};
+            parts.forEach(p => {
+                if (p.type !== 'literal') map[p.type] = p.value;
+            });
+
+            return {
+                year: Number(map.year),
+                month: Number(map.month),
+                day: Number(map.day)
+            };
+        }
+
+        function toSchoolDateKey(date) {
+            const y = date.getUTCFullYear();
+            const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const d = String(date.getUTCDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
         function getErphWeekInfo() {
-            const p = getMalaysiaDateParts();
-            const date = new Date(Date.UTC(p.year, p.month - 1, p.day));
-            const day = date.getUTCDay(); // 0 Sun
-            const diffToMonday = day === 0 ? -6 : 1 - day;
+            const todayParts = getMalaysiaDateParts();
+            const today = new Date(Date.UTC(
+                todayParts.year,
+                todayParts.month - 1,
+                todayParts.day
+            ));
 
-            const monday = new Date(date);
-            monday.setUTCDate(date.getUTCDate() + diffToMonday);
+            const todayKey = toSchoolDateKey(today);
 
-            const sunday = new Date(monday);
-            sunday.setUTCDate(monday.getUTCDate() + 6);
+            // Jika hari ini ialah CUTI, paparkan cuti dan jangan
+            // anggap ia sebagai minggu eRPH.
+            if (ERPH_CUTI_DATES.includes(todayKey)) {
+                return {
+                    key: `CUTI-${todayKey}`,
+                    code: 'CUTI',
+                    isHoliday: true,
+                    startKey: todayKey,
+                    endKey: todayKey,
+                    label: 'Cuti',
+                    range: new Intl.DateTimeFormat('ms-MY', {
+                        timeZone: 'Asia/Kuala_Lumpur',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    }).format(today)
+                };
+            }
 
-            const pad = n => String(n).padStart(2, '0');
-            const weekKey = `${monday.getUTCFullYear()}-${pad(monday.getUTCMonth() + 1)}-${pad(monday.getUTCDate())}`;
+            // Cari minggu sekolah terakhir yang tarikh mulanya
+            // tidak melebihi tarikh hari ini.
+            let current = null;
+
+            for (const week of ERPH_SCHOOL_WEEKS) {
+                if (week.date <= todayKey) {
+                    current = week;
+                } else {
+                    break;
+                }
+            }
+
+            if (!current) {
+                return {
+                    key: 'SEBELUM-M01',
+                    code: 'BELUM-MULA',
+                    isHoliday: false,
+                    startKey: todayKey,
+                    endKey: todayKey,
+                    label: 'Sebelum M01',
+                    range: 'Tiada minggu eRPH aktif'
+                };
+            }
+
+            const start = new Date(`${current.date}T00:00:00Z`);
+
+            // Minggu sekolah berlangsung sehingga hari sebelum
+            // tarikh minggu sekolah berikutnya. Jika minggu terakhir,
+            // gunakan 6 hari selepas tarikh mula.
+            const index = ERPH_SCHOOL_WEEKS.findIndex(w => w.code === current.code);
+            const next = ERPH_SCHOOL_WEEKS[index + 1];
+
+            let end;
+            if (next) {
+                end = new Date(`${next.date}T00:00:00Z`);
+                end.setUTCDate(end.getUTCDate() - 1);
+            } else {
+                end = new Date(start);
+                end.setUTCDate(end.getUTCDate() + 6);
+            }
 
             const fmt = d => new Intl.DateTimeFormat('ms-MY', {
                 timeZone: 'Asia/Kuala_Lumpur',
                 day: 'numeric',
-                month: 'long',
+                month: 'short',
                 year: 'numeric'
             }).format(d);
 
             return {
-                key: weekKey,
-                monday,
-                sunday,
-                label: `Minggu bermula ${fmt(monday)}`,
-                range: `${fmt(monday)} – ${fmt(sunday)}`
+                key: current.code,
+                code: current.code,
+                isHoliday: false,
+                startKey: current.date,
+                endKey: toSchoolDateKey(end),
+                label: current.code,
+                range: `${fmt(start)} – ${fmt(end)}`
             };
         }
 
@@ -2560,7 +2704,8 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             window.scrollTo(0, 0);
 
             const info = getErphWeekInfo();
-            document.getElementById('erphWeekLabel').textContent = info.label;
+            document.getElementById('erphWeekLabel').textContent =
+                info.isHoliday ? 'CUTI' : `Minggu ${info.code}`;
             document.getElementById('erphWeekRange').textContent = info.range;
 
             const adminPanel = document.getElementById('erphAdminPanel');
@@ -2648,6 +2793,12 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             }
 
             const info = getErphWeekInfo();
+
+            if (info.isHoliday) {
+                showToast('Tiada penghantaran eRPH pada minggu cuti.', 'info');
+                return;
+            }
+
             const id = getErphSubmissionId(teacher.email, info.key);
             const ref = doc(db, ERPH_SUBMISSIONS, id);
 
@@ -2663,7 +2814,9 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     displayName: teacher.displayName || 'Guru',
                     sheetUrl: url,
                     weekKey: info.key,
-                    weekStart: info.key,
+                    weekCode: info.code,
+                    weekStart: info.startKey,
+                    weekEnd: info.endKey,
                     updatedAt: serverTimestamp(),
                     submittedAt: existing.exists() ? (existing.data().submittedAt || serverTimestamp()) : serverTimestamp()
                 }, { merge: true });
@@ -2707,6 +2860,8 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
             try {
                 const week = getErphWeekInfo();
+                const adminWeekCode = document.getElementById('erphAdminWeekCode');
+                if (adminWeekCode) adminWeekCode.textContent = week.isHoliday ? 'CUTI' : week.code;
                 const teachersSnap = await getDocs(collection(db, TEACHERS));
                 const submissionsSnap = await getDocs(collection(db, ERPH_SUBMISSIONS));
 
