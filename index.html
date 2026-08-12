@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="ms" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
@@ -1242,7 +1242,7 @@
                                     Penyemak
                                 </label>
                                 <select id="assignmentReviewerSelect"
-                                        onchange="renderAssignmentTeachers()"
+                                        onchange="window.renderAssignmentTeachers()"
                                         class="relative z-30 w-full px-3 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
                                     <option value="Sapri bin Paee">Sapri bin Paee</option>
                                     <option value="Fauzia binti Etayi Kandi Hassan">Fauzia binti Etayi Kandi Hassan</option>
@@ -1993,6 +1993,8 @@
                 loadReviewerAssignments();
             }
         }
+
+        window.switchAdminTab = switchAdminTab;
 
         function toggleTypeInput() {
             const type = document.getElementById('toolType').value;
@@ -3617,18 +3619,18 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             // reviewAssignments belum mempunyai rekod atau bacaan gagal.
             populateAssignmentReviewerSelect();
 
-            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
+            const role = String(window.currentTeacher?.role || '').trim().toLowerCase();
+            if (role !== 'admin') {
                 list.innerHTML = '<div class="text-xs text-rose-400 text-center py-6">Akses Admin diperlukan.</div>';
                 return;
             }
 
-            list.innerHTML = '<div class="text-xs text-slate-400 text-center py-8"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Memuatkan guru dan pembahagian...</div>';
+            list.innerHTML = '<div class="text-xs text-slate-400 text-center py-8"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Memuatkan senarai guru...</div>';
 
             try {
-                const [teachersSnap, assignmentsSnap] = await Promise.all([
-                    getDocs(collection(db, TEACHERS)),
-                    getDocs(collection(db, REVIEW_ASSIGNMENTS))
-                ]);
+                // Baca teachers secara BERASINGAN. Jika reviewAssignments gagal,
+                // senarai guru tetap mesti dipaparkan.
+                const teachersSnap = await getDocs(collection(db, TEACHERS));
 
                 reviewerTeachers = teachersSnap.docs
                     .map(d => ({ id: d.id, ...d.data() }))
@@ -3638,29 +3640,33 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                             .localeCompare(String(b.displayName || b.email || b.id))
                     );
 
-                reviewerProfiles = teachersSnap.docs
-                    .map(d => ({ id: d.id, ...d.data() }))
-                    .filter(t => t.active !== false);
+                reviewerProfiles = reviewerTeachers.slice();
+                reviewerAssignments = [];
 
-                reviewerAssignments = assignmentsSnap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                // Cuba baca assignment secara berasingan. Kegagalan di sini
+                // tidak boleh menghilangkan senarai guru.
+                try {
+                    const assignmentsSnap = await getDocs(collection(db, REVIEW_ASSIGNMENTS));
+                    reviewerAssignments = assignmentsSnap.docs.map(d => ({
+                        id: d.id,
+                        ...d.data()
+                    }));
+                } catch (assignmentError) {
+                    console.warn('reviewAssignments tidak dapat dibaca. Senarai guru tetap dipaparkan:', assignmentError);
+                }
 
-                // Pastikan pilihan penyemak kekal selepas data Firestore selesai dimuat.
                 populateAssignmentReviewerSelect();
                 renderAssignmentTeachers();
 
             } catch (e) {
-                console.error('Gagal memuatkan pembahagian penyemak:', e);
+                console.error('Gagal memuatkan senarai guru:', e);
                 list.innerHTML = `
                     <div class="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-5 text-center">
                         <div class="text-rose-300 font-extrabold text-sm mb-1">
-                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>Gagal memuatkan data
+                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>Gagal memuatkan senarai guru
                         </div>
                         <div class="text-[10px] text-slate-300 leading-relaxed">
-                            Semak Firestore Rules untuk <code class="text-emerald-300">teachers</code> dan
-                            <code class="text-emerald-300">reviewAssignments</code>.
+                            Semak Firestore Rules untuk <code class="text-emerald-300">teachers</code>.
                         </div>
                         <div class="text-[9px] text-rose-200/80 mt-2 break-words">${escapeHtml(e.message)}</div>
                     </div>`;
@@ -3720,6 +3726,11 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 cb.addEventListener('change', updateAssignmentCount);
             });
         }
+
+        // Pastikan fungsi boleh dipanggil oleh onclick/onchange dalam HTML
+        // walaupun kod ini berada dalam scope module.
+        window.loadReviewerAssignments = loadReviewerAssignments;
+        window.renderAssignmentTeachers = renderAssignmentTeachers;
 
         function updateAssignmentCount() {
             const count = document.getElementById('assignmentSelectedCount');
