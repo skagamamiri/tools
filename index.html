@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="ms" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
@@ -3536,11 +3536,32 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             );
         }
 
+        function populateAssignmentReviewerSelect() {
+            const select = document.getElementById('assignmentReviewerSelect');
+            if (!select) return;
+
+            const previous = select.value;
+            select.innerHTML = ERPH_REVIEWER_NAMES.map(name =>
+                `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
+            ).join('');
+
+            if (ERPH_REVIEWER_NAMES.includes(previous)) {
+                select.value = previous;
+            } else {
+                select.value = ERPH_REVIEWER_NAMES[0] || '';
+            }
+        }
+
         async function loadReviewerAssignments() {
             const list = document.getElementById('assignmentTeacherList');
             const select = document.getElementById('assignmentReviewerSelect');
 
             if (!list || !select) return;
+
+            // Paparkan nama penyemak dahulu. Jangan tunggu Firestore.
+            // Ini memastikan dropdown tidak kosong walaupun collection
+            // reviewAssignments belum mempunyai rekod atau bacaan gagal.
+            populateAssignmentReviewerSelect();
 
             if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
                 list.innerHTML = '<div class="text-xs text-rose-400 text-center py-6">Akses Admin diperlukan.</div>';
@@ -3572,17 +3593,8 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     ...d.data()
                 }));
 
-                const previous = select.value;
-                select.innerHTML = ERPH_REVIEWER_NAMES.map(name =>
-                    `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
-                ).join('');
-
-                if (ERPH_REVIEWER_NAMES.includes(previous)) {
-                    select.value = previous;
-                } else {
-                    select.value = ERPH_REVIEWER_NAMES[0] || '';
-                }
-
+                // Pastikan pilihan penyemak kekal selepas data Firestore selesai dimuat.
+                populateAssignmentReviewerSelect();
                 renderAssignmentTeachers();
 
             } catch (e) {
