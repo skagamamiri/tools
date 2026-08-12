@@ -400,21 +400,62 @@
         /* ============================================================
            ADMIN PANEL — FULLSCREEN DENGAN LEBAR KANDUNGAN TERKAWAL
            ============================================================ */
-        #adminModal .admin-tabbar,
-        #adminModal .admin-content {
-            width: min(100%, 1180px);
-            margin-left: auto;
-            margin-right: auto;
+        /* ============================================================
+           ADMIN FRAME — SATU LEBAR UNTUK SEMUA TAB
+           ============================================================ */
+        #adminModal .admin-tabbar {
+            width: min(100%, 1180px) !important;
+            max-width: 1180px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            align-self: center !important;
+            box-sizing: border-box !important;
+            flex: 0 0 auto !important;
         }
 
         #adminModal .admin-content {
-            box-sizing: border-box;
+            width: min(100%, 1180px) !important;
+            max-width: 1180px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            align-self: center !important;
+            box-sizing: border-box !important;
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+        }
+
+        /* Semua tab menggunakan lebar dalaman yang sama */
+        #adminModal #addToolForm,
+        #adminModal #manageToolsView,
+        #adminModal #manageTeachersView,
+        #adminModal #manageAssignmentsView {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        #adminModal #manageAssignmentsView > .admin-section-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Elak grid Senarai Guru menyebabkan frame melimpah */
+        #adminModal #manageAssignmentsView .grid {
+            min-width: 0 !important;
+        }
+
+        #adminModal #manageAssignmentsView .grid > * {
+            min-width: 0 !important;
         }
 
         @media (max-width: 768px) {
             #adminModal .admin-tabbar,
             #adminModal .admin-content {
-                width: 100%;
+                width: 100% !important;
+                max-width: 100% !important;
             }
         }
 
@@ -1173,7 +1214,6 @@
                         </div>
                     </div>
 
-                </div>
 
                 <!-- PEMBAHAGIAN PENYEMAK -->
                 <div id="manageAssignmentsView" class="hidden">
@@ -1197,13 +1237,17 @@
                         </div>
 
                         <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 mt-5">
-                            <div class="rounded-2xl border border-slate-700 bg-slate-950/40 p-4">
+                            <div class="relative z-20 rounded-2xl border border-slate-700 bg-slate-950/40 p-4 overflow-visible">
                                 <label for="assignmentReviewerSelect" class="block text-[10px] uppercase tracking-wider text-slate-400 font-extrabold mb-2">
                                     Penyemak
                                 </label>
                                 <select id="assignmentReviewerSelect"
                                         onchange="renderAssignmentTeachers()"
-                                        class="w-full px-3 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                                        class="relative z-30 w-full px-3 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                                    <option value="Sapri bin Paee">Sapri bin Paee</option>
+                                    <option value="Fauzia binti Etayi Kandi Hassan">Fauzia binti Etayi Kandi Hassan</option>
+                                    <option value="Mohamad Nazimi bin Abdul Rahman">Mohamad Nazimi bin Abdul Rahman</option>
+                                    <option value="Helmi bin Tambi">Helmi bin Tambi</option>
                                 </select>
 
                                 <div class="mt-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3">
@@ -1242,7 +1286,8 @@
                     </div>
                 </div>
 
-
+                <!-- End Tab Content Body -->
+                </div>
 
             </div>
 
@@ -1583,16 +1628,6 @@
                 window.firebaseLogoutTeacher();
             }
         }
-
-        // ============================================================
-        // GLOBAL AUTH HANDLERS
-        // Penting kerana butang Login/Logout dibina semula melalui
-        // innerHTML selepas Firebase logout. Inline onclick memerlukan
-        // fungsi ini tersedia pada window.
-        // ============================================================
-        window.openTeacherLoginModal = openTeacherLoginModal;
-        window.closeTeacherLoginModal = closeTeacherLoginModal;
-        window.logoutTeacher = logoutTeacher;
 
         // Launch Tool Action (Guarded with Firebase Login Check)
         function launchTool(id) {
@@ -1955,11 +1990,7 @@
             } else if (tab === 'ASSIGNMENTS') {
                 if (btnAssignments) btnAssignments.className = 'flex-1 min-w-[180px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
                 if (viewAssignments) viewAssignments.classList.remove('hidden');
-                if (window.loadReviewerAssignments) {
-                    window.loadReviewerAssignments();
-                } else {
-                    console.error('loadReviewerAssignments belum tersedia.');
-                }
+                loadReviewerAssignments();
             }
         }
 
@@ -2400,14 +2431,10 @@
             const teacher = window.currentTeacher;
             if (!teacher) {
                 container.innerHTML = `
-                    <button id="teacherHeaderLoginBtn" type="button" onclick="openTeacherLoginModal()" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-semibold shadow-sm hover:shadow-md hover:border-brand-500 transition flex items-center space-x-2">
+                    <button onclick="openTeacherLoginModal()" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-semibold shadow-sm hover:shadow-md hover:border-brand-500 transition flex items-center space-x-2">
                         <i class="fa-brands fa-google text-red-500"></i>
                         <span class="hidden sm:inline">Login dengan Google</span>
                     </button>`;
-                const loginBtn = document.getElementById('teacherHeaderLoginBtn');
-                if (loginBtn) {
-                    loginBtn.addEventListener('click', openTeacherLoginModal);
-                }
                 return;
             }
             const photo = teacher.photoURL
@@ -3554,14 +3581,44 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             );
         }
 
+        function populateAssignmentReviewerSelect() {
+            const select = document.getElementById('assignmentReviewerSelect');
+            if (!select) return;
+
+            const previous = select.value;
+            const names = Array.isArray(ERPH_REVIEWER_NAMES) && ERPH_REVIEWER_NAMES.length
+                ? ERPH_REVIEWER_NAMES
+                : [
+                    'Sapri bin Paee',
+                    'Fauzia binti Etayi Kandi Hassan',
+                    'Mohamad Nazimi bin Abdul Rahman',
+                    'Helmi bin Tambi'
+                ];
+
+            select.innerHTML = names.map(name =>
+                `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
+            ).join('');
+
+            if (names.includes(previous)) {
+                select.value = previous;
+            } else {
+                select.value = names[0] || '';
+            }
+        }
+
         async function loadReviewerAssignments() {
             const list = document.getElementById('assignmentTeacherList');
             const select = document.getElementById('assignmentReviewerSelect');
 
             if (!list || !select) return;
 
-            if (!window.currentTeacher || !['admin', 'pentadbir'].includes(window.currentTeacher.role)) {
-                list.innerHTML = '<div class="text-xs text-rose-400 text-center py-6">Akses Admin/Pentadbir diperlukan.</div>';
+            // Paparkan nama penyemak dahulu. Jangan tunggu Firestore.
+            // Ini memastikan dropdown tidak kosong walaupun collection
+            // reviewAssignments belum mempunyai rekod atau bacaan gagal.
+            populateAssignmentReviewerSelect();
+
+            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
+                list.innerHTML = '<div class="text-xs text-rose-400 text-center py-6">Akses Admin diperlukan.</div>';
                 return;
             }
 
@@ -3590,17 +3647,8 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     ...d.data()
                 }));
 
-                const previous = select.value;
-                select.innerHTML = ERPH_REVIEWER_NAMES.map(name =>
-                    `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
-                ).join('');
-
-                if (ERPH_REVIEWER_NAMES.includes(previous)) {
-                    select.value = previous;
-                } else {
-                    select.value = ERPH_REVIEWER_NAMES[0] || '';
-                }
-
+                // Pastikan pilihan penyemak kekal selepas data Firestore selesai dimuat.
+                populateAssignmentReviewerSelect();
                 renderAssignmentTeachers();
 
             } catch (e) {
@@ -3673,15 +3721,6 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             });
         }
 
-        // ============================================================
-        // GLOBAL BRIDGE UNTUK MODUL FIREBASE
-        // Fungsi ini berada dalam <script type="module">, jadi ia tidak
-        // automatik menjadi window.*. Tab Admin menggunakan fungsi ini
-        // daripada script biasa / inline HTML.
-        // ============================================================
-        window.loadReviewerAssignments = loadReviewerAssignments;
-        window.renderAssignmentTeachers = renderAssignmentTeachers;
-
         function updateAssignmentCount() {
             const count = document.getElementById('assignmentSelectedCount');
             const selected = document.querySelectorAll('.assignment-teacher-checkbox:checked');
@@ -3696,8 +3735,8 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         };
 
         window.saveReviewerAssignments = async function() {
-            if (!window.currentTeacher || !['admin', 'pentadbir'].includes(window.currentTeacher.role)) {
-                showToast('Akses Admin/Pentadbir diperlukan.', 'info');
+            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
+                showToast('Akses Admin diperlukan.', 'info');
                 return;
             }
 
