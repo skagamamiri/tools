@@ -419,90 +419,29 @@
         }
 
 
-        /* ============================================================
-           ADMIN MOBILE — MENU DI BAWAH
-           Android / iPhone: Tambah Tool, Urus Tool, Akses Guru
-           kekal sebagai navigation bar di bahagian bawah.
-           ============================================================ */
+        /* =========================================================
+           FOOTER HUB TOOL ICT — COMPACT
+           ========================================================= */
+        .site-footer {
+            flex-shrink: 0;
+            width: 100%;
+            padding: 14px 16px 18px;
+            margin-top: 8px;
+            text-align: center;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #94a3b8;
+            border-top: 1px solid rgba(148, 163, 184, 0.18);
+        }
+        .site-footer p { margin: 0; }
+        .site-footer .footer-host {
+            margin-top: 3px;
+            font-size: 9px;
+            opacity: .8;
+        }
+        .site-footer code { font-size: 9px; }
         @media (max-width: 768px) {
-            #adminModal .admin-tabbar {
-                position: absolute;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                z-index: 80;
-                width: 100%;
-                height: 72px;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                flex-shrink: 0;
-                background: rgba(15, 23, 42, 0.98);
-                border-top: 1px solid rgba(148, 163, 184, 0.18);
-                border-bottom: 0;
-                box-shadow: 0 -8px 24px rgba(2, 8, 23, 0.20);
-                backdrop-filter: blur(14px);
-                -webkit-backdrop-filter: blur(14px);
-            }
-
-            #adminModal .admin-tabbar button {
-                flex: 1 1 0;
-                min-width: 0 !important;
-                height: 72px;
-                padding: 8px 4px 7px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 5px;
-                font-size: 10px;
-                line-height: 1.15;
-                white-space: nowrap;
-                border-bottom: 0 !important;
-                border-top: 3px solid transparent;
-                color: #94a3b8;
-            }
-
-            #adminModal .admin-tabbar button i {
-                margin: 0 !important;
-                font-size: 18px;
-            }
-
-            #adminModal .admin-tabbar button.text-brand-600,
-            #adminModal .admin-tabbar button.active {
-                color: #22c55e !important;
-                background: rgba(34, 197, 94, 0.08);
-                border-top-color: #22c55e !important;
-            }
-
-            /* Ruang bawah supaya content tidak dilindungi navigation bar. */
-            #adminModal .admin-content {
-                width: 100%;
-                padding-bottom: 96px !important;
-            }
-
-            /* Header kekal di atas dan lebih padat pada telefon. */
-            #adminModal .admin-topbar {
-                min-height: 86px;
-            }
-
-            /* Jika kandungan admin menggunakan flex-grow, pastikan ia
-               boleh scroll di antara header dan bottom navigation. */
-            #adminModal .admin-modal-shell {
-                position: relative;
-            }
-
-            /* Safe area untuk iPhone dengan home indicator. */
-            @supports (padding-bottom: env(safe-area-inset-bottom)) {
-                #adminModal .admin-tabbar {
-                    height: calc(72px + env(safe-area-inset-bottom));
-                    padding-bottom: env(safe-area-inset-bottom);
-                }
-
-                #adminModal .admin-content {
-                    padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important;
-                }
-            }
+            .site-footer { padding-bottom: 80px; }
         }
 
 </style>
@@ -974,9 +913,6 @@
                     <button id="tabBtnTeachers" onclick="switchAdminTab('TEACHERS')" class="flex-1 min-w-[140px] py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center">
                         <i class="fa-solid fa-user-shield mr-1.5 text-brand-600"></i>Akses Guru
                     </button>
-                    <button id="tabBtnAssignments" onclick="switchAdminTab('ASSIGNMENTS')" class="flex-1 min-w-[180px] py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center">
-                        <i class="fa-solid fa-users-gear mr-1.5 text-brand-600"></i>Pembahagian Penyemak
-                    </button>
                 </div>
 
                 <!-- Tab Content Body -->
@@ -1035,15 +971,7 @@
                         <!-- HTML Input Container -->
                         <div id="htmlInputContainer" class="hidden">
                             <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Kod HTML / JS Interaktif <span class="text-rose-500">*</span></label>
-                            <textarea id="toolHtmlCode" rows="6" placeholder="<!-- Masukkan HTML, CSS & JavaScript alatan di sini -->&#10;<style>body { font-family: sans-serif; text-align: center; padding: 20px; }
-        .assignment-teacher-row input:checked + span {
-            box-shadow: 0 0 0 2px rgba(16,185,129,.18);
-        }
-        @media (max-width: 700px) {
-            #tabBtnAssignments { min-width: 210px !important; }
-        }
-
-</style>&#10;<h3>Timer PdP</h3>&#10;<button onclick='alert(&quot;Mula!&quot;)'>Mula</button>" class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-900 text-emerald-400 font-mono text-xs focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+                            <textarea id="toolHtmlCode" rows="6" placeholder="<!-- Masukkan HTML, CSS & JavaScript alatan di sini -->&#10;<style>body { font-family: sans-serif; text-align: center; padding: 20px; }</style>&#10;<h3>Timer PdP</h3>&#10;<button onclick='alert(&quot;Mula!&quot;)'>Mula</button>" class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-900 text-emerald-400 font-mono text-xs focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
                             <p class="text-[10px] text-slate-400 mt-1"><i class="fa-solid fa-circle-info mr-1"></i>Kod HTML ini akan dijalankan secara selamat di dalam paparan modal web app.</p>
                         </div>
 
@@ -1085,6 +1013,7 @@
                                 </div>
                             </div>
                         </div>
+
                         <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
                             <input type="email" id="teacherEmailInput" placeholder="email Google guru" class="admin-input sm:col-span-2 w-full px-3 py-2.5 rounded-xl border text-xs focus:ring-2 focus:ring-brand-500 outline-none transition">
                             <input type="text" id="teacherNameInput" placeholder="Nama guru" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
@@ -1173,75 +1102,7 @@
                         </div>
                     </div>
 
-                <!-- PEMBAHAGIAN PENYEMAK -->
-                <div id="manageAssignmentsView" class="hidden w-full">
-                    <div class="admin-section-card rounded-3xl p-4 sm:p-5">
-                        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                            <div class="min-w-0">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="section-eyebrow !text-emerald-400">eRPH • FIRESTORE</span>
-                                    <span class="text-[9px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-300 font-bold">REVIEW ASSIGNMENTS</span>
-                                </div>
-                                <h4 class="font-heading font-extrabold text-base text-white mt-1">Pembahagian Penyemak eRPH</h4>
-                                <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                                    Tetapkan setiap guru kepada seorang penyemak. Pembahagian ini disimpan dalam
-                                    <code class="text-emerald-300">reviewAssignments</code>.
-                                </p>
-                            </div>
-                            <button onclick="loadReviewerAssignments()" type="button"
-                                    class="shrink-0 px-4 py-2.5 rounded-xl border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-800">
-                                <i class="fa-solid fa-rotate mr-1.5"></i>Muat Semula
-                            </button>
-                        </div>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 mt-5">
-                            <div class="rounded-2xl border border-slate-700 bg-slate-950/40 p-4">
-                                <label for="assignmentReviewerSelect" class="block text-[10px] uppercase tracking-wider text-slate-400 font-extrabold mb-2">
-                                    Penyemak
-                                </label>
-                                <select id="assignmentReviewerSelect"
-                                        onchange="window.renderAssignmentTeachers()"
-                                        class="w-full px-3 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
-                                </select>
-
-                                <div class="mt-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3">
-                                    <div class="text-[9px] uppercase tracking-wider text-emerald-300 font-extrabold">Jumlah guru</div>
-                                    <div id="assignmentSelectedCount" class="text-2xl font-heading font-extrabold text-white mt-1">0</div>
-                                    <div class="text-[10px] text-slate-400 mt-1">ditugaskan kepada penyemak ini</div>
-                                </div>
-                            </div>
-
-                            <div class="rounded-2xl border border-slate-700 bg-slate-950/40 overflow-hidden">
-                                <div class="px-4 py-3 border-b border-slate-700 flex items-center justify-between gap-3">
-                                    <div>
-                                        <div class="text-[9px] uppercase tracking-wider text-slate-400 font-extrabold">Senarai Guru</div>
-                                        <div class="text-[10px] text-slate-500 mt-0.5">Tick guru yang hendak disemak oleh penyemak dipilih.</div>
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button onclick="selectAllAssignmentTeachers(true)" type="button"
-                                                class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-200 text-[9px] font-bold">
-                                            Semua
-                                        </button>
-                                        <button onclick="selectAllAssignmentTeachers(false)" type="button"
-                                                class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-200 text-[9px] font-bold">
-                                            Kosong
-                                        </button>
-                                    </div>
-                                </div>
-                                <div id="assignmentTeacherList" class="max-h-[460px] overflow-y-auto p-3 space-y-2"></div>
-                                <div class="px-4 py-3 border-t border-slate-700 flex justify-end">
-                                    <button onclick="saveReviewerAssignments()" type="button"
-                                            class="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold">
-                                        <i class="fa-solid fa-floppy-disk mr-1.5"></i>Simpan Pembahagian
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
-
-
-
             </div>
 
         </div>
@@ -1304,9 +1165,9 @@
     </div>
 
     <!-- Footer -->
-    <footer class="mt-8 border-t border-slate-200 dark:border-slate-800/60 py-6 text-center text-xs text-slate-400">
+    <footer class="site-footer">
         <p>© 2026 SK Agama (MIS) Miri, Sarawak • Disediakan oleh Cg Sabri (Guru ICT)</p>
-        <p class="text-[10px] text-slate-400 mt-1">Dihoskan di <code class="text-brand-600 dark:text-brand-400 font-mono">skagamamiri.github.io/tools</code></p>
+        <p class="footer-host">Dihoskan di <code>skagamamiri.github.io/tools</code></p>
     </footer>
 
     <script>
@@ -1909,41 +1770,28 @@
 
         function switchAdminTab(tab) {
             activeAdminTab = tab;
-
             const btnAdd = document.getElementById('tabBtnAdd');
             const btnManage = document.getElementById('tabBtnManage');
             const btnTeachers = document.getElementById('tabBtnTeachers');
-            const btnAssignments = document.getElementById('tabBtnAssignments');
-
+            
             const formAdd = document.getElementById('addToolForm');
             const viewManage = document.getElementById('manageToolsView');
             const viewTeachers = document.getElementById('manageTeachersView');
-            const viewAssignments = document.getElementById('manageAssignmentsView');
 
-            [btnAdd, btnManage, btnTeachers, btnAssignments].forEach(btn => {
-                if (btn) btn.className =
-                    'flex-1 min-w-[140px] py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center';
-            });
-
-            [formAdd, viewManage, viewTeachers, viewAssignments].forEach(v => {
-                if (v) v.classList.add('hidden');
-            });
+            [btnAdd, btnManage, btnTeachers].forEach(b => b.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center');
+            [formAdd, viewManage, viewTeachers].forEach(v => v.classList.add('hidden'));
 
             if (tab === 'ADD') {
-                if (btnAdd) btnAdd.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
-                if (formAdd) formAdd.classList.remove('hidden');
+                btnAdd.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
+                formAdd.classList.remove('hidden');
             } else if (tab === 'MANAGE') {
-                if (btnManage) btnManage.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
-                if (viewManage) viewManage.classList.remove('hidden');
+                btnManage.className = 'flex-1 min-w-[120px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
+                viewManage.classList.remove('hidden');
                 renderManageToolsList();
             } else if (tab === 'TEACHERS') {
-                if (btnTeachers) btnTeachers.className = 'flex-1 min-w-[140px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
-                if (viewTeachers) viewTeachers.classList.remove('hidden');
+                btnTeachers.className = 'flex-1 min-w-[140px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
+                viewTeachers.classList.remove('hidden');
                 renderTeacherList();
-            } else if (tab === 'ASSIGNMENTS') {
-                if (btnAssignments) btnAssignments.className = 'flex-1 min-w-[180px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
-                if (viewAssignments) viewAssignments.classList.remove('hidden');
-                window.loadReviewerAssignments();
             }
         }
 
@@ -2196,16 +2044,6 @@
         provider.setCustomParameters({ prompt: 'select_account' });
 
         const TEACHERS = 'teachers';
-        const REVIEW_ASSIGNMENTS = 'reviewAssignments';
-
-        // Senarai penyemak rasmi. Email akan diambil daripada collection teachers
-        // apabila rekod penyemak wujud.
-        const REVIEWER_NAMES = [
-            'Sapri bin Paee',
-            'Fauzia binti Etayi Kandi Hassan',
-            'Mohamad Nazimi bin Abdul Rahman',
-            'Helmi bin Tambi'
-        ];
 
         // WHITELIST FIRESTORE:
         // Document ID mesti sama tepat dengan email Google pengguna.
@@ -3491,285 +3329,61 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         }
 
         // ============================================================
-        // PEMBAHAGIAN GURU MENGIKUT PENYEMAK — FIRESTORE
+        // PEMBAHAGIAN GURU MENGIKUT PENYEMAK
         // ============================================================
+        const ERPH_REVIEW_ASSIGNMENTS = {"Sapri bin Paee": ["Nur Hidayah binti Abdul Latip", "Aisya Humaira Tan", "Clement Kok Thai Wei", "Dorothy David Ibau", "Fauzia binti Etayi Kandi Hassan", "Helmi bin Tambi", "Mohamad Nazimi bin Abdul Rahman", "Mohd. Sabri bin Mura", "Sharon Ibah ak Sanggah", "Muhammad Saifullah bin Suhaimi", "Nurul Asmafiqa binti Rahman"], "Fauzia binti Etayi Kandi Hassan": ["Sapri bin Paee", "Aileen Koh Ai Ling", "Dayang Fatimah binti Awang Muhammad Daud", "Devinis Sylvin ak Simon", "Haslina Faten binti Hasbi", "Haslinda binti Arsat", "Liew Siew Mui", "Martha ak Chalie", "Aireen Natasha bin Che Buyong", "Nadzaty akmar Abdullah", "Veronica Catherine ak Nohan", "Razreena binti Amin", "Najihah binti Khairudin", "Anis Najla binti Mohamad"], "Mohamad Nazimi bin Abdul Rahman": ["Abdullah bin Mohammad", "Azwandy bin Tuah", "Dyg. Noraishikin Bt Abg. Ahmad Masuine", "Masiah binti Masaid", "Mohd Solahuddin bin Che Pa", "Ahmad Bashir bin Mohd Ibrahim", "Rozana binti Rahmat (j-QAF)", "Siti Nurfauziana binti Bakri", "Wailie bin Hamdin", "Zulhadi bin Nayan", "Rosnani binti Timbang", "Mohammad Zulsyafiq bin Mohd. Zaki", "Nur Rafeeah binti Hasbol", "Ainun Mardhiah binti Mohd Suazhar"], "Helmi bin Tambi": ["Dygku Nurhazrin binti Awgku Sanusi", "Hafizawati binti Abdul Aziz", "Mary ak Lipa", "Mohammad Amir Ashraf bin Samawi", "Norismaliza binti Ali Basah", "Sifwandi bin Othman", "Abu Suffian bin Mat", "Hanis Nabihah binti Harun", "Mohamad Amizul bin Abu Bakeri", "Mohamad Azwan bin Mohamed", "Zulhilmi bin Puasa", "Amyliazita Empang Lawai", "Mohammad Faizul bin Wili"]};
 
-        const ERPH_REVIEWER_NAMES = REVIEWER_NAMES;
-
-        let reviewerAssignments = [];
-        let reviewerTeachers = [];
-        let reviewerProfiles = [];
+        const ERPH_REVIEWER_NAMES = Object.keys(ERPH_REVIEW_ASSIGNMENTS);
 
         function normalisePersonName(name) {
             return String(name || '')
                 .trim()
-                .replace(/\s+/g, ' ')
+                .replace(/\\s+/g, ' ')
                 .toLowerCase();
         }
 
-        function reviewerEmailByName(name) {
-            const match = reviewerProfiles.find(t =>
-                normalisePersonName(t.displayName) === normalisePersonName(name)
-            );
-            return String(match?.email || match?.id || '').toLowerCase();
-        }
-
         function getAssignedTeacherNames(reviewerName) {
-            return reviewerAssignments
-                .filter(a => normalisePersonName(a.reviewerName) === normalisePersonName(reviewerName))
-                .map(a => normalisePersonName(a.teacherName));
+            return ERPH_REVIEW_ASSIGNMENTS[reviewerName] || [];
         }
 
         function teacherBelongsToReviewer(teacher, reviewerName) {
-            const assigned = reviewerAssignments.filter(a =>
-                normalisePersonName(a.reviewerName) === normalisePersonName(reviewerName)
-            );
-
-            const teacherEmail = String(teacher.email || teacher.id || '').toLowerCase();
-            const teacherName = normalisePersonName(teacher.displayName);
-
-            return assigned.some(a =>
-                String(a.teacherEmail || '').toLowerCase() === teacherEmail ||
-                normalisePersonName(a.teacherName) === teacherName
-            );
+            const assigned = getAssignedTeacherNames(reviewerName)
+                .map(normalisePersonName);
+            return assigned.includes(normalisePersonName(teacher.displayName));
         }
-
-        async function loadReviewerAssignments() {
-            const list = document.getElementById('assignmentTeacherList');
-            const select = document.getElementById('assignmentReviewerSelect');
-
-            if (!list || !select) return;
-
-            if (!window.currentTeacher || !['admin', 'pentadbir'].includes(window.currentTeacher.role)) {
-                list.innerHTML = '<div class="text-xs text-rose-400 text-center py-6">Akses Admin/Pentadbir diperlukan.</div>';
-                return;
-            }
-
-            list.innerHTML = '<div class="text-xs text-slate-400 text-center py-8"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Memuatkan guru dan pembahagian...</div>';
-
-            try {
-                const [teachersSnap, assignmentsSnap] = await Promise.all([
-                    getDocs(collection(db, TEACHERS)),
-                    getDocs(collection(db, REVIEW_ASSIGNMENTS))
-                ]);
-
-                reviewerTeachers = teachersSnap.docs
-                    .map(d => ({ id: d.id, ...d.data() }))
-                    .filter(t => t.active !== false)
-                    .sort((a, b) =>
-                        String(a.displayName || a.email || a.id)
-                            .localeCompare(String(b.displayName || b.email || b.id))
-                    );
-
-                reviewerProfiles = teachersSnap.docs
-                    .map(d => ({ id: d.id, ...d.data() }))
-                    .filter(t => t.active !== false);
-
-                reviewerAssignments = assignmentsSnap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-
-                const previous = select.value;
-                select.innerHTML = ERPH_REVIEWER_NAMES.map(name =>
-                    `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
-                ).join('');
-
-                if (ERPH_REVIEWER_NAMES.includes(previous)) {
-                    select.value = previous;
-                } else {
-                    select.value = ERPH_REVIEWER_NAMES[0] || '';
-                }
-
-                renderAssignmentTeachers();
-
-            } catch (e) {
-                console.error('Gagal memuatkan pembahagian penyemak:', e);
-                list.innerHTML = `
-                    <div class="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-5 text-center">
-                        <div class="text-rose-300 font-extrabold text-sm mb-1">
-                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>Gagal memuatkan data
-                        </div>
-                        <div class="text-[10px] text-slate-300 leading-relaxed">
-                            Semak Firestore Rules untuk <code class="text-emerald-300">teachers</code> dan
-                            <code class="text-emerald-300">reviewAssignments</code>.
-                        </div>
-                        <div class="text-[9px] text-rose-200/80 mt-2 break-words">${escapeHtml(e.message)}</div>
-                    </div>`;
-            }
-        }
-
-        // Expose kepada tab admin dan inline event handler HTML.
-        window.loadReviewerAssignments = loadReviewerAssignments;
-
-        function renderAssignmentTeachers() {
-            const list = document.getElementById('assignmentTeacherList');
-            const select = document.getElementById('assignmentReviewerSelect');
-            const count = document.getElementById('assignmentSelectedCount');
-
-            if (!list || !select) return;
-
-            const reviewerName = select.value || '';
-            const assigned = reviewerAssignments.filter(a =>
-                normalisePersonName(a.reviewerName) === normalisePersonName(reviewerName)
-            );
-
-            const assignedEmails = new Set(
-                assigned.map(a => String(a.teacherEmail || '').toLowerCase()).filter(Boolean)
-            );
-            const assignedNames = new Set(
-                assigned.map(a => normalisePersonName(a.teacherName)).filter(Boolean)
-            );
-
-            if (count) count.textContent = assigned.length;
-
-            if (!reviewerTeachers.length) {
-                list.innerHTML = '<div class="text-xs text-slate-400 text-center py-8">Tiada guru aktif.</div>';
-                return;
-            }
-
-            list.innerHTML = reviewerTeachers.map((teacher, index) => {
-                const email = String(teacher.email || teacher.id || '').toLowerCase();
-                const name = String(teacher.displayName || email.split('@')[0] || 'Guru');
-                const checked = assignedEmails.has(email) || assignedNames.has(normalisePersonName(name));
-
-                return `
-                    <label class="assignment-teacher-row flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900/70 px-3 py-3 cursor-pointer hover:border-emerald-500/50 transition">
-                        <input type="checkbox"
-                               class="assignment-teacher-checkbox w-4 h-4 accent-emerald-500"
-                               data-email="${escapeHtml(email)}"
-                               data-name="${escapeHtml(name)}"
-                               ${checked ? 'checked' : ''}>
-                        <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-300 flex items-center justify-center text-[10px] font-extrabold shrink-0">
-                            ${escapeHtml(initials(name))}
-                        </span>
-                        <span class="min-w-0 flex-1">
-                            <span class="block text-xs font-bold text-white truncate">${escapeHtml(name)}</span>
-                            <span class="block text-[9px] text-slate-500 truncate">${escapeHtml(email)}</span>
-                        </span>
-                    </label>
-                `;
-            }).join('');
-
-            list.querySelectorAll('.assignment-teacher-checkbox').forEach(cb => {
-                cb.addEventListener('change', updateAssignmentCount);
-            });
-        }
-
-        // Expose kepada onchange dropdown.
-        window.renderAssignmentTeachers = renderAssignmentTeachers;
-
-        function updateAssignmentCount() {
-            const count = document.getElementById('assignmentSelectedCount');
-            const selected = document.querySelectorAll('.assignment-teacher-checkbox:checked');
-            if (count) count.textContent = selected.length;
-        }
-
-        window.selectAllAssignmentTeachers = function(selectAll) {
-            document.querySelectorAll('.assignment-teacher-checkbox').forEach(cb => {
-                cb.checked = !!selectAll;
-            });
-            updateAssignmentCount();
-        };
-
-        window.saveReviewerAssignments = async function() {
-            if (!window.currentTeacher || !['admin', 'pentadbir'].includes(window.currentTeacher.role)) {
-                showToast('Akses Admin/Pentadbir diperlukan.', 'info');
-                return;
-            }
-
-            const select = document.getElementById('assignmentReviewerSelect');
-            if (!select) return;
-
-            const reviewerName = select.value;
-            const reviewerEmail = reviewerEmailByName(reviewerName);
-
-            const selected = Array.from(
-                document.querySelectorAll('.assignment-teacher-checkbox:checked')
-            ).map(cb => ({
-                teacherEmail: cb.dataset.email || '',
-                teacherName: cb.dataset.name || ''
-            }));
-
-            try {
-                const existing = reviewerAssignments.filter(a =>
-                    normalisePersonName(a.reviewerName) === normalisePersonName(reviewerName)
-                );
-
-                // Satu guru hanya mempunyai satu penyemak.
-                // Padam assignment lama guru yang dipilih dan assignment lama
-                // guru tersebut jika ia berpindah kepada penyemak baharu.
-                const selectedEmails = new Set(selected.map(x => x.teacherEmail));
-
-                const batch = writeBatch(db);
-
-                for (const a of reviewerAssignments) {
-                    const teacherEmail = String(a.teacherEmail || a.id || '').toLowerCase();
-
-                    if (
-                        normalisePersonName(a.reviewerName) === normalisePersonName(reviewerName) ||
-                        selectedEmails.has(teacherEmail)
-                    ) {
-                        if (a.id) batch.delete(doc(db, REVIEW_ASSIGNMENTS, a.id));
-                    }
-                }
-
-                for (const teacher of selected) {
-                    if (!teacher.teacherEmail) continue;
-
-                    const id = teacher.teacherEmail;
-                    batch.set(doc(db, REVIEW_ASSIGNMENTS, id), {
-                        teacherEmail: teacher.teacherEmail,
-                        teacherName: teacher.teacherName,
-                        reviewerEmail,
-                        reviewerName,
-                        updatedAt: serverTimestamp(),
-                        updatedBy: window.currentTeacher.email
-                    });
-                }
-
-                await batch.commit();
-
-                showToast(
-                    `Pembahagian untuk ${reviewerName} berjaya disimpan (${selected.length} guru).`,
-                    'success'
-                );
-
-                await loadReviewerAssignments();
-
-            } catch (e) {
-                console.error('Gagal menyimpan pembahagian penyemak:', e);
-                showToast('Gagal menyimpan pembahagian. Semak Firestore Rules.', 'info');
-            }
-        };
 
         function renderReviewerSelector() {
             const wrap = document.getElementById('erphReviewerSelectorWrap');
             const select = document.getElementById('erphReviewerSelect');
             if (!wrap || !select) return;
 
+            // PENTING:
+            // Jangan reset pilihan pengguna setiap kali loadErphAdminSummary()
+            // dipanggil. Versi sebelumnya menetapkan semula kepada nama penyemak
+            // yang sedang login, menyebabkan dropdown nampak boleh dibuka tetapi
+            // pilihan lain terus kembali kepada Sapri.
             const previousSelection = select.value;
-            const availableNames = ERPH_REVIEWER_NAMES;
 
-            select.innerHTML = availableNames.map(name =>
+            select.innerHTML = ERPH_REVIEWER_NAMES.map(name =>
                 `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
             ).join('');
 
             const currentName = window.currentTeacher?.displayName || '';
-            const matching = availableNames.find(
+            const matching = ERPH_REVIEWER_NAMES.find(
                 n => normalisePersonName(n) === normalisePersonName(currentName)
             );
 
-            const previousStillExists = availableNames.some(
+            const previousStillExists = ERPH_REVIEWER_NAMES.some(
                 n => normalisePersonName(n) === normalisePersonName(previousSelection)
             );
 
             if (previousStillExists) {
                 select.value = previousSelection;
             } else if (matching) {
+                // Penyemak yang sedang login dipilih secara automatik pada kali pertama.
                 select.value = matching;
             } else {
-                select.value = availableNames[0] || '';
+                select.value = ERPH_REVIEWER_NAMES[0] || '';
             }
 
             wrap.classList.remove('hidden');
@@ -3779,7 +3393,9 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             const select = document.getElementById('erphReviewerSelect');
             if (!select) return;
 
+            // Simpan pilihan semasa sebelum Firestore dimuatkan.
             window.selectedErphReviewer = select.value;
+
             loadErphAdminSummary();
         };
 
@@ -3794,11 +3410,6 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             list.innerHTML = '<div class="text-xs text-slate-400 text-center py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Memuatkan...</div>';
 
             try {
-                if (!reviewerAssignments.length) {
-                    const assignmentSnap = await getDocs(collection(db, REVIEW_ASSIGNMENTS));
-                    reviewerAssignments = assignmentSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                }
-
                 renderReviewerSelector();
 
                 const reviewerSelect = document.getElementById('erphReviewerSelect');
@@ -3830,10 +3441,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     .filter(t =>
                         t.active !== false &&
                         ['teacher', 'pentadbir'].includes(t.role) &&
-                        (
-                            teacherBelongsToReviewer(t, selectedReviewer) ||
-                            normalisePersonName(t.displayName) === normalisePersonName(selectedReviewer)
-                        )
+                        teacherBelongsToReviewer(t, selectedReviewer)
                     )
                     .sort((a, b) =>
                         String(a.displayName || a.email || a.id)
