@@ -1202,7 +1202,7 @@
                                     Penyemak
                                 </label>
                                 <select id="assignmentReviewerSelect"
-                                        onchange="renderAssignmentTeachers()"
+                                        onchange="window.renderAssignmentTeachers()"
                                         class="w-full px-3 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
                                 </select>
 
@@ -1945,7 +1945,7 @@
             } else if (tab === 'ASSIGNMENTS') {
                 if (btnAssignments) btnAssignments.className = 'flex-1 min-w-[180px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
                 if (viewAssignments) viewAssignments.classList.remove('hidden');
-                loadReviewerAssignments();
+                window.loadReviewerAssignments();
             }
         }
 
@@ -3601,6 +3601,9 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             }
         }
 
+        // Expose kepada tab admin dan inline event handler HTML.
+        window.loadReviewerAssignments = loadReviewerAssignments;
+
         function renderAssignmentTeachers() {
             const list = document.getElementById('assignmentTeacherList');
             const select = document.getElementById('assignmentReviewerSelect');
@@ -3654,6 +3657,9 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 cb.addEventListener('change', updateAssignmentCount);
             });
         }
+
+        // Expose kepada onchange dropdown.
+        window.renderAssignmentTeachers = renderAssignmentTeachers;
 
         function updateAssignmentCount() {
             const count = document.getElementById('assignmentSelectedCount');
@@ -4089,7 +4095,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             }
         });
 
-        document.addEventListener('keydown', function(e) { 
+        document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 const htmlViewer = document.getElementById('htmlModal');
                 if (htmlViewer && !htmlViewer.classList.contains('hidden')) {
