@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="ms" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
@@ -3542,8 +3542,8 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
             if (!list || !select) return;
 
-            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
-                list.innerHTML = '<div class="text-xs text-rose-400 text-center py-6">Akses Admin diperlukan.</div>';
+            if (!window.currentTeacher || !['admin', 'pentadbir'].includes(window.currentTeacher.role)) {
+                list.innerHTML = '<div class="text-xs text-rose-400 text-center py-6">Akses Admin/Pentadbir diperlukan.</div>';
                 return;
             }
 
@@ -3669,8 +3669,8 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         };
 
         window.saveReviewerAssignments = async function() {
-            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
-                showToast('Akses Admin diperlukan.', 'info');
+            if (!window.currentTeacher || !['admin', 'pentadbir'].includes(window.currentTeacher.role)) {
+                showToast('Akses Admin/Pentadbir diperlukan.', 'info');
                 return;
             }
 
