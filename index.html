@@ -3571,9 +3571,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
             if (!list || !select) return;
 
-            // Paparkan nama penyemak dahulu. Jangan tunggu Firestore.
-            // Ini memastikan dropdown tidak kosong walaupun collection
-            // reviewAssignments belum mempunyai rekod atau bacaan gagal.
+            // Nama penyemak dipaparkan terus tanpa bergantung kepada Firestore.
             populateAssignmentReviewerSelect();
 
             if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
@@ -3581,13 +3579,13 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 return;
             }
 
-            list.innerHTML = '<div class="text-xs text-slate-400 text-center py-8"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Memuatkan guru dan pembahagian...</div>';
+            list.innerHTML = '<div class="text-xs text-slate-400 text-center py-8"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Memuatkan senarai guru...</div>';
 
+            // PENTING: teachers dan reviewAssignments dibaca secara berasingan.
+            // Jika reviewAssignments tiada permission / belum wujud, senarai guru
+            // tetap dipaparkan dan boleh digunakan untuk pembahagian.
             try {
-                const [teachersSnap, assignmentsSnap] = await Promise.all([
-                    getDocs(collection(db, TEACHERS)),
-                    getDocs(collection(db, REVIEW_ASSIGNMENTS))
-                ]);
+                const teachersSnap = await getDocs(collection(db, TEACHERS));
 
                 reviewerTeachers = teachersSnap.docs
                     .map(d => ({ id: d.id, ...d.data() }))
@@ -3597,29 +3595,33 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                             .localeCompare(String(b.displayName || b.email || b.id))
                     );
 
-                reviewerProfiles = teachersSnap.docs
-                    .map(d => ({ id: d.id, ...d.data() }))
-                    .filter(t => t.active !== false);
+                reviewerProfiles = reviewerTeachers.slice();
+                reviewerAssignments = [];
 
-                reviewerAssignments = assignmentsSnap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                // Cuba baca assignment secara berasingan. Kegagalan di sini
+                // tidak boleh menyebabkan senarai guru hilang.
+                try {
+                    const assignmentsSnap = await getDocs(collection(db, REVIEW_ASSIGNMENTS));
+                    reviewerAssignments = assignmentsSnap.docs.map(d => ({
+                        id: d.id,
+                        ...d.data()
+                    }));
+                } catch (assignmentError) {
+                    console.warn('reviewAssignments tidak dapat dibaca. Senarai guru tetap dipaparkan:', assignmentError);
+                }
 
-                // Pastikan pilihan penyemak kekal selepas data Firestore selesai dimuat.
                 populateAssignmentReviewerSelect();
                 renderAssignmentTeachers();
 
             } catch (e) {
-                console.error('Gagal memuatkan pembahagian penyemak:', e);
+                console.error('Gagal memuatkan senarai guru:', e);
                 list.innerHTML = `
                     <div class="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-5 text-center">
                         <div class="text-rose-300 font-extrabold text-sm mb-1">
-                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>Gagal memuatkan data
+                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>Gagal memuatkan senarai guru
                         </div>
                         <div class="text-[10px] text-slate-300 leading-relaxed">
-                            Semak Firestore Rules untuk <code class="text-emerald-300">teachers</code> dan
-                            <code class="text-emerald-300">reviewAssignments</code>.
+                            Semak Firestore Rules untuk <code class="text-emerald-300">teachers</code>.
                         </div>
                         <div class="text-[9px] text-rose-200/80 mt-2 break-words">${escapeHtml(e.message)}</div>
                     </div>`;
