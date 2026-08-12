@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ms" class="scroll-smooth">
-<head> 
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hub Tool ICT - SK Agama (MIS) Miri</title>
@@ -400,62 +400,21 @@
         /* ============================================================
            ADMIN PANEL — FULLSCREEN DENGAN LEBAR KANDUNGAN TERKAWAL
            ============================================================ */
-        /* ============================================================
-           ADMIN FRAME — SATU LEBAR UNTUK SEMUA TAB
-           ============================================================ */
-        #adminModal .admin-tabbar {
-            width: min(100%, 1180px) !important;
-            max-width: 1180px !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-            align-self: center !important;
-            box-sizing: border-box !important;
-            flex: 0 0 auto !important;
+        #adminModal .admin-tabbar,
+        #adminModal .admin-content {
+            width: min(100%, 1180px);
+            margin-left: auto;
+            margin-right: auto;
         }
 
         #adminModal .admin-content {
-            width: min(100%, 1180px) !important;
-            max-width: 1180px !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-            align-self: center !important;
-            box-sizing: border-box !important;
-            flex: 1 1 auto !important;
-            min-width: 0 !important;
-        }
-
-        /* Semua tab menggunakan lebar dalaman yang sama */
-        #adminModal #addToolForm,
-        #adminModal #manageToolsView,
-        #adminModal #manageTeachersView,
-        #adminModal #manageAssignmentsView {
-            width: 100% !important;
-            max-width: 100% !important;
-            min-width: 0 !important;
-            box-sizing: border-box !important;
-        }
-
-        #adminModal #manageAssignmentsView > .admin-section-card {
-            width: 100% !important;
-            max-width: 100% !important;
-            min-width: 0 !important;
-            box-sizing: border-box !important;
-        }
-
-        /* Elak grid Senarai Guru menyebabkan frame melimpah */
-        #adminModal #manageAssignmentsView .grid {
-            min-width: 0 !important;
-        }
-
-        #adminModal #manageAssignmentsView .grid > * {
-            min-width: 0 !important;
+            box-sizing: border-box;
         }
 
         @media (max-width: 768px) {
             #adminModal .admin-tabbar,
             #adminModal .admin-content {
-                width: 100% !important;
-                max-width: 100% !important;
+                width: 100%;
             }
         }
 
@@ -1242,7 +1201,7 @@
                                     Penyemak
                                 </label>
                                 <select id="assignmentReviewerSelect"
-                                        onchange="window.renderAssignmentTeachers()"
+                                        onchange="renderAssignmentTeachers()"
                                         class="relative z-30 w-full px-3 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
                                     <option value="Sapri bin Paee">Sapri bin Paee</option>
                                     <option value="Fauzia binti Etayi Kandi Hassan">Fauzia binti Etayi Kandi Hassan</option>
@@ -1994,8 +1953,6 @@
             }
         }
 
-        window.switchAdminTab = switchAdminTab;
-
         function toggleTypeInput() {
             const type = document.getElementById('toolType').value;
             const urlBox = document.getElementById('urlInputContainer');
@@ -2247,14 +2204,12 @@
         const TEACHERS = 'teachers';
         const REVIEW_ASSIGNMENTS = 'reviewAssignments';
 
-        // Senarai penyemak rasmi. Email akan diambil daripada collection teachers
-        // apabila rekod penyemak wujud.
-        const REVIEWER_NAMES = [
-            'Sapri bin Paee',
-            'Fauzia binti Etayi Kandi Hassan',
-            'Mohamad Nazimi bin Abdul Rahman',
-            'Helmi bin Tambi'
-        ];
+        // PENYEMAK DINAMIK:
+        // Semua guru aktif yang mempunyai role `admin` atau `pentadbir`
+        // akan dianggap sebagai penyemak secara automatik.
+        // Nama/email diambil terus daripada collection `teachers` Firestore.
+        let REVIEWER_NAMES = [];
+        const REVIEWER_ROLES = ['admin', 'pentadbir'];
 
         // WHITELIST FIRESTORE:
         // Document ID mesti sama tepat dengan email Google pengguna.
@@ -3543,7 +3498,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         // PEMBAHAGIAN GURU MENGIKUT PENYEMAK — FIRESTORE
         // ============================================================
 
-        const ERPH_REVIEWER_NAMES = REVIEWER_NAMES;
+        let ERPH_REVIEWER_NAMES = [];
 
         let reviewerAssignments = [];
         let reviewerTeachers = [];
@@ -3583,23 +3538,37 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             );
         }
 
+        function setReviewerProfiles(teachers) {
+            reviewerProfiles = (Array.isArray(teachers) ? teachers : [])
+                .filter(t => t && t.active !== false && REVIEWER_ROLES.includes(String(t.role || '').toLowerCase()))
+                .sort((a, b) => String(a.displayName || a.email || a.id || '')
+                    .localeCompare(String(b.displayName || b.email || b.id || '')));
+
+            REVIEWER_NAMES = reviewerProfiles.map(t => String(t.displayName || t.email || t.id || '').trim())
+                .filter(Boolean);
+            ERPH_REVIEWER_NAMES = [...REVIEWER_NAMES];
+        }
+
         function populateAssignmentReviewerSelect() {
             const select = document.getElementById('assignmentReviewerSelect');
             if (!select) return;
 
             const previous = select.value;
-            const names = Array.isArray(ERPH_REVIEWER_NAMES) && ERPH_REVIEWER_NAMES.length
-                ? ERPH_REVIEWER_NAMES
-                : [
-                    'Sapri bin Paee',
-                    'Fauzia binti Etayi Kandi Hassan',
-                    'Mohamad Nazimi bin Abdul Rahman',
-                    'Helmi bin Tambi'
-                ];
+            const names = Array.isArray(REVIEWER_NAMES) ? REVIEWER_NAMES : [];
 
-            select.innerHTML = names.map(name =>
-                `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
-            ).join('');
+            if (!names.length) {
+                select.innerHTML = '<option value="">Tiada pentadbir/penyemak aktif</option>';
+                select.value = '';
+                return;
+            }
+
+            select.innerHTML = names.map(name => {
+                const profile = reviewerProfiles.find(t =>
+                    normalisePersonName(t.displayName || t.email || t.id) === normalisePersonName(name)
+                );
+                const roleLabel = String(profile?.role || '').toLowerCase() === 'admin' ? 'Admin' : 'Pentadbir';
+                return `<option value="${escapeHtml(name)}">${escapeHtml(name)} • ${escapeHtml(roleLabel)}</option>`;
+            }).join('');
 
             if (names.includes(previous)) {
                 select.value = previous;
@@ -3614,23 +3583,18 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
             if (!list || !select) return;
 
-            // Paparkan nama penyemak dahulu. Jangan tunggu Firestore.
-            // Ini memastikan dropdown tidak kosong walaupun collection
-            // reviewAssignments belum mempunyai rekod atau bacaan gagal.
-            populateAssignmentReviewerSelect();
-
-            const role = String(window.currentTeacher?.role || '').trim().toLowerCase();
-            if (role !== 'admin') {
+            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
                 list.innerHTML = '<div class="text-xs text-rose-400 text-center py-6">Akses Admin diperlukan.</div>';
                 return;
             }
 
-            list.innerHTML = '<div class="text-xs text-slate-400 text-center py-8"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Memuatkan senarai guru...</div>';
+            list.innerHTML = '<div class="text-xs text-slate-400 text-center py-8"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Memuatkan guru dan pembahagian...</div>';
 
             try {
-                // Baca teachers secara BERASINGAN. Jika reviewAssignments gagal,
-                // senarai guru tetap mesti dipaparkan.
-                const teachersSnap = await getDocs(collection(db, TEACHERS));
+                const [teachersSnap, assignmentsSnap] = await Promise.all([
+                    getDocs(collection(db, TEACHERS)),
+                    getDocs(collection(db, REVIEW_ASSIGNMENTS))
+                ]);
 
                 reviewerTeachers = teachersSnap.docs
                     .map(d => ({ id: d.id, ...d.data() }))
@@ -3640,33 +3604,29 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                             .localeCompare(String(b.displayName || b.email || b.id))
                     );
 
-                reviewerProfiles = reviewerTeachers.slice();
-                reviewerAssignments = [];
+                const allTeacherProfiles = teachersSnap.docs
+                    .map(d => ({ id: d.id, ...d.data() }));
+                setReviewerProfiles(allTeacherProfiles);
 
-                // Cuba baca assignment secara berasingan. Kegagalan di sini
-                // tidak boleh menghilangkan senarai guru.
-                try {
-                    const assignmentsSnap = await getDocs(collection(db, REVIEW_ASSIGNMENTS));
-                    reviewerAssignments = assignmentsSnap.docs.map(d => ({
-                        id: d.id,
-                        ...d.data()
-                    }));
-                } catch (assignmentError) {
-                    console.warn('reviewAssignments tidak dapat dibaca. Senarai guru tetap dipaparkan:', assignmentError);
-                }
+                reviewerAssignments = assignmentsSnap.docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
 
+                // Pastikan pilihan penyemak kekal selepas data Firestore selesai dimuat.
                 populateAssignmentReviewerSelect();
                 renderAssignmentTeachers();
 
             } catch (e) {
-                console.error('Gagal memuatkan senarai guru:', e);
+                console.error('Gagal memuatkan pembahagian penyemak:', e);
                 list.innerHTML = `
                     <div class="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-5 text-center">
                         <div class="text-rose-300 font-extrabold text-sm mb-1">
-                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>Gagal memuatkan senarai guru
+                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>Gagal memuatkan data
                         </div>
                         <div class="text-[10px] text-slate-300 leading-relaxed">
-                            Semak Firestore Rules untuk <code class="text-emerald-300">teachers</code>.
+                            Semak Firestore Rules untuk <code class="text-emerald-300">teachers</code> dan
+                            <code class="text-emerald-300">reviewAssignments</code>.
                         </div>
                         <div class="text-[9px] text-rose-200/80 mt-2 break-words">${escapeHtml(e.message)}</div>
                     </div>`;
@@ -3726,11 +3686,6 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 cb.addEventListener('change', updateAssignmentCount);
             });
         }
-
-        // Pastikan fungsi boleh dipanggil oleh onclick/onchange dalam HTML
-        // walaupun kod ini berada dalam scope module.
-        window.loadReviewerAssignments = loadReviewerAssignments;
-        window.renderAssignmentTeachers = renderAssignmentTeachers;
 
         function updateAssignmentCount() {
             const count = document.getElementById('assignmentSelectedCount');
@@ -3822,7 +3777,9 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             if (!wrap || !select) return;
 
             const previousSelection = select.value;
-            const availableNames = ERPH_REVIEWER_NAMES;
+            const availableNames = ERPH_REVIEWER_NAMES.length
+                ? ERPH_REVIEWER_NAMES
+                : reviewerProfiles.map(t => String(t.displayName || t.email || t.id || '').trim()).filter(Boolean);
 
             select.innerHTML = availableNames.map(name =>
                 `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
@@ -3872,13 +3829,17 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     reviewerAssignments = assignmentSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 }
 
+                // Penyemak ditentukan secara automatik daripada teachers:
+                // role admin/pentadbir + active != false.
+                const reviewerTeacherSnap = await getDocs(collection(db, TEACHERS));
+                setReviewerProfiles(reviewerTeacherSnap.docs.map(d => ({ id: d.id, ...d.data() })));
                 renderReviewerSelector();
 
                 const reviewerSelect = document.getElementById('erphReviewerSelect');
                 const selectedReviewer =
                     window.selectedErphReviewer ||
                     reviewerSelect?.value ||
-                    ERPH_REVIEWER_NAMES[0];
+                    ERPH_REVIEWER_NAMES[0] || '';
 
                 const week = getErphWeekInfo();
                 const adminWeekCode = document.getElementById('erphAdminWeekCode');
