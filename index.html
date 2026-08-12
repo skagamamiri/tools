@@ -1955,7 +1955,11 @@
             } else if (tab === 'ASSIGNMENTS') {
                 if (btnAssignments) btnAssignments.className = 'flex-1 min-w-[180px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
                 if (viewAssignments) viewAssignments.classList.remove('hidden');
-                loadReviewerAssignments();
+                if (window.loadReviewerAssignments) {
+                    window.loadReviewerAssignments();
+                } else {
+                    console.error('loadReviewerAssignments belum tersedia.');
+                }
             }
         }
 
@@ -3668,6 +3672,15 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 cb.addEventListener('change', updateAssignmentCount);
             });
         }
+
+        // ============================================================
+        // GLOBAL BRIDGE UNTUK MODUL FIREBASE
+        // Fungsi ini berada dalam <script type="module">, jadi ia tidak
+        // automatik menjadi window.*. Tab Admin menggunakan fungsi ini
+        // daripada script biasa / inline HTML.
+        // ============================================================
+        window.loadReviewerAssignments = loadReviewerAssignments;
+        window.renderAssignmentTeachers = renderAssignmentTeachers;
 
         function updateAssignmentCount() {
             const count = document.getElementById('assignmentSelectedCount');
