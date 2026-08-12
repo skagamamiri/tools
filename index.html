@@ -1196,13 +1196,17 @@
                         </div>
 
                         <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 mt-5">
-                            <div class="rounded-2xl border border-slate-700 bg-slate-950/40 p-4">
+                            <div class="relative z-20 rounded-2xl border border-slate-700 bg-slate-950/40 p-4 overflow-visible">
                                 <label for="assignmentReviewerSelect" class="block text-[10px] uppercase tracking-wider text-slate-400 font-extrabold mb-2">
                                     Penyemak
                                 </label>
                                 <select id="assignmentReviewerSelect"
                                         onchange="renderAssignmentTeachers()"
-                                        class="w-full px-3 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                                        class="relative z-30 w-full px-3 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                                    <option value="Sapri bin Paee">Sapri bin Paee</option>
+                                    <option value="Fauzia binti Etayi Kandi Hassan">Fauzia binti Etayi Kandi Hassan</option>
+                                    <option value="Mohamad Nazimi bin Abdul Rahman">Mohamad Nazimi bin Abdul Rahman</option>
+                                    <option value="Helmi bin Tambi">Helmi bin Tambi</option>
                                 </select>
 
                                 <div class="mt-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3">
@@ -3541,14 +3545,23 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             if (!select) return;
 
             const previous = select.value;
-            select.innerHTML = ERPH_REVIEWER_NAMES.map(name =>
+            const names = Array.isArray(ERPH_REVIEWER_NAMES) && ERPH_REVIEWER_NAMES.length
+                ? ERPH_REVIEWER_NAMES
+                : [
+                    'Sapri bin Paee',
+                    'Fauzia binti Etayi Kandi Hassan',
+                    'Mohamad Nazimi bin Abdul Rahman',
+                    'Helmi bin Tambi'
+                ];
+
+            select.innerHTML = names.map(name =>
                 `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
             ).join('');
 
-            if (ERPH_REVIEWER_NAMES.includes(previous)) {
+            if (names.includes(previous)) {
                 select.value = previous;
             } else {
-                select.value = ERPH_REVIEWER_NAMES[0] || '';
+                select.value = names[0] || '';
             }
         }
 
