@@ -666,9 +666,14 @@
                     
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-950/50">
-                        <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Minggu</div>
-                        <div id="erphWeekLabel" class="font-heading font-extrabold text-slate-800 dark:text-white mt-1">-</div>
+                        <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Minggu eRPH</div>
+                        <select id="erphWeekSelect" onchange="changeErphSubmissionWeek()"
+                                class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-heading font-extrabold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500">
+                        </select>
                         <div id="erphWeekRange" class="text-[10px] text-slate-500 mt-1">-</div>
+                        <div class="text-[9px] text-emerald-600 dark:text-emerald-400 mt-2">
+                            <i class="fa-solid fa-circle-info mr-1"></i>Minggu semasa dan minggu terdahulu boleh dipilih.
+                        </div>
                     </div>
                     <div id="erphStatusCard" class="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-950/50">
                         <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Status</div>
@@ -3206,66 +3211,18 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             return `${y}-${m}-${d}`;
         }
 
-        function getErphWeekInfo() {
-            const todayParts = getMalaysiaDateParts();
-            const today = new Date(Date.UTC(
-                todayParts.year,
-                todayParts.month - 1,
-                todayParts.day
-            ));
+        let selectedErphWeekCode = null;
 
-            const todayKey = toSchoolDateKey(today);
+        function getErphWeekIndexByCode(code) {
+            return ERPH_SCHOOL_WEEKS.findIndex(w => w.code === code);
+        }
 
-            // Jika hari ini ialah CUTI, paparkan cuti dan jangan
-            // anggap ia sebagai minggu eRPH.
-            if (ERPH_CUTI_DATES.includes(todayKey)) {
-                return {
-                    key: `CUTI-${todayKey}`,
-                    code: 'CUTI',
-                    isHoliday: true,
-                    startKey: todayKey,
-                    endKey: todayKey,
-                    label: 'Cuti',
-                    range: new Intl.DateTimeFormat('ms-MY', {
-                        timeZone: 'Asia/Kuala_Lumpur',
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                    }).format(today)
-                };
-            }
+        function getErphWeekInfoByWeek(week) {
+            if (!week) return null;
 
-            // Cari minggu sekolah terakhir yang tarikh mulanya
-            // tidak melebihi tarikh hari ini.
-            let current = null;
-
-            for (const week of ERPH_SCHOOL_WEEKS) {
-                if (week.date <= todayKey) {
-                    current = week;
-                } else {
-                    break;
-                }
-            }
-
-            if (!current) {
-                return {
-                    key: 'SEBELUM-M01',
-                    code: 'BELUM-MULA',
-                    isHoliday: false,
-                    startKey: todayKey,
-                    endKey: todayKey,
-                    label: 'Sebelum M01',
-                    range: 'Tiada minggu eRPH aktif'
-                };
-            }
-
-            const start = new Date(`${current.date}T00:00:00Z`);
-
-            // Minggu sekolah berlangsung sehingga hari sebelum
-            // tarikh minggu sekolah berikutnya. Jika minggu terakhir,
-            // gunakan 6 hari selepas tarikh mula.
-            const index = ERPH_SCHOOL_WEEKS.findIndex(w => w.code === current.code);
+            const index = getErphWeekIndexByCode(week.code);
             const next = ERPH_SCHOOL_WEEKS[index + 1];
+            const start = new Date(`${week.date}T00:00:00Z`);
 
             let end;
             if (next) {
@@ -3284,14 +3241,115 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             }).format(d);
 
             return {
-                key: current.code,
-                code: current.code,
+                key: week.code,
+                code: week.code,
                 isHoliday: false,
-                startKey: current.date,
+                startKey: week.date,
                 endKey: toSchoolDateKey(end),
-                label: current.code,
+                label: week.code,
                 range: `${fmt(start)} – ${fmt(end)}`
             };
+        }
+
+        function getCurrentErphWeekInfo() {
+            const todayParts = getMalaysiaDateParts();
+            const today = new Date(Date.UTC(
+                todayParts.year,
+                todayParts.month - 1,
+                todayParts.day
+            ));
+            const todayKey = toSchoolDateKey(today);
+
+            if (ERPH_CUTI_DATES.includes(todayKey)) {
+                return {
+                    key: `CUTI-${todayKey}`,
+                    code: 'CUTI',
+                    isHoliday: true,
+                    startKey: todayKey,
+                    endKey: todayKey,
+                    label: 'Cuti',
+                    range: new Intl.DateTimeFormat('ms-MY', {
+                        timeZone: 'Asia/Kuala_Lumpur',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    }).format(today)
+                };
+            }
+
+            let current = null;
+            for (const week of ERPH_SCHOOL_WEEKS) {
+                if (week.date <= todayKey) current = week;
+                else break;
+            }
+
+            if (!current) {
+                return {
+                    key: 'SEBELUM-M01',
+                    code: 'BELUM-MULA',
+                    isHoliday: false,
+                    startKey: todayKey,
+                    endKey: todayKey,
+                    label: 'Sebelum M01',
+                    range: 'Tiada minggu eRPH aktif'
+                };
+            }
+
+            return getErphWeekInfoByWeek(current);
+        }
+
+        function populateErphWeekSelector(preferredCode = null) {
+            const select = document.getElementById('erphWeekSelect');
+            if (!select) return;
+
+            const current = getCurrentErphWeekInfo();
+            const currentIndex = getErphWeekIndexByCode(current.code);
+
+            const availableWeeks = ERPH_SCHOOL_WEEKS
+                .filter((week, index) => currentIndex >= 0 && index <= currentIndex)
+                .slice()
+                .reverse();
+
+            select.innerHTML = availableWeeks.map(week => {
+                const isCurrent = week.code === current.code;
+                return `<option value="${escapeHtml(week.code)}">Minggu ${escapeHtml(week.code)}${isCurrent ? ' • SEMASA' : ' • LEWAT'}</option>`;
+            }).join('');
+
+            const desired = preferredCode && availableWeeks.some(w => w.code === preferredCode)
+                ? preferredCode
+                : current.code;
+
+            selectedErphWeekCode = desired;
+            select.value = desired;
+
+            const info = getSelectedErphWeekInfo();
+            const range = document.getElementById('erphWeekRange');
+            if (range && info) range.textContent = info.range;
+        }
+
+        function getSelectedErphWeekInfo() {
+            const code = selectedErphWeekCode || document.getElementById('erphWeekSelect')?.value;
+            const current = getCurrentErphWeekInfo();
+
+            if (!code || code === current.code) return current;
+
+            const week = ERPH_SCHOOL_WEEKS.find(w => w.code === code);
+            return week ? getErphWeekInfoByWeek(week) : current;
+        }
+
+        async function changeErphSubmissionWeek() {
+            const select = document.getElementById('erphWeekSelect');
+            selectedErphWeekCode = select?.value || getCurrentErphWeekInfo().code;
+
+            const info = getSelectedErphWeekInfo();
+            const range = document.getElementById('erphWeekRange');
+            if (range && info) range.textContent = info.range;
+
+            await loadMyErphSubmission();
+        }
+
+        function getErphWeekInfo() {
+            return getCurrentErphWeekInfo();
         }
 
         function getErphSubmissionId(email, weekKey) {
@@ -3327,14 +3385,12 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             document.body.classList.add('erph-viewer-open');
             window.scrollTo(0, 0);
 
-            const info = getErphWeekInfo();
-            document.getElementById('erphWeekLabel').textContent =
-                info.isHoliday ? 'CUTI' : `Minggu ${info.code}`;
-            document.getElementById('erphWeekRange').textContent = info.range;
+            const info = getCurrentErphWeekInfo();
+            populateErphWeekSelector(info.code);
 
             const adminPanel = document.getElementById('erphAdminPanel');
             const canReview = ['admin', 'pentadbir'].includes(teacher.role);
-            adminPanel.classList.toggle('hidden', !canReview);
+            if (adminPanel) adminPanel.classList.toggle('hidden', !canReview);
 
             await loadMyErphSubmission();
             await loadMyErphHistory();
@@ -3354,7 +3410,15 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             const teacher = window.currentTeacher;
             if (!teacher) return;
 
-            const info = getErphWeekInfo();
+            const info = getSelectedErphWeekInfo() || getCurrentErphWeekInfo();
+            const currentInfo = getCurrentErphWeekInfo();
+            const selectedIndex = getErphWeekIndexByCode(info.code);
+            const currentIndex = getErphWeekIndexByCode(currentInfo.code);
+            const isLateWeek = !currentInfo.isHoliday
+                && selectedIndex >= 0
+                && currentIndex >= 0
+                && selectedIndex < currentIndex;
+
             const ref = doc(
                 db,
                 ERPH_SUBMISSIONS,
@@ -3374,8 +3438,13 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     const data = snap.data();
                     input.value = data.sheetUrl || '';
 
-                    badge.className = 'mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-extrabold';
-                    badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Dah Hantar';
+                    if (isLateWeek) {
+                        badge.className = 'mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-extrabold';
+                        badge.innerHTML = '<i class="fa-solid fa-clock"></i> Lewat';
+                    } else {
+                        badge.className = 'mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-extrabold';
+                        badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Dah Hantar';
+                    }
 
                     submittedAt.textContent =
                         `Dihantar: ${formatErphTimestamp(data.submittedAt) || 'Tarikh tidak tersedia'}`;
@@ -3472,9 +3541,14 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                         ? `${escapeHtml(data.reviewMark)}/100`
                         : '';
                     const reviewed = !!grade || !!String(data.reviewComment || '').trim();
+                    const currentInfo = getCurrentErphWeekInfo();
+                    const recordIndex = getErphWeekIndexByCode(data.weekCode || data.weekKey);
+                    const currentIndex = getErphWeekIndexByCode(currentInfo.code);
+                    const late = !currentInfo.isHoliday && recordIndex >= 0 && currentIndex >= 0 && recordIndex < currentIndex;
+
                     const statusBadge = grade
-                        ? `<span class="px-2 py-1 rounded-lg bg-sky-500/10 text-sky-600 text-[9px] font-extrabold">Dinilai • ${escapeHtml(grade)}${mark ? ` • ${mark}` : ''}</span>`
-                        : `<span class="px-2 py-1 rounded-lg bg-amber-500/10 text-amber-600 text-[9px] font-extrabold">${reviewed ? 'Ulasan Diberi' : 'Belum Dinilai'}</span>`;
+                        ? `<span class="px-2 py-1 rounded-lg bg-sky-500/10 text-sky-600 text-[9px] font-extrabold">Dinilai • ${escapeHtml(grade)}${mark ? ` • ${mark}` : ''}${late ? ' • Lewat' : ''}</span>`
+                        : `<span class="px-2 py-1 rounded-lg ${late ? 'bg-amber-500/10 text-amber-600' : (reviewed ? 'bg-emerald-500/10 text-emerald-600' : 'bg-slate-500/10 text-slate-500')} text-[9px] font-extrabold">${late ? 'Lewat' : (reviewed ? 'Ulasan Diberi' : 'Belum Dinilai')}</span>`;
                     const comment = String(data.reviewComment || '').trim();
                     const reviewer = data.reviewedByName || data.reviewedBy || 'Pentadbir';
 
@@ -3486,7 +3560,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                                         <span class="font-heading font-extrabold text-sm text-slate-800 dark:text-white">${escapeHtml(data.weekCode || data.weekKey || 'Minggu')}</span>
                                         ${statusBadge}
                                     </div>
-                                    <div class="text-[10px] text-slate-400 mt-1">Dihantar: ${escapeHtml(formatErphTimestamp(data.submittedAt) || 'Tarikh tidak tersedia')}</div>
+                                    <div class="text-[10px] text-slate-400 mt-1">Dihantar: ${escapeHtml(formatErphTimestamp(data.submittedAt) || 'Tarikh tidak tersedia')}${late ? ' • Lewat' : ''}</div>
                                 </div>
                                 <button type="button" onclick="openMyHistoricalErph(decodeURIComponent('${encodeURIComponent(data.sheetUrl || '')}'))"
                                         class="shrink-0 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[9px] font-extrabold hover:bg-emerald-500 hover:text-white transition">
@@ -3533,7 +3607,14 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 return;
             }
 
-            const info = getErphWeekInfo();
+            const info = getSelectedErphWeekInfo() || getCurrentErphWeekInfo();
+            const currentInfo = getCurrentErphWeekInfo();
+            const selectedIndex = getErphWeekIndexByCode(info.code);
+            const currentIndex = getErphWeekIndexByCode(currentInfo.code);
+            const isLateWeek = !currentInfo.isHoliday
+                && selectedIndex >= 0
+                && currentIndex >= 0
+                && selectedIndex < currentIndex;
 
             if (info.isHoliday) {
                 showToast('Tiada penghantaran eRPH pada minggu cuti.', 'info');
@@ -3558,14 +3639,19 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     weekCode: info.code,
                     weekStart: info.startKey,
                     weekEnd: info.endKey,
+                    submissionStatus: isLateWeek ? 'lewat' : 'dah_hantar',
                     updatedAt: serverTimestamp(),
                     submittedAt: existing.exists() ? (existing.data().submittedAt || serverTimestamp()) : serverTimestamp()
                 }, { merge: true });
 
                 showToast(
                     existing.exists()
-                        ? 'Pautan eRPH berjaya dikemas kini.'
-                        : 'eRPH minggu ini berjaya dihantar.',
+                        ? (isLateWeek
+                            ? 'Pautan eRPH minggu terdahulu berjaya dikemas kini. Status: Lewat.'
+                            : 'Pautan eRPH berjaya dikemas kini.')
+                        : (isLateWeek
+                            ? 'eRPH minggu terdahulu berjaya dihantar. Status: Lewat.'
+                            : 'eRPH minggu ini berjaya dihantar.'),
                     'success'
                 );
 
