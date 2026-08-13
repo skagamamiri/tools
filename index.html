@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>
 <html lang="ms" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
@@ -398,6 +398,22 @@
 
 
         /* ============================================================
+           FRONTEND FOOTER — SENTIASA DIPAPARKAN
+           Footer ini berada di dalam <main>, bukan di dalam panel admin.
+           ============================================================ */
+        #frontendFooter {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: relative;
+            z-index: 10;
+        }
+
+        #frontendFooter code {
+            word-break: break-word;
+        }
+
+        /* ============================================================
            ADMIN PANEL — FULLSCREEN DENGAN LEBAR KANDUNGAN TERKAWAL
            ============================================================ */
         #adminModal .admin-tabbar,
@@ -632,6 +648,18 @@
             </button>
         </div>
 
+    <!-- Footer FRONTEND -->
+    <footer id="frontendFooter"
+            class="w-full mt-8 border-t border-slate-200 dark:border-slate-800/60 py-6 text-center text-xs text-slate-400 relative z-10 bg-slate-50 dark:bg-slate-900">
+        <div class="max-w-6xl mx-auto px-4">
+            <p>© 2026 SK Agama (MIS) Miri, Sarawak • Disediakan oleh Cg Sabri (Guru ICT)</p>
+            <p class="text-[10px] text-slate-400 mt-1">
+                Dihoskan di
+                <code class="text-brand-600 dark:text-brand-400 font-mono">skagamamiri.github.io/tools</code>
+            </p>
+        </div>
+    </footer>
+
     </main>
 
 
@@ -667,11 +695,12 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-950/50">
                         <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Minggu eRPH</div>
-                        <select id="erphWeekSelect" onchange="changeErphSubmissionWeek()"
-                                class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-heading font-extrabold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500">
+                        <select id="erphWeekSelect"
+                                onchange="changeErphSubmissionWeek()"
+                                class="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-extrabold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500">
                         </select>
-                        <div id="erphWeekRange" class="text-[10px] text-slate-500 mt-1">-</div>
-                        <div class="text-[9px] text-emerald-600 dark:text-emerald-400 mt-2">
+                        <div id="erphWeekRange" class="text-[10px] text-slate-500 mt-2">-</div>
+                        <div class="text-[9px] text-emerald-600 dark:text-emerald-400 mt-1">
                             <i class="fa-solid fa-circle-info mr-1"></i>Minggu semasa dan minggu terdahulu boleh dipilih.
                         </div>
                     </div>
@@ -681,10 +710,6 @@
                             <i class="fa-solid fa-circle-question"></i> Belum Hantar
                         </div>
                         <div id="erphSubmittedAt" class="text-[10px] text-slate-500 mt-2">Belum ada penghantaran minggu ini.</div>
-                        <div id="erphReviewInfo" class="mt-3 rounded-2xl bg-slate-100 dark:bg-slate-800 p-3">
-                            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Penilaian Pentadbir</div>
-                            <div class="text-xs text-slate-500 mt-1">Belum dinilai.</div>
-                        </div>
                     </div>
                 </div>
 
@@ -732,7 +757,8 @@
                             <h4 class="font-heading font-extrabold text-sm text-slate-800 dark:text-white">Sejarah Penghantaran eRPH</h4>
                             <p class="text-[10px] text-slate-500 mt-0.5">Lihat semula eRPH yang telah dihantar dan ulasan penilaian pentadbir.</p>
                         </div>
-                        <button onclick="loadMyErphHistory()" type="button" class="shrink-0 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-emerald-500 hover:text-white transition">
+                        <button onclick="loadMyErphHistory()" type="button"
+                                class="shrink-0 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-emerald-500 hover:text-white transition">
                             <i class="fa-solid fa-clock-rotate-left mr-1"></i>Sejarah
                         </button>
                     </div>
@@ -741,7 +767,20 @@
                     </div>
                 </div>
 
-                
+                <div id="erphAdminPanel" class="hidden border-t border-slate-200 dark:border-slate-800 pt-5">
+
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                            <div class="text-[9px] uppercase tracking-wider text-emerald-600 font-bold">Pentadbir • Semakan RPH</div>
+                            <h4 class="font-heading font-extrabold text-sm text-slate-800 dark:text-white">Semakan eRPH <span id="erphAdminWeekCode">Minggu Ini</span></h4>
+                        </div>
+                        <button onclick="loadErphAdminSummary()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300">
+                            <i class="fa-solid fa-rotate-right mr-1"></i>Semak
+                        </button>
+                    </div>
+                    <div id="erphAdminStats" class="grid grid-cols-3 gap-2 mb-3"></div>
+                    <div id="erphAdminList" class="max-h-72 overflow-y-auto space-y-2"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -1185,9 +1224,8 @@
                         </div>
                     </div>
 
-
                 <!-- PEMBAHAGIAN PENYEMAK -->
-                <div id="manageAssignmentsView" class="hidden">
+                <div id="manageAssignmentsView" class="hidden w-full">
                     <div class="admin-section-card rounded-3xl p-4 sm:p-5">
                         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                             <div class="min-w-0">
@@ -1208,17 +1246,13 @@
                         </div>
 
                         <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 mt-5">
-                            <div class="relative z-20 rounded-2xl border border-slate-700 bg-slate-950/40 p-4 overflow-visible">
+                            <div class="rounded-2xl border border-slate-700 bg-slate-950/40 p-4">
                                 <label for="assignmentReviewerSelect" class="block text-[10px] uppercase tracking-wider text-slate-400 font-extrabold mb-2">
                                     Penyemak
                                 </label>
                                 <select id="assignmentReviewerSelect"
-                                        onchange="renderAssignmentTeachers()"
-                                        class="relative z-30 w-full px-3 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
-                                    <option value="Sapri bin Paee">Sapri bin Paee</option>
-                                    <option value="Fauzia binti Etayi Kandi Hassan">Fauzia binti Etayi Kandi Hassan</option>
-                                    <option value="Mohamad Nazimi bin Abdul Rahman">Mohamad Nazimi bin Abdul Rahman</option>
-                                    <option value="Helmi bin Tambi">Helmi bin Tambi</option>
+                                        onchange="window.renderAssignmentTeachers()"
+                                        class="w-full px-3 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
                                 </select>
 
                                 <div class="mt-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3">
@@ -1257,8 +1291,7 @@
                     </div>
                 </div>
 
-                <!-- End Tab Content Body -->
-                </div>
+
 
             </div>
 
@@ -1321,11 +1354,6 @@
         </button>
     </div>
 
-    <!-- Footer -->
-    <footer class="mt-8 border-t border-slate-200 dark:border-slate-800/60 py-6 text-center text-xs text-slate-400">
-        <p>© 2026 SK Agama (MIS) Miri, Sarawak • Disediakan oleh Cg Sabri (Guru ICT)</p>
-        <p class="text-[10px] text-slate-400 mt-1">Dihoskan di <code class="text-brand-600 dark:text-brand-400 font-mono">skagamamiri.github.io/tools</code></p>
-    </footer>
 
     <script>
         // Default Pre-loaded Tools
@@ -1961,7 +1989,7 @@
             } else if (tab === 'ASSIGNMENTS') {
                 if (btnAssignments) btnAssignments.className = 'flex-1 min-w-[180px] py-3 border-b-2 border-brand-600 text-brand-600 font-bold text-center';
                 if (viewAssignments) viewAssignments.classList.remove('hidden');
-                loadReviewerAssignments();
+                window.loadReviewerAssignments();
             }
         }
 
@@ -2216,12 +2244,14 @@
         const TEACHERS = 'teachers';
         const REVIEW_ASSIGNMENTS = 'reviewAssignments';
 
-        // PENYEMAK DINAMIK:
-        // Semua guru aktif yang mempunyai role `admin` atau `pentadbir`
-        // akan dianggap sebagai penyemak secara automatik.
-        // Nama/email diambil terus daripada collection `teachers` Firestore.
-        let REVIEWER_NAMES = [];
-        const REVIEWER_ROLES = ['admin', 'pentadbir'];
+        // Senarai penyemak rasmi. Email akan diambil daripada collection teachers
+        // apabila rekod penyemak wujud.
+        const REVIEWER_NAMES = [
+            'Sapri bin Paee',
+            'Fauzia binti Etayi Kandi Hassan',
+            'Mohamad Nazimi bin Abdul Rahman',
+            'Helmi bin Tambi'
+        ];
 
         // WHITELIST FIRESTORE:
         // Document ID mesti sama tepat dengan email Google pengguna.
@@ -3211,6 +3241,118 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             return `${y}-${m}-${d}`;
         }
 
+        function getErphWeekInfo() {
+            const todayParts = getMalaysiaDateParts();
+            const today = new Date(Date.UTC(
+                todayParts.year,
+                todayParts.month - 1,
+                todayParts.day
+            ));
+
+            const todayKey = toSchoolDateKey(today);
+
+            // Jika hari ini ialah CUTI, paparkan cuti dan jangan
+            // anggap ia sebagai minggu eRPH.
+            if (ERPH_CUTI_DATES.includes(todayKey)) {
+                return {
+                    key: `CUTI-${todayKey}`,
+                    code: 'CUTI',
+                    isHoliday: true,
+                    startKey: todayKey,
+                    endKey: todayKey,
+                    label: 'Cuti',
+                    range: new Intl.DateTimeFormat('ms-MY', {
+                        timeZone: 'Asia/Kuala_Lumpur',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    }).format(today)
+                };
+            }
+
+            // Cari minggu sekolah terakhir yang tarikh mulanya
+            // tidak melebihi tarikh hari ini.
+            let current = null;
+
+            for (const week of ERPH_SCHOOL_WEEKS) {
+                if (week.date <= todayKey) {
+                    current = week;
+                } else {
+                    break;
+                }
+            }
+
+            if (!current) {
+                return {
+                    key: 'SEBELUM-M01',
+                    code: 'BELUM-MULA',
+                    isHoliday: false,
+                    startKey: todayKey,
+                    endKey: todayKey,
+                    label: 'Sebelum M01',
+                    range: 'Tiada minggu eRPH aktif'
+                };
+            }
+
+            const start = new Date(`${current.date}T00:00:00Z`);
+
+            // Minggu sekolah berlangsung sehingga hari sebelum
+            // tarikh minggu sekolah berikutnya. Jika minggu terakhir,
+            // gunakan 6 hari selepas tarikh mula.
+            const index = ERPH_SCHOOL_WEEKS.findIndex(w => w.code === current.code);
+            const next = ERPH_SCHOOL_WEEKS[index + 1];
+
+            let end;
+            if (next) {
+                end = new Date(`${next.date}T00:00:00Z`);
+                end.setUTCDate(end.getUTCDate() - 1);
+            } else {
+                end = new Date(start);
+                end.setUTCDate(end.getUTCDate() + 6);
+            }
+
+            const fmt = d => new Intl.DateTimeFormat('ms-MY', {
+                timeZone: 'Asia/Kuala_Lumpur',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            }).format(d);
+
+            return {
+                key: current.code,
+                code: current.code,
+                isHoliday: false,
+                startKey: current.date,
+                endKey: toSchoolDateKey(end),
+                label: current.code,
+                range: `${fmt(start)} – ${fmt(end)}`
+            };
+        }
+
+        function getErphSubmissionId(email, weekKey) {
+            return `${weekKey}__${encodeURIComponent(String(email).toLowerCase())}`;
+        }
+
+        function formatErphTimestamp(ts) {
+            if (!ts) return '';
+            try {
+                const d = typeof ts.toDate === 'function' ? ts.toDate() : new Date(ts);
+                return new Intl.DateTimeFormat('ms-MY', {
+                    timeZone: 'Asia/Kuala_Lumpur',
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                }).format(d);
+            } catch {
+                return '';
+            }
+        }
+
+        // ============================================================
+        // PEMILIHAN MINGGU eRPH
+        // Guru boleh memilih minggu semasa atau minggu terdahulu.
+        // Minggu terdahulu akan berstatus LEWAT.
+        // ============================================================
+
         let selectedErphWeekCode = null;
 
         function getErphWeekIndexByCode(code) {
@@ -3251,58 +3393,11 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             };
         }
 
-        function getCurrentErphWeekInfo() {
-            const todayParts = getMalaysiaDateParts();
-            const today = new Date(Date.UTC(
-                todayParts.year,
-                todayParts.month - 1,
-                todayParts.day
-            ));
-            const todayKey = toSchoolDateKey(today);
-
-            if (ERPH_CUTI_DATES.includes(todayKey)) {
-                return {
-                    key: `CUTI-${todayKey}`,
-                    code: 'CUTI',
-                    isHoliday: true,
-                    startKey: todayKey,
-                    endKey: todayKey,
-                    label: 'Cuti',
-                    range: new Intl.DateTimeFormat('ms-MY', {
-                        timeZone: 'Asia/Kuala_Lumpur',
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                    }).format(today)
-                };
-            }
-
-            let current = null;
-            for (const week of ERPH_SCHOOL_WEEKS) {
-                if (week.date <= todayKey) current = week;
-                else break;
-            }
-
-            if (!current) {
-                return {
-                    key: 'SEBELUM-M01',
-                    code: 'BELUM-MULA',
-                    isHoliday: false,
-                    startKey: todayKey,
-                    endKey: todayKey,
-                    label: 'Sebelum M01',
-                    range: 'Tiada minggu eRPH aktif'
-                };
-            }
-
-            return getErphWeekInfoByWeek(current);
-        }
-
         function populateErphWeekSelector(preferredCode = null) {
             const select = document.getElementById('erphWeekSelect');
             if (!select) return;
 
-            const current = getCurrentErphWeekInfo();
+            const current = getErphWeekInfo();
             const currentIndex = getErphWeekIndexByCode(current.code);
 
             const availableWeeks = ERPH_SCHOOL_WEEKS
@@ -3329,7 +3424,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
         function getSelectedErphWeekInfo() {
             const code = selectedErphWeekCode || document.getElementById('erphWeekSelect')?.value;
-            const current = getCurrentErphWeekInfo();
+            const current = getErphWeekInfo();
 
             if (!code || code === current.code) return current;
 
@@ -3339,35 +3434,13 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
         async function changeErphSubmissionWeek() {
             const select = document.getElementById('erphWeekSelect');
-            selectedErphWeekCode = select?.value || getCurrentErphWeekInfo().code;
+            selectedErphWeekCode = select?.value || getErphWeekInfo().code;
 
             const info = getSelectedErphWeekInfo();
             const range = document.getElementById('erphWeekRange');
             if (range && info) range.textContent = info.range;
 
             await loadMyErphSubmission();
-        }
-
-        function getErphWeekInfo() {
-            return getCurrentErphWeekInfo();
-        }
-
-        function getErphSubmissionId(email, weekKey) {
-            return `${weekKey}__${encodeURIComponent(String(email).toLowerCase())}`;
-        }
-
-        function formatErphTimestamp(ts) {
-            if (!ts) return '';
-            try {
-                const d = typeof ts.toDate === 'function' ? ts.toDate() : new Date(ts);
-                return new Intl.DateTimeFormat('ms-MY', {
-                    timeZone: 'Asia/Kuala_Lumpur',
-                    dateStyle: 'medium',
-                    timeStyle: 'short'
-                }).format(d);
-            } catch {
-                return '';
-            }
         }
 
         async function openErphModal() {
@@ -3385,12 +3458,12 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             document.body.classList.add('erph-viewer-open');
             window.scrollTo(0, 0);
 
-            const info = getCurrentErphWeekInfo();
+            const info = getErphWeekInfo();
             populateErphWeekSelector(info.code);
 
             const adminPanel = document.getElementById('erphAdminPanel');
             const canReview = ['admin', 'pentadbir'].includes(teacher.role);
-            if (adminPanel) adminPanel.classList.toggle('hidden', !canReview);
+            adminPanel.classList.toggle('hidden', !canReview);
 
             await loadMyErphSubmission();
             await loadMyErphHistory();
@@ -3410,10 +3483,12 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             const teacher = window.currentTeacher;
             if (!teacher) return;
 
-            const info = getSelectedErphWeekInfo() || getCurrentErphWeekInfo();
-            const currentInfo = getCurrentErphWeekInfo();
+            const info = getSelectedErphWeekInfo() || getErphWeekInfo();
+            const currentInfo = getErphWeekInfo();
+
             const selectedIndex = getErphWeekIndexByCode(info.code);
             const currentIndex = getErphWeekIndexByCode(currentInfo.code);
+
             const isLateWeek = !currentInfo.isHoliday
                 && selectedIndex >= 0
                 && currentIndex >= 0
@@ -3438,7 +3513,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     const data = snap.data();
                     input.value = data.sheetUrl || '';
 
-                    if (isLateWeek) {
+                    if (isLateWeek || data.submissionStatus === 'lewat') {
                         badge.className = 'mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-extrabold';
                         badge.innerHTML = '<i class="fa-solid fa-clock"></i> Lewat';
                     } else {
@@ -3451,20 +3526,21 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
                     const reviewInfo = document.getElementById('erphReviewInfo');
                     if (reviewInfo) {
-                        if (data.reviewGrade) {
+                        if (data.reviewGrade || String(data.reviewComment || '').trim()) {
                             reviewInfo.className = 'mt-3 rounded-2xl bg-sky-500/10 border border-sky-500/20 p-3';
                             reviewInfo.innerHTML = `
                                 <div class="flex items-center justify-between gap-3">
                                     <div>
                                         <div class="text-[9px] uppercase tracking-wider text-sky-600 font-bold">Penilaian Pentadbir</div>
                                         <div class="text-sm font-heading font-extrabold text-sky-700 dark:text-sky-300 mt-0.5">
-                                            Gred ${escapeHtml(data.reviewGrade)}
-                                            ${data.reviewMark !== null && data.reviewMark !== undefined ? ` • ${escapeHtml(data.reviewMark)}/100` : ''}
+                                            ${data.reviewGrade ? `Gred ${escapeHtml(data.reviewGrade)}` : 'Ulasan diberikan'}
+                                            ${data.reviewMark !== null && data.reviewMark !== undefined && data.reviewMark !== '' ? ` • ${escapeHtml(data.reviewMark)}/100` : ''}
                                         </div>
                                     </div>
                                     <i class="fa-solid fa-circle-check text-sky-500"></i>
                                 </div>
-                                ${data.reviewComment ? `<div class="text-[10px] text-slate-600 dark:text-slate-300 mt-2">${escapeHtml(data.reviewComment)}</div>` : ''}
+                                ${data.reviewComment ? `<div class="text-[10px] text-slate-600 dark:text-slate-300 mt-2 whitespace-pre-line">${escapeHtml(data.reviewComment)}</div>` : ''}
+                                ${data.reviewedByName ? `<div class="text-[9px] text-slate-400 mt-2">Disemak oleh ${escapeHtml(data.reviewedByName)}</div>` : ''}
                             `;
                         } else {
                             reviewInfo.className = 'mt-3 rounded-2xl bg-slate-100 dark:bg-slate-800 p-3';
@@ -3473,21 +3549,26 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     }
 
                     statusCard.classList.add('border-emerald-200', 'dark:border-emerald-900/50');
-
                     openBtn.classList.remove('hidden');
-                    openBtn.dataset.url = data.sheetUrl || '';
                     openBtn.classList.add('sm:inline-block');
-
+                    openBtn.dataset.url = data.sheetUrl || '';
                 } else {
                     input.value = '';
+
                     badge.className = 'mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-extrabold';
                     badge.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Belum Hantar';
-                    submittedAt.textContent = 'Belum ada penghantaran minggu ini.';
+
+                    submittedAt.textContent =
+                        isLateWeek
+                            ? 'Belum dihantar untuk minggu ini. Jika dihantar sekarang, status akan menjadi Lewat.'
+                            : 'Belum ada penghantaran minggu ini.';
+
                     const reviewInfo = document.getElementById('erphReviewInfo');
                     if (reviewInfo) {
                         reviewInfo.className = 'mt-3 rounded-2xl bg-slate-100 dark:bg-slate-800 p-3';
                         reviewInfo.innerHTML = '<div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Penilaian Pentadbir</div><div class="text-xs text-slate-500 mt-1">Belum dinilai.</div>';
                     }
+
                     statusCard.classList.remove('border-emerald-200', 'dark:border-emerald-900/50');
                     openBtn.classList.add('hidden');
                     openBtn.dataset.url = '';
@@ -3506,24 +3587,35 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             list.innerHTML = '<div class="text-xs text-slate-400 text-center py-5"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Memuatkan sejarah eRPH...</div>';
 
             try {
-                // Baca rekod guru sendiri satu demi satu menggunakan ID dokumen yang sama
-                // seperti ketika penghantaran dibuat. Ini tidak memerlukan query/list
-                // Firestore dan serasi dengan Rules semasa.
                 const current = getErphWeekInfo();
-                const currentIndex = ERPH_SCHOOL_WEEKS.findIndex(w => w.code === current.code);
-                const weeks = ERPH_SCHOOL_WEEKS
-                    .filter(w => w.date <= (current.startKey || '9999-12-31'))
-                    .slice(0, currentIndex >= 0 ? currentIndex + 1 : ERPH_SCHOOL_WEEKS.length);
+                const currentIndex = getErphWeekIndexByCode(current.code);
 
-                const docs = await Promise.all(weeks.map(async week => {
-                    const ref = doc(db, ERPH_SUBMISSIONS, getErphSubmissionId(teacher.email, week.code));
-                    const snap = await getDoc(ref);
-                    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
-                }));
+                const weeks = ERPH_SCHOOL_WEEKS
+                    .filter((week, index) => currentIndex < 0 || index <= currentIndex)
+                    .slice()
+                    .reverse();
+
+                // Baca dokumen guru sendiri satu demi satu. Ini tidak memerlukan
+                // query/list dan serasi dengan Rules yang membenarkan guru membaca
+                // dokumen penghantaran miliknya sendiri.
+                const docs = await Promise.all(
+                    weeks.map(async week => {
+                        const ref = doc(
+                            db,
+                            ERPH_SUBMISSIONS,
+                            getErphSubmissionId(teacher.email, week.code)
+                        );
+                        const snap = await getDoc(ref);
+                        return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+                    })
+                );
 
                 const records = docs
                     .filter(Boolean)
-                    .sort((a, b) => String(b.weekStart || b.weekKey || '').localeCompare(String(a.weekStart || a.weekKey || '')));
+                    .sort((a, b) =>
+                        String(b.weekStart || b.weekKey || '')
+                            .localeCompare(String(a.weekStart || a.weekKey || ''))
+                    );
 
                 if (!records.length) {
                     list.innerHTML = `
@@ -3540,16 +3632,24 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     const mark = data.reviewMark !== null && data.reviewMark !== undefined && data.reviewMark !== ''
                         ? `${escapeHtml(data.reviewMark)}/100`
                         : '';
-                    const reviewed = !!grade || !!String(data.reviewComment || '').trim();
-                    const currentInfo = getCurrentErphWeekInfo();
-                    const recordIndex = getErphWeekIndexByCode(data.weekCode || data.weekKey);
-                    const currentIndex = getErphWeekIndexByCode(currentInfo.code);
-                    const late = !currentInfo.isHoliday && recordIndex >= 0 && currentIndex >= 0 && recordIndex < currentIndex;
-
-                    const statusBadge = grade
-                        ? `<span class="px-2 py-1 rounded-lg bg-sky-500/10 text-sky-600 text-[9px] font-extrabold">Dinilai • ${escapeHtml(grade)}${mark ? ` • ${mark}` : ''}${late ? ' • Lewat' : ''}</span>`
-                        : `<span class="px-2 py-1 rounded-lg ${late ? 'bg-amber-500/10 text-amber-600' : (reviewed ? 'bg-emerald-500/10 text-emerald-600' : 'bg-slate-500/10 text-slate-500')} text-[9px] font-extrabold">${late ? 'Lewat' : (reviewed ? 'Ulasan Diberi' : 'Belum Dinilai')}</span>`;
                     const comment = String(data.reviewComment || '').trim();
+                    const currentInfo = getErphWeekInfo();
+                    const recordIndex = getErphWeekIndexByCode(data.weekCode || data.weekKey);
+                    const currentIndexNow = getErphWeekIndexByCode(currentInfo.code);
+                    const late = data.submissionStatus === 'lewat'
+                        || (!currentInfo.isHoliday && recordIndex >= 0 && currentIndexNow >= 0 && recordIndex < currentIndexNow);
+
+                    let statusBadge;
+                    if (grade) {
+                        statusBadge = `<span class="px-2 py-1 rounded-lg bg-sky-500/10 text-sky-600 text-[9px] font-extrabold">Dinilai • ${escapeHtml(grade)}${mark ? ` • ${mark}` : ''}${late ? ' • Lewat' : ''}</span>`;
+                    } else if (late) {
+                        statusBadge = `<span class="px-2 py-1 rounded-lg bg-amber-500/10 text-amber-600 text-[9px] font-extrabold">Lewat</span>`;
+                    } else if (comment) {
+                        statusBadge = `<span class="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 text-[9px] font-extrabold">Ulasan Diberi</span>`;
+                    } else {
+                        statusBadge = `<span class="px-2 py-1 rounded-lg bg-slate-500/10 text-slate-500 text-[9px] font-extrabold">Belum Dinilai</span>`;
+                    }
+
                     const reviewer = data.reviewedByName || data.reviewedBy || 'Pentadbir';
 
                     return `
@@ -3560,9 +3660,12 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                                         <span class="font-heading font-extrabold text-sm text-slate-800 dark:text-white">${escapeHtml(data.weekCode || data.weekKey || 'Minggu')}</span>
                                         ${statusBadge}
                                     </div>
-                                    <div class="text-[10px] text-slate-400 mt-1">Dihantar: ${escapeHtml(formatErphTimestamp(data.submittedAt) || 'Tarikh tidak tersedia')}${late ? ' • Lewat' : ''}</div>
+                                    <div class="text-[10px] text-slate-400 mt-1">
+                                        Dihantar: ${escapeHtml(formatErphTimestamp(data.submittedAt) || 'Tarikh tidak tersedia')}
+                                    </div>
                                 </div>
-                                <button type="button" onclick="openMyHistoricalErph(decodeURIComponent('${encodeURIComponent(data.sheetUrl || '')}'))"
+                                <button type="button"
+                                        onclick="openMyHistoricalErph(decodeURIComponent('${encodeURIComponent(data.sheetUrl || '')}'))"
                                         class="shrink-0 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[9px] font-extrabold hover:bg-emerald-500 hover:text-white transition">
                                     <i class="fa-solid fa-table mr-1"></i>Buka eRPH
                                 </button>
@@ -3607,10 +3710,12 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 return;
             }
 
-            const info = getSelectedErphWeekInfo() || getCurrentErphWeekInfo();
-            const currentInfo = getCurrentErphWeekInfo();
+            const info = getSelectedErphWeekInfo() || getErphWeekInfo();
+            const currentInfo = getErphWeekInfo();
+
             const selectedIndex = getErphWeekIndexByCode(info.code);
             const currentIndex = getErphWeekIndexByCode(currentInfo.code);
+
             const isLateWeek = !currentInfo.isHoliday
                 && selectedIndex >= 0
                 && currentIndex >= 0
@@ -3641,21 +3746,24 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     weekEnd: info.endKey,
                     submissionStatus: isLateWeek ? 'lewat' : 'dah_hantar',
                     updatedAt: serverTimestamp(),
-                    submittedAt: existing.exists() ? (existing.data().submittedAt || serverTimestamp()) : serverTimestamp()
+                    submittedAt: existing.exists()
+                        ? (existing.data().submittedAt || serverTimestamp())
+                        : serverTimestamp()
                 }, { merge: true });
 
                 showToast(
                     existing.exists()
                         ? (isLateWeek
-                            ? 'Pautan eRPH minggu terdahulu berjaya dikemas kini. Status: Lewat.'
-                            : 'Pautan eRPH berjaya dikemas kini.')
+                            ? `Pautan eRPH ${info.code} berjaya dikemas kini. Status: Lewat.`
+                            : `Pautan eRPH ${info.code} berjaya dikemas kini.`)
                         : (isLateWeek
-                            ? 'eRPH minggu terdahulu berjaya dihantar. Status: Lewat.'
-                            : 'eRPH minggu ini berjaya dihantar.'),
+                            ? `eRPH ${info.code} berjaya dihantar. Status: Lewat.`
+                            : `eRPH ${info.code} berjaya dihantar.`),
                     'success'
                 );
 
                 await loadMyErphSubmission();
+                await loadMyErphHistory();
 
                 if (teacher.role === 'admin') {
                     await loadErphAdminSummary();
@@ -3676,10 +3784,12 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         }
 
         // ============================================================
-        // PEMBAHAGIAN GURU MENGIKUT PENYEMAK — FIRESTORE
+        // PEMBAHAGIAN GURU MENGIKUT PENYEMAK — V40 FINAL
+        // Setiap guru hanya mempunyai seorang penyemak.
+        // Paparan dan kiraan sentiasa berdasarkan penyemak yang dipilih.
         // ============================================================
 
-        let ERPH_REVIEWER_NAMES = [];
+        const ERPH_REVIEWER_NAMES = REVIEWER_NAMES;
 
         let reviewerAssignments = [];
         let reviewerTeachers = [];
@@ -3699,63 +3809,45 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             return String(match?.email || match?.id || '').toLowerCase();
         }
 
-        function getAssignedTeacherNames(reviewerName) {
-            return reviewerAssignments
-                .filter(a => normalisePersonName(a.reviewerName) === normalisePersonName(reviewerName))
-                .map(a => normalisePersonName(a.teacherName));
-        }
-
-        function teacherBelongsToReviewer(teacher, reviewerName) {
-            const assigned = reviewerAssignments.filter(a =>
-                normalisePersonName(a.reviewerName) === normalisePersonName(reviewerName)
-            );
-
-            const teacherEmail = String(teacher.email || teacher.id || '').toLowerCase();
-            const teacherName = normalisePersonName(teacher.displayName);
-
-            return assigned.some(a =>
-                String(a.teacherEmail || '').toLowerCase() === teacherEmail ||
-                normalisePersonName(a.teacherName) === teacherName
-            );
-        }
-
-        function setReviewerProfiles(teachers) {
-            reviewerProfiles = (Array.isArray(teachers) ? teachers : [])
-                .filter(t => t && t.active !== false && REVIEWER_ROLES.includes(String(t.role || '').toLowerCase()))
-                .sort((a, b) => String(a.displayName || a.email || a.id || '')
-                    .localeCompare(String(b.displayName || b.email || b.id || '')));
-
-            REVIEWER_NAMES = reviewerProfiles.map(t => String(t.displayName || t.email || t.id || '').trim())
-                .filter(Boolean);
-            ERPH_REVIEWER_NAMES = [...REVIEWER_NAMES];
-        }
-
         function populateAssignmentReviewerSelect() {
             const select = document.getElementById('assignmentReviewerSelect');
             if (!select) return;
 
             const previous = select.value;
-            const names = Array.isArray(REVIEWER_NAMES) ? REVIEWER_NAMES : [];
 
-            if (!names.length) {
-                select.innerHTML = '<option value="">Tiada pentadbir/penyemak aktif</option>';
-                select.value = '';
-                return;
-            }
+            select.innerHTML = ERPH_REVIEWER_NAMES.map(name =>
+                `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
+            ).join('');
 
-            select.innerHTML = names.map(name => {
-                const profile = reviewerProfiles.find(t =>
-                    normalisePersonName(t.displayName || t.email || t.id) === normalisePersonName(name)
-                );
-                const roleLabel = String(profile?.role || '').toLowerCase() === 'admin' ? 'Admin' : 'Pentadbir';
-                return `<option value="${escapeHtml(name)}">${escapeHtml(name)} • ${escapeHtml(roleLabel)}</option>`;
-            }).join('');
-
-            if (names.includes(previous)) {
+            if (ERPH_REVIEWER_NAMES.includes(previous)) {
                 select.value = previous;
             } else {
-                select.value = names[0] || '';
+                select.value = ERPH_REVIEWER_NAMES[0] || '';
             }
+        }
+
+        // ------------------------------------------------------------
+        // Ambil semua assignment dan normalise:
+        // seorang guru = satu assignment aktif.
+        // ------------------------------------------------------------
+        function getCanonicalAssignments() {
+            const map = new Map();
+
+            for (const a of reviewerAssignments) {
+                const email = String(
+                    a.teacherEmail || a.id || ''
+                ).trim().toLowerCase();
+
+                if (!email) continue;
+
+                // Rekod terakhir dalam snapshot menang jika ada duplicate.
+                map.set(email, {
+                    ...a,
+                    teacherEmail: email
+                });
+            }
+
+            return Array.from(map.values());
         }
 
         async function loadReviewerAssignments() {
@@ -3764,193 +3856,638 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
             if (!list || !select) return;
 
-            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
-                list.innerHTML = '<div class="text-xs text-rose-400 text-center py-6">Akses Admin diperlukan.</div>';
+            populateAssignmentReviewerSelect();
+
+            if (
+                !window.currentTeacher ||
+                !['admin', 'pentadbir'].includes(window.currentTeacher.role)
+            ) {
+                list.innerHTML =
+                    '<div class="text-xs text-rose-400 text-center py-6">' +
+                    'Akses Admin/Pentadbir diperlukan.' +
+                    '</div>';
                 return;
             }
 
-            list.innerHTML = '<div class="text-xs text-slate-400 text-center py-8"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Memuatkan guru dan pembahagian...</div>';
+            list.innerHTML =
+                '<div class="text-xs text-slate-400 text-center py-8">' +
+                '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>' +
+                'Memuatkan senarai guru...' +
+                '</div>';
 
             try {
-                const [teachersSnap, assignmentsSnap] = await Promise.all([
-                    getDocs(collection(db, TEACHERS)),
-                    getDocs(collection(db, REVIEW_ASSIGNMENTS))
-                ]);
+                // Teachers WAJIB berjaya dibaca.
+                const teachersSnap =
+                    await getDocs(collection(db, TEACHERS));
 
                 reviewerTeachers = teachersSnap.docs
-                    .map(d => ({ id: d.id, ...d.data() }))
+                    .map(d => ({
+                        id: d.id,
+                        ...d.data()
+                    }))
                     .filter(t => t.active !== false)
                     .sort((a, b) =>
-                        String(a.displayName || a.email || a.id)
-                            .localeCompare(String(b.displayName || b.email || b.id))
+                        String(
+                            a.displayName ||
+                            a.email ||
+                            a.id
+                        ).localeCompare(
+                            String(
+                                b.displayName ||
+                                b.email ||
+                                b.id
+                            )
+                        )
                     );
 
-                const allTeacherProfiles = teachersSnap.docs
-                    .map(d => ({ id: d.id, ...d.data() }));
-                setReviewerProfiles(allTeacherProfiles);
+                reviewerProfiles = reviewerTeachers.slice();
 
-                reviewerAssignments = assignmentsSnap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                // Assignment dibaca secara berasingan.
+                // Jika collection kosong / tiada permission,
+                // senarai guru masih akan dipaparkan.
+                reviewerAssignments = [];
 
-                // Pastikan pilihan penyemak kekal selepas data Firestore selesai dimuat.
+                try {
+                    const assignmentsSnap =
+                        await getDocs(
+                            collection(
+                                db,
+                                REVIEW_ASSIGNMENTS
+                            )
+                        );
+
+                    reviewerAssignments =
+                        assignmentsSnap.docs.map(d => ({
+                            id: d.id,
+                            ...d.data()
+                        }));
+
+                } catch (assignmentError) {
+                    console.warn(
+                        'reviewAssignments gagal dibaca:',
+                        assignmentError
+                    );
+                }
+
                 populateAssignmentReviewerSelect();
                 renderAssignmentTeachers();
 
             } catch (e) {
-                console.error('Gagal memuatkan pembahagian penyemak:', e);
+                console.error(
+                    'Gagal memuatkan senarai guru:',
+                    e
+                );
+
                 list.innerHTML = `
                     <div class="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-5 text-center">
+
                         <div class="text-rose-300 font-extrabold text-sm mb-1">
-                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>Gagal memuatkan data
+                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>
+                            Gagal memuatkan senarai guru
                         </div>
+
                         <div class="text-[10px] text-slate-300 leading-relaxed">
-                            Semak Firestore Rules untuk <code class="text-emerald-300">teachers</code> dan
-                            <code class="text-emerald-300">reviewAssignments</code>.
+                            Semak Firestore Rules untuk
+                            <code class="text-emerald-300">teachers</code>.
                         </div>
-                        <div class="text-[9px] text-rose-200/80 mt-2 break-words">${escapeHtml(e.message)}</div>
-                    </div>`;
+
+                        <div class="text-[9px] text-rose-200/80 mt-2 break-words">
+                            ${escapeHtml(e.message)}
+                        </div>
+
+                    </div>
+                `;
             }
         }
 
+        window.loadReviewerAssignments =
+            loadReviewerAssignments;
+
+
+        // ------------------------------------------------------------
+        // RENDER
+        // ------------------------------------------------------------
         function renderAssignmentTeachers() {
-            const list = document.getElementById('assignmentTeacherList');
-            const select = document.getElementById('assignmentReviewerSelect');
-            const count = document.getElementById('assignmentSelectedCount');
+
+            const list =
+                document.getElementById(
+                    'assignmentTeacherList'
+                );
+
+            const select =
+                document.getElementById(
+                    'assignmentReviewerSelect'
+                );
+
+            const count =
+                document.getElementById(
+                    'assignmentSelectedCount'
+                );
 
             if (!list || !select) return;
 
-            const reviewerName = select.value || '';
-            const assigned = reviewerAssignments.filter(a =>
-                normalisePersonName(a.reviewerName) === normalisePersonName(reviewerName)
-            );
+            const reviewerName =
+                String(select.value || '').trim();
 
-            const assignedEmails = new Set(
-                assigned.map(a => String(a.teacherEmail || '').toLowerCase()).filter(Boolean)
-            );
-            const assignedNames = new Set(
-                assigned.map(a => normalisePersonName(a.teacherName)).filter(Boolean)
-            );
+            const reviewerKey =
+                normalisePersonName(reviewerName);
 
-            if (count) count.textContent = assigned.length;
+            const canonical =
+                getCanonicalAssignments();
+
+
+            // HANYA assignment untuk penyemak yang sedang dipilih.
+            const assigned =
+                canonical.filter(a =>
+                    normalisePersonName(
+                        a.reviewerName
+                    ) === reviewerKey
+                );
+
+
+            // Email guru yang ditugaskan kepada penyemak ini.
+            const assignedEmails =
+                new Set(
+                    assigned
+                        .map(a =>
+                            String(
+                                a.teacherEmail ||
+                                a.id ||
+                                ''
+                            )
+                            .trim()
+                            .toLowerCase()
+                        )
+                        .filter(Boolean)
+                );
+
+
+            // JUMLAH GURU = jumlah email unik untuk penyemak semasa.
+            if (count) {
+                count.textContent =
+                    String(assignedEmails.size);
+            }
+
 
             if (!reviewerTeachers.length) {
-                list.innerHTML = '<div class="text-xs text-slate-400 text-center py-8">Tiada guru aktif.</div>';
+                list.innerHTML =
+                    '<div class="text-xs text-slate-400 text-center py-8">' +
+                    'Tiada guru aktif.' +
+                    '</div>';
                 return;
             }
 
-            list.innerHTML = reviewerTeachers.map((teacher, index) => {
-                const email = String(teacher.email || teacher.id || '').toLowerCase();
-                const name = String(teacher.displayName || email.split('@')[0] || 'Guru');
-                const checked = assignedEmails.has(email) || assignedNames.has(normalisePersonName(name));
 
-                return `
-                    <label class="assignment-teacher-row flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900/70 px-3 py-3 cursor-pointer hover:border-emerald-500/50 transition">
-                        <input type="checkbox"
-                               class="assignment-teacher-checkbox w-4 h-4 accent-emerald-500"
-                               data-email="${escapeHtml(email)}"
-                               data-name="${escapeHtml(name)}"
-                               ${checked ? 'checked' : ''}>
-                        <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-300 flex items-center justify-center text-[10px] font-extrabold shrink-0">
-                            ${escapeHtml(initials(name))}
-                        </span>
-                        <span class="min-w-0 flex-1">
-                            <span class="block text-xs font-bold text-white truncate">${escapeHtml(name)}</span>
-                            <span class="block text-[9px] text-slate-500 truncate">${escapeHtml(email)}</span>
-                        </span>
-                    </label>
-                `;
-            }).join('');
+            list.innerHTML =
+                reviewerTeachers.map(teacher => {
 
-            list.querySelectorAll('.assignment-teacher-checkbox').forEach(cb => {
-                cb.addEventListener('change', updateAssignmentCount);
-            });
+                    const email =
+                        String(
+                            teacher.email ||
+                            teacher.id ||
+                            ''
+                        )
+                        .trim()
+                        .toLowerCase();
+
+                    const name =
+                        String(
+                            teacher.displayName ||
+                            email.split('@')[0] ||
+                            'Guru'
+                        ).trim();
+
+                    // Guru bertanda hanya jika assignment TERKINI
+                    // memang menunjuk kepada penyemak ini.
+                    const checked =
+                        email &&
+                        assignedEmails.has(email);
+
+
+                    return `
+                        <label
+                            class="assignment-teacher-row
+                                   flex items-center gap-3
+                                   rounded-2xl
+                                   border border-slate-700
+                                   bg-slate-900/70
+                                   px-3 py-3
+                                   cursor-pointer
+                                   hover:border-emerald-500/50
+                                   transition">
+
+                            <input
+                                type="checkbox"
+                                class="assignment-teacher-checkbox
+                                       w-4 h-4
+                                       accent-emerald-500"
+                                data-email="${escapeHtml(email)}"
+                                data-name="${escapeHtml(name)}"
+                                ${checked ? 'checked' : ''}
+                            >
+
+                            <span
+                                class="w-8 h-8 rounded-xl
+                                       bg-emerald-500/10
+                                       text-emerald-300
+                                       flex items-center
+                                       justify-center
+                                       text-[10px]
+                                       font-extrabold
+                                       shrink-0">
+
+                                ${escapeHtml(
+                                    initials(name)
+                                )}
+
+                            </span>
+
+                            <span class="min-w-0 flex-1">
+
+                                <span
+                                    class="block
+                                           text-xs
+                                           font-bold
+                                           text-white
+                                           truncate">
+
+                                    ${escapeHtml(name)}
+
+                                </span>
+
+                                <span
+                                    class="block
+                                           text-[9px]
+                                           text-slate-500
+                                           truncate">
+
+                                    ${escapeHtml(email)}
+
+                                </span>
+
+                            </span>
+
+                        </label>
+                    `;
+
+                }).join('');
+
+
+            list
+                .querySelectorAll(
+                    '.assignment-teacher-checkbox'
+                )
+                .forEach(cb => {
+
+                    cb.addEventListener(
+                        'change',
+                        updateAssignmentCount
+                    );
+
+                });
         }
 
+        window.renderAssignmentTeachers =
+            renderAssignmentTeachers;
+
+
+        // ------------------------------------------------------------
+        // LIVE COUNT
+        // ------------------------------------------------------------
         function updateAssignmentCount() {
-            const count = document.getElementById('assignmentSelectedCount');
-            const selected = document.querySelectorAll('.assignment-teacher-checkbox:checked');
-            if (count) count.textContent = selected.length;
+
+            const count =
+                document.getElementById(
+                    'assignmentSelectedCount'
+                );
+
+            const selectedEmails =
+                new Set(
+                    Array.from(
+                        document.querySelectorAll(
+                            '.assignment-teacher-checkbox:checked'
+                        )
+                    )
+                    .map(cb =>
+                        String(
+                            cb.dataset.email || ''
+                        )
+                        .trim()
+                        .toLowerCase()
+                    )
+                    .filter(Boolean)
+                );
+
+            if (count) {
+                count.textContent =
+                    String(selectedEmails.size);
+            }
         }
 
-        window.selectAllAssignmentTeachers = function(selectAll) {
-            document.querySelectorAll('.assignment-teacher-checkbox').forEach(cb => {
-                cb.checked = !!selectAll;
-            });
-            updateAssignmentCount();
-        };
 
-        window.saveReviewerAssignments = async function() {
-            if (!window.currentTeacher || window.currentTeacher.role !== 'admin') {
-                showToast('Akses Admin diperlukan.', 'info');
-                return;
-            }
+        window.selectAllAssignmentTeachers =
+            function(selectAll) {
 
-            const select = document.getElementById('assignmentReviewerSelect');
-            if (!select) return;
+                document
+                    .querySelectorAll(
+                        '.assignment-teacher-checkbox'
+                    )
+                    .forEach(cb => {
 
-            const reviewerName = select.value;
-            const reviewerEmail = reviewerEmailByName(reviewerName);
+                        cb.checked =
+                            !!selectAll;
 
-            const selected = Array.from(
-                document.querySelectorAll('.assignment-teacher-checkbox:checked')
-            ).map(cb => ({
-                teacherEmail: cb.dataset.email || '',
-                teacherName: cb.dataset.name || ''
-            }));
-
-            try {
-                const existing = reviewerAssignments.filter(a =>
-                    normalisePersonName(a.reviewerName) === normalisePersonName(reviewerName)
-                );
-
-                // Satu guru hanya mempunyai satu penyemak.
-                // Padam assignment lama guru yang dipilih dan assignment lama
-                // guru tersebut jika ia berpindah kepada penyemak baharu.
-                const selectedEmails = new Set(selected.map(x => x.teacherEmail));
-
-                const batch = writeBatch(db);
-
-                for (const a of reviewerAssignments) {
-                    const teacherEmail = String(a.teacherEmail || a.id || '').toLowerCase();
-
-                    if (
-                        normalisePersonName(a.reviewerName) === normalisePersonName(reviewerName) ||
-                        selectedEmails.has(teacherEmail)
-                    ) {
-                        if (a.id) batch.delete(doc(db, REVIEW_ASSIGNMENTS, a.id));
-                    }
-                }
-
-                for (const teacher of selected) {
-                    if (!teacher.teacherEmail) continue;
-
-                    const id = teacher.teacherEmail;
-                    batch.set(doc(db, REVIEW_ASSIGNMENTS, id), {
-                        teacherEmail: teacher.teacherEmail,
-                        teacherName: teacher.teacherName,
-                        reviewerEmail,
-                        reviewerName,
-                        updatedAt: serverTimestamp(),
-                        updatedBy: window.currentTeacher.email
                     });
+
+                updateAssignmentCount();
+            };
+
+
+        // ------------------------------------------------------------
+        // SIMPAN
+        // ------------------------------------------------------------
+        window.saveReviewerAssignments =
+            async function() {
+
+                if (
+                    !window.currentTeacher ||
+                    !['admin', 'pentadbir']
+                        .includes(
+                            window.currentTeacher.role
+                        )
+                ) {
+
+                    showToast(
+                        'Akses Admin/Pentadbir diperlukan.',
+                        'info'
+                    );
+
+                    return;
                 }
 
-                await batch.commit();
 
-                showToast(
-                    `Pembahagian untuk ${reviewerName} berjaya disimpan (${selected.length} guru).`,
-                    'success'
-                );
+                const select =
+                    document.getElementById(
+                        'assignmentReviewerSelect'
+                    );
 
-                await loadReviewerAssignments();
+                if (!select) return;
 
-            } catch (e) {
-                console.error('Gagal menyimpan pembahagian penyemak:', e);
-                showToast('Gagal menyimpan pembahagian. Semak Firestore Rules.', 'info');
-            }
-        };
+
+                const reviewerName =
+                    String(
+                        select.value || ''
+                    ).trim();
+
+
+                if (!reviewerName) {
+                    showToast(
+                        'Sila pilih penyemak.',
+                        'info'
+                    );
+                    return;
+                }
+
+
+                const reviewerEmail =
+                    reviewerEmailByName(
+                        reviewerName
+                    );
+
+
+                // Guru yang dipilih.
+                const selected =
+                    Array.from(
+                        document.querySelectorAll(
+                            '.assignment-teacher-checkbox:checked'
+                        )
+                    )
+                    .map(cb => ({
+                        teacherEmail:
+                            String(
+                                cb.dataset.email || ''
+                            )
+                            .trim()
+                            .toLowerCase(),
+
+                        teacherName:
+                            String(
+                                cb.dataset.name || ''
+                            ).trim()
+                    }))
+                    .filter(x =>
+                        x.teacherEmail
+                    );
+
+
+                // Dedupe berdasarkan email.
+                const selectedMap =
+                    new Map();
+
+                selected.forEach(t => {
+                    selectedMap.set(
+                        t.teacherEmail,
+                        t
+                    );
+                });
+
+                const uniqueSelected =
+                    Array.from(
+                        selectedMap.values()
+                    );
+
+                const selectedEmails =
+                    new Set(
+                        uniqueSelected.map(
+                            t => t.teacherEmail
+                        )
+                    );
+
+
+                try {
+
+                    const batch =
+                        writeBatch(db);
+
+
+                    /*
+                     * RULE:
+                     *
+                     * 1. Semua assignment lama milik penyemak semasa
+                     *    dibuang.
+                     *
+                     * 2. Jika guru dipilih untuk penyemak baharu,
+                     *    assignment lamanya juga dibuang.
+                     *
+                     * 3. Guru yang tidak dipilih untuk penyemak semasa
+                     *    tetapi bukan milik penyemak baharu dikekalkan.
+                     *
+                     * 4. Dokumen guru yang dipilih akan SET semula
+                     *    dengan reviewer baharu.
+                     */
+
+
+                    const idsToWrite =
+                        new Set(
+                            uniqueSelected.map(
+                                t =>
+                                    t.teacherEmail
+                            )
+                        );
+
+
+                    const deleted =
+                        new Set();
+
+
+                    for (
+                        const assignment
+                        of reviewerAssignments
+                    ) {
+
+                        const docId =
+                            String(
+                                assignment.id ||
+                                assignment.teacherEmail ||
+                                ''
+                            ).trim();
+
+                        const teacherEmail =
+                            String(
+                                assignment.teacherEmail ||
+                                assignment.id ||
+                                ''
+                            )
+                            .trim()
+                            .toLowerCase();
+
+                        if (!docId) continue;
+
+
+                        const oldReviewer =
+                            normalisePersonName(
+                                assignment.reviewerName
+                            );
+
+
+                        const currentReviewer =
+                            oldReviewer ===
+                            normalisePersonName(
+                                reviewerName
+                            );
+
+
+                        const movingTeacher =
+                            selectedEmails.has(
+                                teacherEmail
+                            );
+
+
+                        /*
+                         * Jika dokumen akan ditulis semula,
+                         * jangan delete dahulu.
+                         */
+                        if (
+                            idsToWrite.has(
+                                docId.toLowerCase()
+                            )
+                        ) {
+                            continue;
+                        }
+
+
+                        if (
+                            currentReviewer ||
+                            movingTeacher
+                        ) {
+
+                            if (
+                                !deleted.has(
+                                    docId
+                                )
+                            ) {
+
+                                batch.delete(
+                                    doc(
+                                        db,
+                                        REVIEW_ASSIGNMENTS,
+                                        docId
+                                    )
+                                );
+
+                                deleted.add(
+                                    docId
+                                );
+                            }
+                        }
+                    }
+
+
+                    // Tulis assignment baharu.
+                    for (
+                        const teacher
+                        of uniqueSelected
+                    ) {
+
+                        batch.set(
+                            doc(
+                                db,
+                                REVIEW_ASSIGNMENTS,
+                                teacher.teacherEmail
+                            ),
+                            {
+                                teacherEmail:
+                                    teacher.teacherEmail,
+
+                                teacherName:
+                                    teacher.teacherName,
+
+                                reviewerEmail:
+                                    reviewerEmail || '',
+
+                                reviewerName:
+                                    reviewerName,
+
+                                updatedAt:
+                                    serverTimestamp(),
+
+                                updatedBy:
+                                    window.currentTeacher.email || ''
+
+                            },
+                            {
+                                merge: true
+                            }
+                        );
+                    }
+
+
+                    await batch.commit();
+
+
+                    showToast(
+                        `Pembahagian untuk ${reviewerName} berjaya disimpan (${uniqueSelected.length} guru).`,
+                        'success'
+                    );
+
+
+                    // Reload daripada Firestore.
+                    await loadReviewerAssignments();
+
+                } catch (e) {
+
+                    console.error(
+                        'Gagal menyimpan pembahagian penyemak:',
+                        e
+                    );
+
+                    showToast(
+                        'Gagal menyimpan pembahagian. Semak Firestore Rules.',
+                        'info'
+                    );
+                }
+            };
+
 
         function renderReviewerSelector() {
             const wrap = document.getElementById('erphReviewerSelectorWrap');
@@ -3958,9 +4495,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             if (!wrap || !select) return;
 
             const previousSelection = select.value;
-            const availableNames = ERPH_REVIEWER_NAMES.length
-                ? ERPH_REVIEWER_NAMES
-                : reviewerProfiles.map(t => String(t.displayName || t.email || t.id || '').trim()).filter(Boolean);
+            const availableNames = ERPH_REVIEWER_NAMES;
 
             select.innerHTML = availableNames.map(name =>
                 `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
@@ -4010,17 +4545,13 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     reviewerAssignments = assignmentSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 }
 
-                // Penyemak ditentukan secara automatik daripada teachers:
-                // role admin/pentadbir + active != false.
-                const reviewerTeacherSnap = await getDocs(collection(db, TEACHERS));
-                setReviewerProfiles(reviewerTeacherSnap.docs.map(d => ({ id: d.id, ...d.data() })));
                 renderReviewerSelector();
 
                 const reviewerSelect = document.getElementById('erphReviewerSelect');
                 const selectedReviewer =
                     window.selectedErphReviewer ||
                     reviewerSelect?.value ||
-                    ERPH_REVIEWER_NAMES[0] || '';
+                    ERPH_REVIEWER_NAMES[0];
 
                 const week = getErphWeekInfo();
                 const adminWeekCode = document.getElementById('erphAdminWeekCode');
@@ -4293,8 +4824,6 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         window.submitErphWeekly = submitErphWeekly;
         window.openSubmittedErphLink = openSubmittedErphLink;
         window.loadErphAdminSummary = loadErphAdminSummary;
-        window.loadMyErphHistory = loadMyErphHistory;
-        window.openMyHistoricalErph = openMyHistoricalErph;
         window.openErphReviewer = openErphReviewer;
         window.closeErphReviewer = closeErphReviewer;
         window.openErphGradeModal = openErphGradeModal;
