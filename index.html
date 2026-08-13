@@ -3789,7 +3789,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         // Paparan dan kiraan sentiasa berdasarkan penyemak yang dipilih.
         // ============================================================
 
-        const ERPH_REVIEWER_NAMES = REVIEWER_NAMES;
+        let ERPH_REVIEWER_NAMES = [...REVIEWER_NAMES];
 
         let reviewerAssignments = [];
         let reviewerTeachers = [];
@@ -3902,6 +3902,18 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
                 reviewerProfiles = reviewerTeachers.slice();
 
+                // Penyemak rasmi = semua guru aktif yang mempunyai role
+                // admin atau pentadbir. Ini memastikan apabila pentadbir
+                // ditambah/ditukar dalam Firestore, dia terus menjadi penyemak.
+                const dynamicReviewerNames = reviewerTeachers
+                    .filter(t => ['admin', 'pentadbir'].includes(String(t.role || '').toLowerCase()))
+                    .map(t => String(t.displayName || t.email || t.id || '').trim())
+                    .filter(Boolean);
+
+                ERPH_REVIEWER_NAMES = dynamicReviewerNames.length
+                    ? dynamicReviewerNames
+                    : [...REVIEWER_NAMES];
+
                 // Assignment dibaca secara berasingan.
                 // Jika collection kosong / tiada permission,
                 // senarai guru masih akan dipaparkan.
@@ -3962,6 +3974,50 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
         window.loadReviewerAssignments =
             loadReviewerAssignments;
+
+
+        // ------------------------------------------------------------
+        // SEMAKAN eRPH: tentukan sama ada seorang guru memang
+        // ditugaskan kepada penyemak yang sedang dipilih.
+        // ------------------------------------------------------------
+        function teacherBelongsToReviewer(teacher, reviewerName) {
+            const teacherEmail = String(
+                teacher?.email || teacher?.id || ''
+            ).trim().toLowerCase();
+
+            if (!teacherEmail) return false;
+
+            const reviewerKey = normalisePersonName(reviewerName);
+            if (!reviewerKey) return false;
+
+            const reviewerProfile = reviewerProfiles.find(r =>
+                normalisePersonName(r.displayName || r.email || r.id) === reviewerKey
+            );
+
+            const reviewerEmail = String(
+                reviewerProfile?.email || reviewerProfile?.id || ''
+            ).trim().toLowerCase();
+
+            return reviewerAssignments.some(a => {
+                const assignedTeacherEmail = String(
+                    a.teacherEmail || a.teacherId || a.id || ''
+                ).trim().toLowerCase();
+
+                if (assignedTeacherEmail !== teacherEmail) return false;
+
+                const assignedReviewerName = normalisePersonName(a.reviewerName || '');
+                const assignedReviewerEmail = String(
+                    a.reviewerEmail || ''
+                ).trim().toLowerCase();
+
+                return (
+                    assignedReviewerName === reviewerKey ||
+                    (!!reviewerEmail && assignedReviewerEmail === reviewerEmail)
+                );
+            });
+        }
+
+        window.teacherBelongsToReviewer = teacherBelongsToReviewer;
 
 
         // ------------------------------------------------------------
@@ -4545,6 +4601,20 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     reviewerAssignments = assignmentSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 }
 
+                // Ambil profil guru dahulu supaya senarai penyemak sentiasa
+                // datang daripada role admin/pentadbir sebenar dalam Firestore.
+                const teachersSnap = await getDocs(collection(db, TEACHERS));
+                reviewerProfiles = teachersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                const dynamicReviewerNames = reviewerProfiles
+                    .filter(t => t.active !== false && ['admin', 'pentadbir'].includes(String(t.role || '').toLowerCase()))
+                    .map(t => String(t.displayName || t.email || t.id || '').trim())
+                    .filter(Boolean);
+
+                ERPH_REVIEWER_NAMES = dynamicReviewerNames.length
+                    ? dynamicReviewerNames
+                    : [...REVIEWER_NAMES];
+
                 renderReviewerSelector();
 
                 const reviewerSelect = document.getElementById('erphReviewerSelect');
@@ -4560,7 +4630,6 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 if (adminWeekCode) adminWeekCode.textContent = week.isHoliday ? 'CUTI' : week.code;
                 if (reviewWeekCode) reviewWeekCode.textContent = week.isHoliday ? 'CUTI' : week.code;
 
-                const teachersSnap = await getDocs(collection(db, TEACHERS));
                 const submissionsSnap = await getDocs(collection(db, ERPH_SUBMISSIONS));
 
                 const submissions = {};
