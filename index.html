@@ -2223,12 +2223,11 @@
 
         // Senarai penyemak rasmi. Email akan diambil daripada collection teachers
         // apabila rekod penyemak wujud.
-        const REVIEWER_NAMES = [
-            'Sapri bin Paee',
-            'Fauzia binti Etayi Kandi Hassan',
-            'Mohamad Nazimi bin Abdul Rahman',
-            'Helmi bin Tambi'
-        ];
+        // Senarai penyemak datang terus daripada collection teachers.
+        // Mana-mana akaun aktif dengan role admin/pentadbir akan menjadi penyemak.
+        // Array ini sengaja mutable supaya dropdown boleh dikemas kini selepas
+        // data teachers berjaya dimuatkan.
+        const REVIEWER_NAMES = [];
 
         // WHITELIST FIRESTORE:
         // Document ID mesti sama tepat dengan email Google pengguna.
@@ -3514,7 +3513,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         }
 
         // ============================================================
-        // PEMBAHAGIAN GURU MENGIKUT PENYEMAK — V40 FINAL
+        // PEMBAHAGIAN GURU MENGIKUT PENYEMAK — V43 FINAL FIX
         // Setiap guru hanya mempunyai seorang penyemak.
         // Paparan dan kiraan sentiasa berdasarkan penyemak yang dipilih.
         // ============================================================
@@ -3608,6 +3607,12 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 const teachersSnap=await getDocs(collection(db,TEACHERS));
                 reviewerTeachers=teachersSnap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.active!==false).sort((a,b)=>String(a.displayName||a.email||a.id).localeCompare(String(b.displayName||b.email||b.id),'ms',{sensitivity:'base'}));
                 reviewerProfiles=reviewerTeachers.slice();
+
+                // Penyemak = semua Admin + Pentadbir yang aktif.
+                // Tiada lagi nama penyemak hard-coded.
+                const dynamicReviewerNames = getReviewerProfiles().map(t => t.displayName).filter(Boolean);
+                REVIEWER_NAMES.splice(0, REVIEWER_NAMES.length, ...dynamicReviewerNames);
+
                 reviewerAssignments=[];
                 try {
                     const snap=await getDocs(collection(db,REVIEW_ASSIGNMENTS));
@@ -3736,9 +3741,17 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             list.innerHTML = '<div class="text-xs text-slate-400 text-center py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Memuatkan...</div>';
 
             try {
+                // Baca pembahagian guru. Jika collection belum mempunyai rekod,
+                // teruskan dengan senarai kosong. Jika permission ditolak,
+                // paparkan ralat sebenar supaya mudah dikesan.
                 if (!reviewerAssignments.length) {
-                    const assignmentSnap = await getDocs(collection(db, REVIEW_ASSIGNMENTS));
-                    reviewerAssignments = assignmentSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    try {
+                        const assignmentSnap = await getDocs(collection(db, REVIEW_ASSIGNMENTS));
+                        reviewerAssignments = assignmentSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    } catch (assignmentError) {
+                        console.error('reviewAssignments tidak boleh dibaca:', assignmentError);
+                        throw new Error('Akses collection reviewAssignments ditolak. Sila kemas kini Firestore Rules.');
+                    }
                 }
 
                 renderReviewerSelector();
@@ -3873,7 +3886,15 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
             } catch (e) {
                 console.error('Gagal memuatkan pemantauan eRPH:', e);
-                list.innerHTML = '<div class="text-xs text-rose-500 text-center py-4">Gagal memuatkan data. Semak Firestore Rules.</div>';
+                const detail = escapeHtml(e?.message || 'Ralat tidak diketahui.');
+                list.innerHTML = `
+                    <div class="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-5 text-center">
+                        <div class="text-rose-500 font-extrabold text-sm mb-1">
+                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>Gagal memuatkan data
+                        </div>
+                        <div class="text-[10px] text-slate-500">Semak Firestore Rules untuk teachers, erphSubmissions dan reviewAssignments.</div>
+                        <div class="text-[9px] text-rose-400 mt-2 break-words">${detail}</div>
+                    </div>`;
                 const reviewerList = document.getElementById('reviewerList');
                 if (reviewerList) reviewerList.innerHTML = list.innerHTML;
             }
