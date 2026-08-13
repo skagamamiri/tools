@@ -650,7 +650,7 @@
                     <h3 class="font-heading font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate">Penghantaran eRPH Mingguan</h3>
                 </div>
             </div>
-            <button onclick="loadMyErphSubmission()" type="button" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-500 hover:text-white transition" title="Semak status">
+            <button onclick="loadMyErphSubmission(); loadMyErphHistory()" type="button" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-500 hover:text-white transition" title="Semak status">
                 <i class="fa-solid fa-rotate-right text-xs"></i>
             </button>
         </div>
@@ -676,6 +676,10 @@
                             <i class="fa-solid fa-circle-question"></i> Belum Hantar
                         </div>
                         <div id="erphSubmittedAt" class="text-[10px] text-slate-500 mt-2">Belum ada penghantaran minggu ini.</div>
+                        <div id="erphReviewInfo" class="mt-3 rounded-2xl bg-slate-100 dark:bg-slate-800 p-3">
+                            <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Penilaian Pentadbir</div>
+                            <div class="text-xs text-slate-500 mt-1">Belum dinilai.</div>
+                        </div>
                     </div>
                 </div>
 
@@ -714,6 +718,22 @@
                     <button id="erphOpenLinkBtn" onclick="openSubmittedErphLink()" class="hidden sm:w-auto px-5 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition">
                         <i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i>Buka Pautan
                     </button>
+                </div>
+
+                <div class="border-t border-slate-200 dark:border-slate-800 pt-5">
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                            <div class="text-[9px] uppercase tracking-wider text-emerald-600 font-bold">Rekod Saya</div>
+                            <h4 class="font-heading font-extrabold text-sm text-slate-800 dark:text-white">Sejarah Penghantaran eRPH</h4>
+                            <p class="text-[10px] text-slate-500 mt-0.5">Lihat semula eRPH yang telah dihantar dan ulasan penilaian pentadbir.</p>
+                        </div>
+                        <button onclick="loadMyErphHistory()" type="button" class="shrink-0 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-emerald-500 hover:text-white transition">
+                            <i class="fa-solid fa-clock-rotate-left mr-1"></i>Sejarah
+                        </button>
+                    </div>
+                    <div id="erphHistoryList" class="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+                        <div class="text-xs text-slate-400 text-center py-5">Memuatkan rekod...</div>
+                    </div>
                 </div>
 
                 <div id="erphAdminPanel" class="hidden border-t border-slate-200 dark:border-slate-800 pt-5">
@@ -3330,6 +3350,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             adminPanel.classList.toggle('hidden', !canReview);
 
             await loadMyErphSubmission();
+            await loadMyErphHistory();
 
             if (canReview) {
                 loadErphAdminSummary();
@@ -3419,6 +3440,93 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 console.error('Gagal membaca eRPH:', e);
                 showToast('Gagal menyemak status eRPH. Semak Firestore Rules.', 'info');
             }
+        }
+
+        async function loadMyErphHistory() {
+            const teacher = window.currentTeacher;
+            const list = document.getElementById('erphHistoryList');
+            if (!teacher || !list) return;
+
+            list.innerHTML = '<div class="text-xs text-slate-400 text-center py-5"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Memuatkan sejarah eRPH...</div>';
+
+            try {
+                // Baca rekod guru sendiri satu demi satu menggunakan ID dokumen yang sama
+                // seperti ketika penghantaran dibuat. Ini tidak memerlukan query/list
+                // Firestore dan serasi dengan Rules semasa.
+                const current = getErphWeekInfo();
+                const currentIndex = ERPH_SCHOOL_WEEKS.findIndex(w => w.code === current.code);
+                const weeks = ERPH_SCHOOL_WEEKS
+                    .filter(w => w.date <= (current.startKey || '9999-12-31'))
+                    .slice(0, currentIndex >= 0 ? currentIndex + 1 : ERPH_SCHOOL_WEEKS.length);
+
+                const docs = await Promise.all(weeks.map(async week => {
+                    const ref = doc(db, ERPH_SUBMISSIONS, getErphSubmissionId(teacher.email, week.code));
+                    const snap = await getDoc(ref);
+                    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+                }));
+
+                const records = docs
+                    .filter(Boolean)
+                    .sort((a, b) => String(b.weekStart || b.weekKey || '').localeCompare(String(a.weekStart || a.weekKey || '')));
+
+                if (!records.length) {
+                    list.innerHTML = `
+                        <div class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center">
+                            <i class="fa-solid fa-folder-open text-2xl text-slate-300 dark:text-slate-600"></i>
+                            <div class="text-xs font-bold text-slate-500 mt-2">Belum ada rekod penghantaran.</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Rekod akan muncul di sini selepas anda menghantar eRPH.</div>
+                        </div>`;
+                    return;
+                }
+
+                list.innerHTML = records.map(data => {
+                    const grade = data.reviewGrade || '';
+                    const mark = data.reviewMark !== null && data.reviewMark !== undefined && data.reviewMark !== ''
+                        ? `${escapeHtml(data.reviewMark)}/100`
+                        : '';
+                    const reviewed = !!grade || !!String(data.reviewComment || '').trim();
+                    const statusBadge = grade
+                        ? `<span class="px-2 py-1 rounded-lg bg-sky-500/10 text-sky-600 text-[9px] font-extrabold">Dinilai • ${escapeHtml(grade)}${mark ? ` • ${mark}` : ''}</span>`
+                        : `<span class="px-2 py-1 rounded-lg bg-amber-500/10 text-amber-600 text-[9px] font-extrabold">${reviewed ? 'Ulasan Diberi' : 'Belum Dinilai'}</span>`;
+                    const comment = String(data.reviewComment || '').trim();
+                    const reviewer = data.reviewedByName || data.reviewedBy || 'Pentadbir';
+
+                    return `
+                        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40 p-3 sm:p-4">
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                <div class="min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="font-heading font-extrabold text-sm text-slate-800 dark:text-white">${escapeHtml(data.weekCode || data.weekKey || 'Minggu')}</span>
+                                        ${statusBadge}
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-1">Dihantar: ${escapeHtml(formatErphTimestamp(data.submittedAt) || 'Tarikh tidak tersedia')}</div>
+                                </div>
+                                <button type="button" onclick="openMyHistoricalErph(decodeURIComponent('${encodeURIComponent(data.sheetUrl || '')}'))"
+                                        class="shrink-0 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[9px] font-extrabold hover:bg-emerald-500 hover:text-white transition">
+                                    <i class="fa-solid fa-table mr-1"></i>Buka eRPH
+                                </button>
+                            </div>
+                            <div class="mt-3 rounded-xl ${comment ? 'bg-sky-500/5 border border-sky-500/10' : 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800'} p-3">
+                                <div class="text-[9px] uppercase tracking-wider ${comment ? 'text-sky-600' : 'text-slate-400'} font-extrabold">Ulasan Pentadbir</div>
+                                ${comment
+                                    ? `<div class="text-[11px] text-slate-700 dark:text-slate-200 mt-1 leading-relaxed whitespace-pre-line">${escapeHtml(comment)}</div>
+                                       <div class="text-[9px] text-slate-400 mt-2">Disemak oleh ${escapeHtml(reviewer)}${data.reviewedAt ? ` • ${escapeHtml(formatErphTimestamp(data.reviewedAt))}` : ''}</div>`
+                                    : '<div class="text-[10px] text-slate-500 mt-1">Belum ada ulasan daripada pentadbir.</div>'}
+                            </div>
+                        </div>`;
+                }).join('');
+            } catch (e) {
+                console.error('Gagal memuatkan sejarah eRPH:', e);
+                list.innerHTML = `
+                    <div class="rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/20 p-4 text-center">
+                        <div class="text-xs font-bold text-rose-600">Gagal memuatkan sejarah eRPH.</div>
+                        <div class="text-[10px] text-rose-500 mt-1">${escapeHtml(e?.message || 'Semak Firestore Rules.')}</div>
+                    </div>`;
+            }
+        }
+
+        function openMyHistoricalErph(url) {
+            if (url) window.open(url, '_blank', 'noopener,noreferrer');
         }
 
         async function submitErphWeekly() {
@@ -3524,30 +3632,19 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 .map(a => normalisePersonName(a.teacherName));
         }
 
-        // ============================================================
-        // SEMAKAN eRPH - PADANAN GURU DENGAN PENYEMAK
-        // Dibuat sebagai window function supaya tidak gagal "not defined"
-        // walaupun fungsi dipanggil dari handler / modul lain.
-        // ============================================================
-        window.teacherBelongsToReviewer = function(teacher, reviewerName) {
-            const assigned = Array.isArray(reviewerAssignments)
-                ? reviewerAssignments.filter(a =>
-                    normalisePersonName(a.reviewerName) === normalisePersonName(reviewerName)
-                )
-                : [];
+        function teacherBelongsToReviewer(teacher, reviewerName) {
+            const assigned = reviewerAssignments.filter(a =>
+                normalisePersonName(a.reviewerName) === normalisePersonName(reviewerName)
+            );
 
-            const teacherEmail = String(teacher?.email || teacher?.id || '').trim().toLowerCase();
-            const teacherName = normalisePersonName(teacher?.displayName);
+            const teacherEmail = String(teacher.email || teacher.id || '').toLowerCase();
+            const teacherName = normalisePersonName(teacher.displayName);
 
-            return assigned.some(a => {
-                const assignedEmail = String(a?.teacherEmail || a?.id || '').trim().toLowerCase();
-                const assignedName = normalisePersonName(a?.teacherName);
-
-                return (assignedEmail && teacherEmail && assignedEmail === teacherEmail)
-                    || (!assignedEmail && assignedName && assignedName === teacherName)
-                    || (assignedName && assignedName === teacherName);
-            });
-        };
+            return assigned.some(a =>
+                String(a.teacherEmail || '').toLowerCase() === teacherEmail ||
+                normalisePersonName(a.teacherName) === teacherName
+            );
+        }
 
         function setReviewerProfiles(teachers) {
             reviewerProfiles = (Array.isArray(teachers) ? teachers : [])
@@ -3876,7 +3973,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                         t.active !== false &&
                         ['teacher', 'pentadbir'].includes(t.role) &&
                         (
-                            window.teacherBelongsToReviewer(t, selectedReviewer) ||
+                            teacherBelongsToReviewer(t, selectedReviewer) ||
                             normalisePersonName(t.displayName) === normalisePersonName(selectedReviewer)
                         )
                     )
@@ -4123,6 +4220,8 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         window.submitErphWeekly = submitErphWeekly;
         window.openSubmittedErphLink = openSubmittedErphLink;
         window.loadErphAdminSummary = loadErphAdminSummary;
+        window.loadMyErphHistory = loadMyErphHistory;
+        window.openMyHistoricalErph = openMyHistoricalErph;
         window.openErphReviewer = openErphReviewer;
         window.closeErphReviewer = closeErphReviewer;
         window.openErphGradeModal = openErphGradeModal;
