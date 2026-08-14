@@ -2236,15 +2236,16 @@
                 toast.classList.add('hidden');
             }, 2500);
         }
-        // Fallback click handler: elak isu onclick selepas header dirender semula.
+        // Fallback click handler: header login mesti membuka modal walaupun
+        // inline onclick tidak berfungsi / script module dirender semula.
         document.addEventListener('click', (event) => {
-            const loginButton = event.target.closest('#teacherAuthContainer button');
+            const loginButton = event.target.closest('#teacherLoginHeaderBtn');
             if (!loginButton) return;
             if (window.currentTeacher) return;
             event.preventDefault();
             event.stopPropagation();
-            window.openTeacherLoginModal();
-        });
+            openTeacherLoginModal();
+        }, true);
 
         // Tutup modal apabila klik kawasan gelap di luar kotak login.
         document.addEventListener('click', (event) => {
@@ -2471,10 +2472,11 @@
             const teacher = window.currentTeacher;
             if (!teacher) {
                 container.innerHTML = `
-                    <button onclick="window.openTeacherLoginModal()" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-semibold shadow-sm hover:shadow-md hover:border-brand-500 transition flex items-center space-x-2">
+                    <button type="button" id="teacherLoginHeaderBtn" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-semibold shadow-sm hover:shadow-md hover:border-brand-500 transition flex items-center space-x-2">
                         <i class="fa-brands fa-google text-red-500"></i>
                         <span class="hidden sm:inline">Login dengan Google</span>
                     </button>`;
+                bindTeacherLoginHeaderButton();
                 return;
             }
             const photo = teacher.photoURL
@@ -2493,6 +2495,34 @@
         }
 
         window.renderFirebaseTeacherHeader = renderFirebaseTeacherHeader;
+
+        // HARD FIX: bind the header login button directly from the Firebase
+        // module. This removes dependency on inline onclick/global script scope.
+        function bindTeacherLoginHeaderButton() {
+            const btn = document.getElementById('teacherLoginHeaderBtn');
+            if (!btn || btn.dataset.bound === '1') return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (window.currentTeacher) return;
+                const modal = document.getElementById('teacherLoginModal');
+                const error = document.getElementById('loginErrorAlert');
+                if (error) { error.classList.add('hidden'); error.innerHTML = ''; }
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.style.display = 'flex';
+                    modal.style.pointerEvents = 'auto';
+                    modal.setAttribute('aria-hidden', 'false');
+                    document.body.classList.add('overflow-hidden');
+                } else {
+                    console.error('teacherLoginModal tidak ditemui.');
+                }
+            });
+        }
+
+        window.bindTeacherLoginHeaderButton = bindTeacherLoginHeaderButton;
+        bindTeacherLoginHeaderButton();
 
         // ============================================================
         // GOOGLE LOGIN — POPUP + REDIRECT FALLBACK
