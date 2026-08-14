@@ -770,12 +770,16 @@
 
                 <div id="erphAdminPanel" class="hidden border-t border-slate-200 dark:border-slate-800 pt-5">
 
-                    <div class="flex items-center justify-between gap-3 mb-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
                         <div>
                             <div class="text-[9px] uppercase tracking-wider text-emerald-600 font-bold">Pentadbir • Semakan RPH</div>
                             <h4 class="font-heading font-extrabold text-sm text-slate-800 dark:text-white">Semakan eRPH <span id="erphAdminWeekCode">Minggu Ini</span></h4>
                         </div>
-                        <button onclick="loadErphAdminSummary()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300">
+                        <div class="flex items-center gap-2">
+                            <select id="erphAdminWeekSelect" onchange="changeErphReviewWeek()"
+                                    class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-[10px] font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                            </select>
+                            <button onclick="loadErphAdminSummary()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300">
                             <i class="fa-solid fa-rotate-right mr-1"></i>Semak
                         </button>
                     </div>
@@ -840,14 +844,19 @@
                 </div>
 
                 <div id="erphReviewerSelectorWrap" class="mb-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 p-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                         <div>
-                            <div class="text-[9px] uppercase tracking-widest text-emerald-600 font-extrabold">Penyemak</div>
-                            <div class="text-xs text-slate-500 mt-0.5">Pilih penyemak untuk melihat guru yang ditugaskan sahaja.</div>
+                            <div class="text-[9px] uppercase tracking-widest text-emerald-600 font-extrabold">Penyemak & Minggu</div>
+                            <div class="text-xs text-slate-500 mt-0.5">Pilih penyemak dan minggu eRPH yang hendak disemak. Minggu terdahulu ditanda LEWAT.</div>
                         </div>
-                        <select id="erphReviewerSelect" onchange="changeErphReviewer()" tabindex="0"
-                                class="relative z-[120] w-full sm:w-80 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
-                        </select>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full lg:w-auto">
+                            <select id="erphReviewWeekSelect" onchange="changeErphReviewWeek()" tabindex="0"
+                                    class="relative z-[120] w-full sm:w-44 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                            </select>
+                            <select id="erphReviewerSelect" onchange="changeErphReviewer()" tabindex="0"
+                                    class="relative z-[120] w-full sm:w-80 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -3453,6 +3462,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         // ============================================================
 
         let selectedErphWeekCode = null;
+        let selectedErphReviewWeekCode = null;
 
         function getErphWeekIndexByCode(code) {
             return ERPH_SCHOOL_WEEKS.findIndex(w => w.code === code);
@@ -3519,6 +3529,73 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             const info = getSelectedErphWeekInfo();
             const range = document.getElementById('erphWeekRange');
             if (range && info) range.textContent = info.range;
+        }
+
+        // ============================================================
+        // PEMILIHAN MINGGU UNTUK SEMAKAN PENTADBIR
+        // Pentadbir boleh semak minggu semasa atau minggu terdahulu.
+        // Minggu terdahulu kekal boleh disemak supaya penghantaran LEWAT
+        // seperti M27 tetap muncul selepas guru menghantarnya.
+        // ============================================================
+        function populateErphReviewWeekSelectors(preferredCode = null) {
+            const selectors = [
+                document.getElementById('erphReviewWeekSelect'),
+                document.getElementById('erphAdminWeekSelect')
+            ].filter(Boolean);
+
+            if (!selectors.length) return;
+
+            const current = getErphWeekInfo();
+            const currentIndex = getErphWeekIndexByCode(current.code);
+
+            const availableWeeks = ERPH_SCHOOL_WEEKS
+                .filter((week, index) => currentIndex >= 0 && index <= currentIndex)
+                .slice()
+                .reverse();
+
+            const desired = preferredCode && availableWeeks.some(w => w.code === preferredCode)
+                ? preferredCode
+                : (selectedErphReviewWeekCode && availableWeeks.some(w => w.code === selectedErphReviewWeekCode)
+                    ? selectedErphReviewWeekCode
+                    : current.code);
+
+            selectedErphReviewWeekCode = desired;
+
+            const options = availableWeeks.map(week => {
+                const isCurrent = week.code === current.code;
+                return `<option value="${escapeHtml(week.code)}">Minggu ${escapeHtml(week.code)}${isCurrent ? ' • SEMASA' : ' • LEWAT'}</option>`;
+            }).join('');
+
+            selectors.forEach(select => {
+                select.innerHTML = options;
+                select.value = desired;
+            });
+        }
+
+        function changeErphReviewWeek() {
+            const select = document.getElementById('erphReviewWeekSelect')
+                || document.getElementById('erphAdminWeekSelect');
+            const code = String(select?.value || getErphWeekInfo().code).trim().toUpperCase();
+
+            selectedErphReviewWeekCode = code;
+
+            const reviewSelect = document.getElementById('erphReviewWeekSelect');
+            const adminSelect = document.getElementById('erphAdminWeekSelect');
+            if (reviewSelect) reviewSelect.value = code;
+            if (adminSelect) adminSelect.value = code;
+
+            loadErphAdminSummary();
+        }
+
+        function getSelectedErphReviewWeekInfo() {
+            const code = String(
+                selectedErphReviewWeekCode
+                || document.getElementById('erphReviewWeekSelect')?.value
+                || document.getElementById('erphAdminWeekSelect')?.value
+                || getErphWeekInfo().code
+            ).trim().toUpperCase();
+
+            return getErphWeekInfoByCode(code) || getErphWeekInfo();
         }
 
         function getErphWeekInfoByCode(code) {
@@ -4830,10 +4907,14 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     reviewerSelect?.value ||
                     ERPH_REVIEWER_NAMES[0];
 
-                const week = getErphWeekInfo();
+                // Gunakan minggu yang dipilih oleh Pentadbir, bukan sentiasa minggu semasa.
+                // Ini membolehkan M27 dipaparkan apabila guru menghantar lewat selepas M28 bermula.
+                populateErphReviewWeekSelectors(selectedErphReviewWeekCode);
+                const week = getSelectedErphReviewWeekInfo();
+                selectedErphReviewWeekCode = week.code;
+
                 const adminWeekCode = document.getElementById('erphAdminWeekCode');
                 const reviewWeekCode = document.getElementById('reviewWeekCode');
-
                 if (adminWeekCode) adminWeekCode.textContent = week.isHoliday ? 'CUTI' : week.code;
                 if (reviewWeekCode) reviewWeekCode.textContent = week.isHoliday ? 'CUTI' : week.code;
 
@@ -4842,7 +4923,8 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 const submissions = {};
                 submissionsSnap.docs.forEach(d => {
                     const data = d.data();
-                    if (data.weekKey === week.key && data.email) {
+                    const storedWeek = String(data.weekCode || data.weekKey || '').trim().toUpperCase();
+                    if (storedWeek === String(week.code || '').trim().toUpperCase() && data.email) {
                         submissions[String(data.email).toLowerCase()] = { id: d.id, ...data };
                     }
                 });
@@ -4971,6 +5053,7 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
             modal.classList.remove('hidden');
             document.body.classList.add('erph-viewer-open');
+            populateErphReviewWeekSelectors(selectedErphReviewWeekCode || getErphWeekInfo().code);
             renderReviewerSelector();
             loadErphAdminSummary();
         }
