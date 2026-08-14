@@ -3422,25 +3422,43 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             if (range && info) range.textContent = info.range;
         }
 
-        function getSelectedErphWeekInfo() {
-            const code = selectedErphWeekCode || document.getElementById('erphWeekSelect')?.value;
+        function getErphWeekInfoByCode(code) {
             const current = getErphWeekInfo();
+            const normalisedCode = String(code || '').trim();
 
-            if (!code || code === current.code) return current;
+            if (!normalisedCode || normalisedCode === current.code) {
+                return current;
+            }
 
-            const week = ERPH_SCHOOL_WEEKS.find(w => w.code === code);
+            const week = ERPH_SCHOOL_WEEKS.find(w => w.code === normalisedCode);
             return week ? getErphWeekInfoByWeek(week) : current;
+        }
+
+        function getSelectedErphWeekInfo() {
+            const code =
+                selectedErphWeekCode ||
+                document.getElementById('erphWeekSelect')?.value ||
+                getErphWeekInfo().code;
+
+            return getErphWeekInfoByCode(code);
         }
 
         async function changeErphSubmissionWeek() {
             const select = document.getElementById('erphWeekSelect');
-            selectedErphWeekCode = select?.value || getErphWeekInfo().code;
+            const selectedCode = String(
+                select?.value || getErphWeekInfo().code
+            ).trim();
 
-            const info = getSelectedErphWeekInfo();
+            // SIMPAN kod minggu yang benar-benar dipilih.
+            // Jangan bergantung kepada state lama apabila dropdown berubah.
+            selectedErphWeekCode = selectedCode;
+
+            const info = getErphWeekInfoByCode(selectedCode);
             const range = document.getElementById('erphWeekRange');
             if (range && info) range.textContent = info.range;
 
-            await loadMyErphSubmission();
+            // Hantar kod minggu terus supaya M27 tidak tersalah dibaca sebagai M28.
+            await loadMyErphSubmission(selectedCode);
         }
 
         async function openErphModal() {
@@ -3479,11 +3497,22 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
             document.body.classList.remove('erph-viewer-open');
         }
 
-        async function loadMyErphSubmission() {
+        async function loadMyErphSubmission(weekCodeOverride = null) {
             const teacher = window.currentTeacher;
             if (!teacher) return;
 
-            const info = getSelectedErphWeekInfo() || getErphWeekInfo();
+            // Gunakan kod minggu yang dihantar oleh dropdown jika ada.
+            // Ini mengelakkan bug state lama yang menyebabkan M27 membaca/menyimpan M28.
+            const selectedCode = String(
+                weekCodeOverride ||
+                selectedErphWeekCode ||
+                document.getElementById('erphWeekSelect')?.value ||
+                getErphWeekInfo().code
+            ).trim();
+
+            selectedErphWeekCode = selectedCode;
+
+            const info = getErphWeekInfoByCode(selectedCode) || getErphWeekInfo();
             const currentInfo = getErphWeekInfo();
 
             const selectedIndex = getErphWeekIndexByCode(info.code);
@@ -3710,7 +3739,15 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 return;
             }
 
-            const info = getSelectedErphWeekInfo() || getErphWeekInfo();
+            const selectedCode = String(
+                selectedErphWeekCode ||
+                document.getElementById('erphWeekSelect')?.value ||
+                getErphWeekInfo().code
+            ).trim();
+
+            selectedErphWeekCode = selectedCode;
+
+            const info = getErphWeekInfoByCode(selectedCode) || getErphWeekInfo();
             const currentInfo = getErphWeekInfo();
 
             const selectedIndex = getErphWeekIndexByCode(info.code);
@@ -3726,6 +3763,8 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 return;
             }
 
+            // Dokumen sentiasa menggunakan kod minggu sebenar yang dipilih.
+            // Contoh: M27 disimpan sebagai M27, bukan M28.
             const id = getErphSubmissionId(teacher.email, info.key);
             const ref = doc(db, ERPH_SUBMISSIONS, id);
 
