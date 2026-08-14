@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ms" class="scroll-smooth">
 <head>
+    <!-- ERPH_LEWAT_FIX_V44 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hub Tool ICT - SK Agama (MIS) Miri</title>
@@ -2219,7 +2220,7 @@
             getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
         import {
-            getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
+            getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, serverTimestamp, writeBatch
         } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
         // Shared data from the main script.
@@ -3627,20 +3628,53 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 // Baca dokumen guru sendiri satu demi satu. Ini tidak memerlukan
                 // query/list dan serasi dengan Rules yang membenarkan guru membaca
                 // dokumen penghantaran miliknya sendiri.
+                // Baca setiap minggu secara berasingan supaya satu rekod lama
+                // yang gagal dibaca tidak menyebabkan keseluruhan sejarah hilang.
+                // Ini juga memastikan M27, M26 dan minggu terdahulu kekal dicari.
                 const docs = await Promise.all(
                     weeks.map(async week => {
-                        const ref = doc(
-                            db,
-                            ERPH_SUBMISSIONS,
-                            getErphSubmissionId(teacher.email, week.code)
-                        );
-                        const snap = await getDoc(ref);
-                        return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+                        try {
+                            const ref = doc(
+                                db,
+                                ERPH_SUBMISSIONS,
+                                getErphSubmissionId(teacher.email, week.code)
+                            );
+                            const snap = await getDoc(ref);
+                            return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+                        } catch (weekError) {
+                            console.warn(`Tidak dapat membaca rekod ${week.code}:`, weekError);
+                            return null;
+                        }
                     })
                 );
 
-                const records = docs
-                    .filter(Boolean)
+                let records = docs.filter(Boolean);
+
+                // Fallback: jika rekod minggu lama menggunakan ID/format terdahulu,
+                // cuba cari rekod milik guru melalui medan email. Rekod yang sama
+                // tidak akan diduplikasi. Jika Rules tidak membenarkan query,
+                // sejarah masih menggunakan bacaan terus di atas.
+                try {
+                    const ownQuery = query(
+                        collection(db, ERPH_SUBMISSIONS),
+                        where('email', '==', String(teacher.email || '').toLowerCase())
+                    );
+                    const ownSnap = await getDocs(ownQuery);
+                    const knownIds = new Set(records.map(r => r.id));
+                    ownSnap.docs.forEach(d => {
+                        const data = d.data();
+                        const code = String(data.weekCode || data.weekKey || '').trim();
+                        const index = getErphWeekIndexByCode(code);
+                        if (!knownIds.has(d.id) && index >= 0 && (currentIndex < 0 || index <= currentIndex)) {
+                            records.push({ id: d.id, ...data });
+                            knownIds.add(d.id);
+                        }
+                    });
+                } catch (queryError) {
+                    console.warn('Fallback sejarah eRPH tidak tersedia:', queryError);
+                }
+
+                records = records
                     .sort((a, b) =>
                         String(b.weekStart || b.weekKey || '')
                             .localeCompare(String(a.weekStart || a.weekKey || ''))
@@ -3731,28 +3765,36 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
 
             const input = document.getElementById('erphLinkInput');
             const btn = document.getElementById('erphSubmitBtn');
-            const url = String(input.value || '').trim();
+            const select = document.getElementById('erphWeekSelect');
+            const url = String(input?.value || '').trim();
 
             if (!/^https:\/\/docs\.google\.com\/spreadsheets\/d\//i.test(url)) {
                 showToast('Sila masukkan pautan Google Sheet yang sah.', 'info');
-                input.focus();
+                input?.focus();
                 return;
             }
 
+            // PENTING: ambil nilai terus daripada dropdown dahulu.
+            // Jangan biarkan state lama menyebabkan M27 tersimpan sebagai M28.
             const selectedCode = String(
+                select?.value ||
                 selectedErphWeekCode ||
-                document.getElementById('erphWeekSelect')?.value ||
                 getErphWeekInfo().code
-            ).trim();
+            ).trim().toUpperCase();
 
-            selectedErphWeekCode = selectedCode;
-
-            const info = getErphWeekInfoByCode(selectedCode) || getErphWeekInfo();
+            const info = getErphWeekInfoByCode(selectedCode);
             const currentInfo = getErphWeekInfo();
+
+            if (!info || !info.code || info.code === 'CUTI') {
+                showToast('Minggu eRPH yang dipilih tidak sah.', 'info');
+                return;
+            }
+
+            selectedErphWeekCode = info.code;
+            if (select) select.value = info.code;
 
             const selectedIndex = getErphWeekIndexByCode(info.code);
             const currentIndex = getErphWeekIndexByCode(currentInfo.code);
-
             const isLateWeek = !currentInfo.isHoliday
                 && selectedIndex >= 0
                 && currentIndex >= 0
@@ -3763,53 +3805,81 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 return;
             }
 
-            // Dokumen sentiasa menggunakan kod minggu sebenar yang dipilih.
-            // Contoh: M27 disimpan sebagai M27, bukan M28.
-            const id = getErphSubmissionId(teacher.email, info.key);
+            // ID CANONICAL:
+            // M27 -> M27__email-guru
+            // M28 -> M28__email-guru
+            // Jangan guna tarikh / current date sebagai ID.
+            const canonicalWeekCode = String(info.code).trim().toUpperCase();
+            const id = getErphSubmissionId(teacher.email, canonicalWeekCode);
             const ref = doc(db, ERPH_SUBMISSIONS, id);
 
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Menyimpan...';
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Menyimpan ${escapeHtml(canonicalWeekCode)}...`;
 
             try {
                 const existing = await getDoc(ref);
+                const oldData = existing.exists() ? existing.data() : {};
 
-                await setDoc(ref, {
-                    email: teacher.email.toLowerCase(),
-                    uid: teacher.uid,
+                const payload = {
+                    email: String(teacher.email || '').toLowerCase(),
+                    uid: teacher.uid || '',
                     displayName: teacher.displayName || 'Guru',
                     sheetUrl: url,
-                    weekKey: info.key,
-                    weekCode: info.code,
+
+                    // Semua medan minggu menggunakan KOD minggu yang sama.
+                    // Ini penting untuk Sejarah eRPH dan Semakan Pentadbir.
+                    weekKey: canonicalWeekCode,
+                    weekCode: canonicalWeekCode,
                     weekStart: info.startKey,
                     weekEnd: info.endKey,
                     submissionStatus: isLateWeek ? 'lewat' : 'dah_hantar',
                     updatedAt: serverTimestamp(),
-                    submittedAt: existing.exists()
-                        ? (existing.data().submittedAt || serverTimestamp())
-                        : serverTimestamp()
-                }, { merge: true });
+                    submittedAt: oldData.submittedAt || serverTimestamp()
+                };
+
+                await setDoc(ref, payload, { merge: true });
+
+                // VERIFIKASI: pastikan dokumen benar-benar wujud selepas setDoc.
+                // Jika Rules/permission menghalang, pengguna akan nampak ralat sebenar.
+                const verifySnap = await getDoc(ref);
+                if (!verifySnap.exists()) {
+                    throw new Error(`Firestore tidak menemui dokumen ${id} selepas simpan.`);
+                }
+
+                const saved = verifySnap.data() || {};
+                if (String(saved.weekCode || '').toUpperCase() !== canonicalWeekCode) {
+                    throw new Error(`Data minggu tidak sepadan. Dijangka ${canonicalWeekCode}, tetapi Firestore menyimpan ${saved.weekCode || '(kosong)'}.`);
+                }
 
                 showToast(
                     existing.exists()
                         ? (isLateWeek
-                            ? `Pautan eRPH ${info.code} berjaya dikemas kini. Status: Lewat.`
-                            : `Pautan eRPH ${info.code} berjaya dikemas kini.`)
+                            ? `Pautan eRPH ${canonicalWeekCode} berjaya dikemas kini. Status: Lewat.`
+                            : `Pautan eRPH ${canonicalWeekCode} berjaya dikemas kini.`)
                         : (isLateWeek
-                            ? `eRPH ${info.code} berjaya dihantar. Status: Lewat.`
-                            : `eRPH ${info.code} berjaya dihantar.`),
+                            ? `eRPH ${canonicalWeekCode} berjaya dihantar. Status: Lewat.`
+                            : `eRPH ${canonicalWeekCode} berjaya dihantar.`),
                     'success'
                 );
 
-                await loadMyErphSubmission();
+                // Kekalkan minggu yang dipilih ketika memuatkan semula paparan.
+                await loadMyErphSubmission(canonicalWeekCode);
                 await loadMyErphHistory();
 
-                if (teacher.role === 'admin') {
+                if (['admin', 'pentadbir'].includes(teacher.role)) {
                     await loadErphAdminSummary();
                 }
             } catch (e) {
                 console.error('Gagal hantar eRPH:', e);
-                showToast('Gagal menghantar eRPH. Semak Firestore Rules.', 'info');
+                const code = String(e?.code || '').replace('firestore/', '');
+                const message = String(e?.message || '').trim();
+                const detail = code
+                    ? ` (${code})`
+                    : '';
+                showToast(
+                    `Gagal menyimpan ${canonicalWeekCode}${detail}. ${message || 'Semak Firestore Rules.'}`,
+                    'info'
+                );
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-1.5"></i>Hantar / Kemaskini eRPH';
