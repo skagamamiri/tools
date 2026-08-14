@@ -1611,6 +1611,25 @@
             }
         }
 
+        // Direct login launcher: bypass all intermediate handlers.
+        // This is intentionally exposed before Firebase module loads.
+        window.__openLoginDirect = function () {
+            const modal = document.getElementById('teacherLoginModal');
+            if (!modal) {
+                console.error('LOGIN_MODAL_NOT_FOUND');
+                return false;
+            }
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+            modal.style.visibility = 'visible';
+            modal.style.opacity = '1';
+            modal.style.pointerEvents = 'auto';
+            modal.style.zIndex = '999999';
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('overflow-hidden');
+            return false;
+        };
+
         function openTeacherLoginModal() {
             const modal = document.getElementById('teacherLoginModal');
             const error = document.getElementById('loginErrorAlert');
@@ -1626,7 +1645,10 @@
             // Pastikan modal benar-benar berada di atas semua kandungan.
             modal.classList.remove('hidden');
             modal.style.display = 'flex';
+            modal.style.visibility = 'visible';
+            modal.style.opacity = '1';
             modal.style.pointerEvents = 'auto';
+            modal.style.zIndex = '999999';
             modal.setAttribute('aria-hidden', 'false');
             document.body.classList.add('overflow-hidden');
             return true;
@@ -2236,6 +2258,12 @@
                 toast.classList.add('hidden');
             }, 2500);
         }
+        document.addEventListener('mousedown', (event) => {
+            const btn = event.target.closest && event.target.closest('#teacherLoginHeaderBtn');
+            if (!btn || window.currentTeacher) return;
+            window.__openLoginDirect();
+        }, true);
+
         // Fallback click handler: header login mesti membuka modal walaupun
         // inline onclick tidak berfungsi / script module dirender semula.
         document.addEventListener('click', (event) => {
@@ -2472,7 +2500,7 @@
             const teacher = window.currentTeacher;
             if (!teacher) {
                 container.innerHTML = `
-                    <button type="button" id="teacherLoginHeaderBtn" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-semibold shadow-sm hover:shadow-md hover:border-brand-500 transition flex items-center space-x-2">
+                    <button type="button" id="teacherLoginHeaderBtn" onclick="window.__openLoginDirect && window.__openLoginDirect(); return false;" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-semibold shadow-sm hover:shadow-md hover:border-brand-500 transition flex items-center space-x-2">
                         <i class="fa-brands fa-google text-red-500"></i>
                         <span class="hidden sm:inline">Login dengan Google</span>
                     </button>`;
