@@ -3553,11 +3553,11 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                 .slice()
                 .reverse();
 
-            const desired = preferredCode && availableWeeks.some(w => w.code === preferredCode)
-                ? preferredCode
-                : (selectedErphReviewWeekCode && availableWeeks.some(w => w.code === selectedErphReviewWeekCode)
-                    ? selectedErphReviewWeekCode
-                    : current.code);
+            const requested = String(preferredCode || '').trim().toUpperCase();
+            const existing = String(selectedErphReviewWeekCode || '').trim().toUpperCase();
+
+            const desired = [requested, existing, current.code]
+                .find(code => code && availableWeeks.some(w => w.code === code)) || current.code;
 
             selectedErphReviewWeekCode = desired;
 
@@ -3588,10 +3588,15 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
         }
 
         function getSelectedErphReviewWeekInfo() {
+            const reviewSelect = document.getElementById('erphReviewWeekSelect');
+            const adminSelect = document.getElementById('erphAdminWeekSelect');
+
+            // Utamakan dropdown yang sedang dipilih oleh pentadbir.
+            // Ini mengelakkan state lama M28 daripada mengatasi pilihan M27.
             const code = String(
-                selectedErphReviewWeekCode
-                || document.getElementById('erphReviewWeekSelect')?.value
-                || document.getElementById('erphAdminWeekSelect')?.value
+                reviewSelect?.value
+                || adminSelect?.value
+                || selectedErphReviewWeekCode
                 || getErphWeekInfo().code
             ).trim().toUpperCase();
 
@@ -4907,9 +4912,17 @@ window.downloadTeacherCsvTemplate = downloadTeacherCsvTemplate;
                     reviewerSelect?.value ||
                     ERPH_REVIEWER_NAMES[0];
 
-                // Gunakan minggu yang dipilih oleh Pentadbir, bukan sentiasa minggu semasa.
-                // Ini membolehkan M27 dipaparkan apabila guru menghantar lewat selepas M28 bermula.
-                populateErphReviewWeekSelectors(selectedErphReviewWeekCode);
+                // Gunakan minggu yang benar-benar dipilih oleh Pentadbir.
+                // Baca dropdown dahulu supaya pilihan M27 tidak kembali ke M28.
+                const activeReviewSelect = document.getElementById('erphReviewWeekSelect')
+                    || document.getElementById('erphAdminWeekSelect');
+                const activeSelectedCode = String(
+                    activeReviewSelect?.value
+                    || selectedErphReviewWeekCode
+                    || getErphWeekInfo().code
+                ).trim().toUpperCase();
+
+                populateErphReviewWeekSelectors(activeSelectedCode);
                 const week = getSelectedErphReviewWeekInfo();
                 selectedErphReviewWeekCode = week.code;
 
