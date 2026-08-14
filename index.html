@@ -2500,7 +2500,7 @@
             const teacher = window.currentTeacher;
             if (!teacher) {
                 container.innerHTML = `
-                    <button type="button" id="teacherLoginHeaderBtn" onclick="window.__openLoginDirect && window.__openLoginDirect(); return false;" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-semibold shadow-sm hover:shadow-md hover:border-brand-500 transition flex items-center space-x-2">
+                    <button type="button" id="teacherLoginHeaderBtn" onclick="return window.__loginGoogleDirect ? window.__loginGoogleDirect() : false;" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-semibold shadow-sm hover:shadow-md hover:border-brand-500 transition flex items-center space-x-2">
                         <i class="fa-brands fa-google text-red-500"></i>
                         <span class="hidden sm:inline">Login dengan Google</span>
                     </button>`;
@@ -2700,7 +2700,8 @@
                 `<span>${escapeHtml(text)}</span>`;
         }
 
-        window.loginWithGoogle = async function() {
+        // DIRECT GOOGLE LOGIN BRIDGE\n        // Header login bypasses the login modal entirely.\n        // This avoids any issue with modal visibility / click handlers.\n        window.__loginGoogleDirect = async function() {\n            try {\n                if (typeof window.loginWithGoogle !== 'function') {\n                    throw new Error('Fungsi Google Login belum dimuat. Sila refresh halaman.');\n                }\n                return await window.loginWithGoogle();\n            } catch (err) {\n                console.error('DIRECT_GOOGLE_LOGIN_ERROR:', err);\n                throw err;\n            }\n        };\n\n        window.loginWithGoogle = async function() {
+            console.log('[HubToolICT] Google login started');
             const error = document.getElementById('loginErrorAlert');
             if (error) error.classList.add('hidden');
 
