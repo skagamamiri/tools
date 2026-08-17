@@ -1644,13 +1644,28 @@
                 error.innerHTML = '';
             }
 
-            // Paksa modal kelihatan walaupun Tailwind .hidden masih terpasang.
+            // PENTING: modal mungkin berada di dalam container yang mempunyai
+            // stacking context / overflow. Pindahkan terus ke <body> supaya
+            // overlay benar-benar berada di atas halaman.
+            if (modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
+
+            // Paksa modal kelihatan dan berada di viewport.
             modal.classList.remove('hidden');
             modal.removeAttribute('hidden');
-            modal.style.cssText += ';display:flex !important;visibility:visible !important;opacity:1 !important;pointer-events:auto !important;z-index:2147483647 !important;';
+            modal.style.setProperty('position', 'fixed', 'important');
+            modal.style.setProperty('inset', '0', 'important');
+            modal.style.setProperty('display', 'flex', 'important');
+            modal.style.setProperty('visibility', 'visible', 'important');
+            modal.style.setProperty('opacity', '1', 'important');
+            modal.style.setProperty('pointer-events', 'auto', 'important');
+            modal.style.setProperty('z-index', '2147483647', 'important');
+            modal.style.setProperty('overflow-y', 'auto', 'important');
+            modal.style.setProperty('overflow-x', 'hidden', 'important');
             modal.setAttribute('aria-hidden', 'false');
 
-            // Kunci scroll hanya apabila modal benar-benar dibuka.
+            // Kunci scroll halaman hanya selepas modal benar-benar berada di body.
             document.documentElement.style.overflow = 'hidden';
             document.body.style.overflow = 'hidden';
 
@@ -1674,6 +1689,8 @@
             }
             document.documentElement.style.overflow = '';
             document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
             document.body.classList.remove('overflow-hidden');
             return false;
         };
@@ -1690,14 +1707,25 @@
                 return false;
             }
 
-            // Pastikan modal benar-benar berada di atas semua kandungan.
+            // Pastikan modal tidak terperangkap dalam mana-mana parent/container.
+            if (modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
+
             modal.classList.remove('hidden');
-            modal.style.display = 'flex';
-            modal.style.visibility = 'visible';
-            modal.style.opacity = '1';
-            modal.style.pointerEvents = 'auto';
-            modal.style.zIndex = '999999';
+            modal.removeAttribute('hidden');
+            modal.style.setProperty('position', 'fixed', 'important');
+            modal.style.setProperty('inset', '0', 'important');
+            modal.style.setProperty('display', 'flex', 'important');
+            modal.style.setProperty('visibility', 'visible', 'important');
+            modal.style.setProperty('opacity', '1', 'important');
+            modal.style.setProperty('pointer-events', 'auto', 'important');
+            modal.style.setProperty('z-index', '2147483647', 'important');
+            modal.style.setProperty('overflow-y', 'auto', 'important');
+            modal.style.setProperty('overflow-x', 'hidden', 'important');
             modal.setAttribute('aria-hidden', 'false');
+            document.documentElement.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden';
             document.body.classList.add('overflow-hidden');
             return true;
         }
