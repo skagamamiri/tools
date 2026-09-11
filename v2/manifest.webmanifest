@@ -1,6 +1,6 @@
 {
-  "name": "SK@S ICT Hub — SK Agama (MIS) Miri",
-  "short_name": "SK@S ICT Hub",
+  "name": "ICT HUB — SK Agama (MIS) Miri",
+  "short_name": "ICT HUB",
   "description": "Pusat koleksi tool dan aplikasi digital untuk guru SK Agama (MIS) Miri.",
   "start_url": "./",
   "scope": "./",

@@ -1,4 +1,4 @@
-// SK@S ICT Hub — installability service worker.
+// ICT HUB — installability service worker.
 // Intentionally does NOT cache Firebase/Auth or app data.
 // Network-only behaviour avoids stale login/session data.
 self.addEventListener('install', event => {
