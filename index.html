@@ -743,27 +743,75 @@
     </header>
 
 <!-- Welcome Hero Banner -->
-<div class="relative overflow-hidden rounded-2xl
-            bg-gradient-to-r from-brand-700 via-brand-600 to-tech-700
-            p-5 md:p-7 text-white shadow-xl mb-6">
+<div class="max-w-7xl mx-auto px-4 md:px-6 mb-6">
 
-    <!-- Background gambar sekolah -->
-    <div
-        class="absolute inset-0 bg-cover bg-center"
-        style="
-            background-image: url('./sekolah-sk-agama-miri.jpg');
-            background-size: cover;
-            background-position: center 48%;
-        ">
+    <div class="relative overflow-hidden rounded-2xl
+                p-5 md:p-6
+                text-white shadow-xl
+                min-h-[125px] md:min-h-[145px]">
+
+        <!-- Background gambar sekolah -->
+        <div
+            class="absolute inset-0 bg-cover bg-center"
+            style="
+                background-image: url('./sekolah-sk-agama-miri.jpg');
+                background-position: center 45%;
+            ">
+        </div>
+
+        <!-- Overlay -->
+        <div class="absolute inset-0
+                    bg-gradient-to-r
+                    from-emerald-800/85
+                    via-emerald-700/55
+                    to-sky-700/20">
+        </div>
+
+        <!-- Kandungan -->
+        <div class="relative z-10 max-w-xl">
+
+            <!-- Label -->
+            <span class="inline-flex items-center
+                         px-2.5 py-1
+                         rounded-full
+                         text-[10px] md:text-xs
+                         font-semibold
+                         bg-white/20
+                         backdrop-blur-md">
+
+                <i class="fa-solid fa-star
+                          text-amber-300
+                          mr-1.5"></i>
+
+                Portal Pengurusan ICT Sekolah
+
+            </span>
+
+            <!-- Tajuk -->
+            <h2 class="font-heading
+                       text-2xl md:text-3xl
+                       font-extrabold
+                       tracking-tight
+                       mt-1">
+
+                ICT HUB
+
+            </h2>
+
+            <!-- Subtitle -->
+            <p class="text-xs md:text-sm
+                      text-white/95
+                      mt-1">
+
+                Pusat Aplikasi &amp; Perkhidmatan Digital Sekolah
+
+            </p>
+
+        </div>
+
     </div>
 
-    <!-- Overlay gambar -->
-    <div class="absolute inset-0
-                bg-gradient-to-r
-                from-emerald-700/80
-                via-emerald-600/45
-                to-sky-600/15">
-    </div>
+</div>
 
     <!-- Kandungan Hero -->
     <div class="relative z-10 max-w-2xl">
