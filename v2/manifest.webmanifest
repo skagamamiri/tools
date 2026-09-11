@@ -1,26 +1,17 @@
 {
-  "name": "Hub Tool ICT SK Agama (MIS) Miri",
-  "short_name": "Hub Tool ICT",
-  "description": "Pusat koleksi tool dan aplikasi digital PdP untuk guru SK Agama (MIS) Miri.",
+  "name": "SK@S ICT Hub — SK Agama (MIS) Miri",
+  "short_name": "SK@S ICT Hub",
+  "description": "Pusat koleksi tool dan aplikasi digital untuk guru SK Agama (MIS) Miri.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#f8fafc",
-  "theme_color": "#16a34a",
+  "theme_color": "#0f766e",
   "lang": "ms-MY",
+  "categories": ["education", "productivity"],
   "icons": [
-    {
-      "src": "./icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    {"src":"./icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"./icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
   ]
 }
