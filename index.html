@@ -743,7 +743,10 @@
     </header>
 
 <!-- Welcome Hero Banner -->
-<div class="relative overflow-hidden rounded-2xl min-h-[148px] md:min-h-[180px] flex items-center mb-6 shadow-xl">
+<div class="relative overflow-hidden rounded-2xl
+            bg-gradient-to-r from-brand-700 via-brand-600 to-tech-700
+            px-5 py-4 md:px-7 md:py-5
+            text-white shadow-xl mb-6">
 
     <!-- Background gambar sekolah -->
     <div
@@ -752,40 +755,55 @@
     </div>
 
     <!-- Overlay -->
-    <div class="absolute inset-0 bg-gradient-to-r
-                from-emerald-700/95
-                via-emerald-600/75
-                to-sky-600/35">
+    <div class="absolute inset-0
+                bg-gradient-to-r
+                from-emerald-700/90
+                via-emerald-600/65
+                to-sky-600/25">
     </div>
 
-    <!-- Kandungan Hero -->
-    <div class="relative z-10 px-5 py-6 md:px-7 md:py-7 text-white">
+    <!-- Content -->
+    <div class="relative z-10">
 
         <!-- Label -->
-        <span class="inline-flex items-center px-2.5 py-0.5
-                     rounded-full text-xs font-semibold
-                     bg-white/20 text-white
-                     backdrop-blur-md mb-2">
+        <span class="inline-flex items-center
+                     px-2.5 py-0.5
+                     rounded-full
+                     text-[10px] md:text-xs
+                     font-semibold
+                     bg-white/20
+                     text-white
+                     backdrop-blur-md">
 
-            <i class="fa-solid fa-star text-amber-300 mr-1.5 text-[10px]"></i>
+            <i class="fa-solid fa-star
+                      text-amber-300
+                      mr-1.5 text-[9px]"></i>
+
             Portal Pengurusan ICT Sekolah
-
         </span>
 
-        <!-- Tajuk -->
-        <h2 class="font-heading text-xl md:text-3xl font-extrabold tracking-tight">
+        <!-- Title -->
+        <h2 class="font-heading
+                   text-xl md:text-3xl
+                   font-extrabold
+                   tracking-tight
+                   mt-1">
+
             ICT HUB
         </h2>
 
         <!-- Subtitle -->
-        <p class="text-xs md:text-sm text-white mt-1 leading-relaxed">
+        <p class="text-[11px] md:text-sm
+                  text-white/95
+                  mt-0.5
+                  leading-relaxed">
+
             Pusat Aplikasi &amp; Perkhidmatan Digital Sekolah
         </p>
 
     </div>
 
 </div>
-
         <!-- Search & Filter Controls -->
         <div class="space-y-4 mb-6">
             <!-- Search Bar -->
