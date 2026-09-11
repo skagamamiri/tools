@@ -1,17 +1,14 @@
-// Hub Tool ICT — service worker disabled for authentication reliability.
-// The app is hosted on GitHub Pages and uses Firebase Authentication.
-// Do not cache index.html or Firebase auth helper pages.
-
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.map(key => caches.delete(key))))
-      .then(() => self.clients.claim())
-  );
+// ICT HUB — installability service worker.
+// Intentionally does NOT cache Firebase/Auth or app data.
+// Network-only behaviour avoids stale login/session data.
+self.addEventListener('install', event => {
+  self.skipWaiting();
 });
 
-// Always use the network. Firebase Authentication must never be served
-// from a stale application shell/cache.
+self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('fetch', event => {
-  // Deliberately do not intercept requests.
+  // Do not intercept requests. Browser uses the normal network path.
 });
