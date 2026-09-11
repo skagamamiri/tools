@@ -4,9 +4,7 @@
     <!-- ERPH_LEWAT_FIX_V44 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ICT HUB-Pusat Aplikasi & Perkhidmatan Digital Sekolah</title>
-    <link rel="icon" type="image/png" href="./logo-sk-agama-miri.png">
-<link rel="apple-touch-icon" href="./logo-sk-agama-miri.png">
+    <title>ICT HUB</title>
     <meta name="theme-color" content="#0f766e">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2055,9 +2053,16 @@
             externalBtn.classList.toggle('hidden', !tool.url);
 
             if (tool.type === 'URL') {
+                // URL luar seperti eRPH/OPR perlu berjalan sebagai dokumen penuh.
+                // Jangan gunakan sandbox kerana Firebase Auth/Google Sign-In boleh
+                // terjejas oleh sekatan iframe sandbox. Paparan masih kekal di
+                // dalam fullscreen viewer ICT HUB.
+                iframe.removeAttribute('sandbox');
                 iframe.srcdoc = '';
                 iframe.src = tool.url || 'about:blank';
             } else {
+                // HTML tool dalaman kekal disandbox untuk keselamatan.
+                iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox');
                 iframe.removeAttribute('src');
                 iframe.srcdoc = tool.htmlCode || '<html><body style="font-family:sans-serif;padding:24px"><p>Tiada kod HTML disediakan.</p></body></html>';
             }
@@ -2073,8 +2078,10 @@
             const iframe = document.getElementById('htmlSandboxFrame');
 
             if (activeHtmlTool.type === 'URL') {
+                iframe.removeAttribute('sandbox');
                 iframe.src = activeHtmlTool.url || 'about:blank';
             } else {
+                iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox');
                 iframe.removeAttribute('src');
                 iframe.srcdoc = activeHtmlTool.htmlCode || '<html><body><p>Tiada kod HTML disediakan.</p></body></html>';
             }
@@ -2099,6 +2106,7 @@
             modal.classList.add('hidden');
             iframe.srcdoc = '';
             iframe.removeAttribute('src');
+            iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox');
             document.body.classList.remove('tool-viewer-open');
             activeHtmlTool = null;
         }
