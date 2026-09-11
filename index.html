@@ -1135,7 +1135,7 @@
         <div class="flex-grow min-h-0 w-full bg-slate-50 dark:bg-slate-950 relative">
             <iframe id="htmlSandboxFrame" class="w-full h-full border-none block"
                     sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-                    referrerpolicy="strict-origin-when-cross-origin" allow="clipboard-read; clipboard-write; fullscreen; popups; storage-access"></iframe>
+                    referrerpolicy="strict-origin-when-cross-origin"></iframe>
             <div id="toolFrameError" class="hidden absolute inset-0 bg-white dark:bg-slate-950 items-center justify-center p-6">
                 <div class="max-w-md text-center">
                     <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto mb-4">
@@ -1827,6 +1827,9 @@
         // Firebase authentication state
         let loggedInTeacher = null;
         let activeHtmlTool = null;
+        // Persistent URL iframe: jangan musnahkan iframe apabila pengguna tekan Back.
+        // Ini membantu mengekalkan sesi Firebase/Google dalam embedded eRPH.
+        let persistentUrlIframe = null;
 
         // Initialize App
         window.addEventListener('DOMContentLoaded', () => {
@@ -2053,14 +2056,17 @@
             externalBtn.classList.toggle('hidden', !tool.url);
 
             if (tool.type === 'URL') {
-                // URL HTML yang berada pada origin yang sama (contoh GitHub Pages
-                // /tools/erph.html) dimuat melalui fetch + srcdoc. Ini mengelakkan
-                // X-Frame-Options/CSP frame blocking pada dokumen asal, tetapi
-                // masih mengekalkan aplikasi di dalam fullscreen ICT HUB.
-                iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation');
-                iframe.removeAttribute('src');
-                iframe.srcdoc = '<html><body style=\"font-family:sans-serif;padding:24px\"><p>Memuatkan tool...</p></body></html>';
-                loadUrlToolIntoFrame(tool.url, iframe, errorBox);
+                // URL luar seperti eRPH/OPR berjalan dalam iframe tanpa sandbox.
+                // PENTING: iframe dikekalkan apabila viewer ditutup supaya sesi
+                // Firebase/Google dalam eRPH tidak dimusnahkan.
+                iframe.removeAttribute('sandbox');
+                iframe.srcdoc = '';
+
+                const targetUrl = tool.url || 'about:blank';
+                if (persistentUrlIframe !== targetUrl) {
+                    iframe.src = targetUrl;
+                    persistentUrlIframe = targetUrl;
+                }
             } else {
                 // HTML tool dalaman kekal disandbox untuk keselamatan.
                 iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox');
@@ -2073,46 +2079,14 @@
             window.scrollTo(0, 0);
         }
 
-        async function loadUrlToolIntoFrame(url, iframe, errorBox) {
-            if (!url) {
-                errorBox.classList.remove('hidden');
-                errorBox.classList.add('flex');
-                return;
-            }
-
-            try {
-                const response = await fetch(url, { cache: 'no-store', credentials: 'same-origin' });
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-
-                let html = await response.text();
-                const baseTag = '<base href=\"' + new URL(url, window.location.href).href.replace(/\"/g, '&quot;') + '\">';
-
-                if (/<head[\s>]/i.test(html)) {
-                    html = html.replace(/<head([^>]*)>/i, '<head$1>' + baseTag);
-                } else {
-                    html = '<!doctype html><html><head>' + baseTag + '</head><body>' + html + '</body></html>';
-                }
-
-                iframe.srcdoc = html;
-                errorBox.classList.add('hidden');
-                errorBox.classList.remove('flex');
-            } catch (err) {
-                console.error('Gagal memuat URL tool dalam viewer:', err);
-                errorBox.classList.remove('hidden');
-                errorBox.classList.add('flex');
-            }
-        }
-
         function reloadHtmlTool() {
             if (!activeHtmlTool) return;
 
             const iframe = document.getElementById('htmlSandboxFrame');
 
             if (activeHtmlTool.type === 'URL') {
-                iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation');
-                iframe.removeAttribute('src');
-                iframe.srcdoc = '<html><body style=\"font-family:sans-serif;padding:24px\"><p>Memuatkan semula...</p></body></html>';
-                loadUrlToolIntoFrame(activeHtmlTool.url, iframe, document.getElementById('toolFrameError'));
+                iframe.removeAttribute('sandbox');
+                iframe.src = activeHtmlTool.url || 'about:blank';
             } else {
                 iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox');
                 iframe.removeAttribute('src');
@@ -2137,9 +2111,18 @@
             const iframe = document.getElementById('htmlSandboxFrame');
 
             modal.classList.add('hidden');
-            iframe.srcdoc = '';
-            iframe.removeAttribute('src');
-            iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+
+            // JANGAN kosongkan src untuk URL tool.
+            // Iframe yang hidup mengekalkan konteks/session Firebase eRPH
+            // apabila pengguna menekan Back dan membuka semula tool.
+            if (activeHtmlTool && activeHtmlTool.type === 'URL') {
+                // Kekalkan iframe dan URL seperti sedia ada.
+            } else {
+                iframe.srcdoc = '';
+                iframe.removeAttribute('src');
+                iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+            }
+
             document.body.classList.remove('tool-viewer-open');
             activeHtmlTool = null;
         }
