@@ -3327,6 +3327,51 @@
             } catch (e) { console.error(e); container.innerHTML = '<p class="text-xs text-rose-500 text-center py-3">Gagal memuatkan senarai. Semak Firestore Rules.</p>'; }
         };
 
+        // ============================================================
+        // RESTORE AUTH AFTER BROWSER BACK / BFCACHE
+        // GitHub Pages + top-level DELIMa navigation can restore /tools/
+        // from the browser back-forward cache. In that case Firebase's
+        // UI state may be stale until the page is refreshed. Re-hydrate
+        // the local Firebase session explicitly on pageshow.
+        // ============================================================
+        async function restoreHubAuthState() {
+            try {
+                // Wait until Firebase has finished loading persisted auth.
+                if (typeof auth.authStateReady === 'function') {
+                    await auth.authStateReady();
+                }
+
+                const user = auth.currentUser;
+                if (!user) {
+                    loggedInTeacher = null;
+                    window.loggedInTeacher = null;
+                    window.currentTeacher = null;
+                    renderFirebaseTeacherHeader();
+                    updateAdminVisibility();
+                    return false;
+                }
+
+                const email = (user.email || '').toLowerCase().trim();
+                if (!email) return false;
+
+                const snap = await getDoc(doc(db, TEACHERS, email));
+                if (!snap.exists() || snap.data().active === false) {
+                    await signOut(auth);
+                    return false;
+                }
+
+                setLoggedIn(user, snap.data());
+                renderFirebaseTeacherHeader();
+                updateAdminVisibility();
+                return true;
+            } catch (e) {
+                console.error('Gagal memulihkan sesi Firebase selepas Back:', e);
+                return false;
+            }
+        }
+
+        window.__restoreHubAuthState = restoreHubAuthState;
+
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 loggedInTeacher = null;
@@ -3372,6 +3417,28 @@
 
         // Load public tool catalogue on first visit.
         loadToolsFromFirebase();
+
+        // Browser Back may restore this document from bfcache instead of
+        // executing the module again. Re-check Firebase persisted session.
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                setTimeout(() => {
+                    if (typeof window.__restoreHubAuthState === 'function') {
+                        window.__restoreHubAuthState();
+                    }
+                }, 0);
+            }
+        });
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                setTimeout(() => {
+                    if (typeof window.__restoreHubAuthState === 'function') {
+                        window.__restoreHubAuthState();
+                    }
+                }, 50);
+            }
+        });
     
 // ============================================================
 // BULK TEACHER CSV IMPORT - NATIVE PARSER
