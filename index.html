@@ -1827,9 +1827,6 @@
         // Firebase authentication state
         let loggedInTeacher = null;
         let activeHtmlTool = null;
-        // Kekalkan instance iframe supaya sesi/login tool URL tidak hilang apabila Back ditekan.
-        let htmlViewerLoadedUrl = '';
-        let htmlViewerHasContent = false;
 
         // Initialize App
         window.addEventListener('DOMContentLoaded', () => {
@@ -2056,22 +2053,20 @@
             externalBtn.classList.toggle('hidden', !tool.url);
 
             if (tool.type === 'URL') {
-                // PENTING: jangan bina semula srcdoc jika URL yang sama masih berada
-                // dalam iframe. Ini mengekalkan Firebase/Auth state yang hidup di
-                // dalam dokumen iframe apabila pengguna menekan Back.
-                iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation');
-
-                const canReuseViewer = htmlViewerHasContent && htmlViewerLoadedUrl === (tool.url || '');
-                if (!canReuseViewer) {
-                    iframe.removeAttribute('src');
-                    iframe.srcdoc = '<html><body style=\"font-family:sans-serif;padding:24px\"><p>Memuatkan tool...</p></body></html>';
-                    htmlViewerLoadedUrl = tool.url || '';
-                    htmlViewerHasContent = false;
-                    loadUrlToolIntoFrame(tool.url, iframe, errorBox);
-                } else {
-                    errorBox.classList.add('hidden');
-                    errorBox.classList.remove('flex');
+                // URL LUAR / DELIMa: jangan gunakan fetch + srcdoc.
+                // srcdoc menukar origin dokumen dan boleh memutuskan cookie/localStorage
+                // authentication. Untuk portal yang mempunyai login sendiri, buka pada
+                // origin sebenar supaya session/cookie dikendalikan terus oleh browser.
+                if (isSessionPortalUrl(tool.url)) {
+                    navigateToSessionPortal(tool.url);
+                    return;
                 }
+
+                // Tool URL biasa masih menggunakan viewer asal supaya tool lain tidak berubah.
+                iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation');
+                iframe.removeAttribute('src');
+                iframe.srcdoc = '<html><body style=\"font-family:sans-serif;padding:24px\"><p>Memuatkan tool...</p></body></html>';
+                loadUrlToolIntoFrame(tool.url, iframe, errorBox);
             } else {
                 // HTML tool dalaman kekal disandbox untuk keselamatan.
                 iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox');
@@ -2082,6 +2077,28 @@
             modal.classList.remove('hidden');
             document.body.classList.add('tool-viewer-open');
             window.scrollTo(0, 0);
+        }
+
+        // Portal yang memerlukan authentication mesti kekal pada origin asal.
+        function isSessionPortalUrl(url) {
+            try {
+                const u = new URL(url, window.location.href);
+                const host = u.hostname.toLowerCase();
+                return host === 'delimamb.moe-dl.edu.my' || host.endsWith('.moe-dl.edu.my');
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function navigateToSessionPortal(url) {
+            try {
+                // Simpan penanda supaya browser Back kembali ke ICT HUB dengan normal.
+                sessionStorage.setItem('ictHubReturnFromPortal', '1');
+            } catch (e) {}
+
+            // Top-level navigation ialah penting: cookie/session DELIMa menjadi first-party,
+            // bukan third-party iframe/srcdoc. Jangan guna fetch, srcdoc atau sandbox di sini.
+            window.location.assign(url);
         }
 
         async function loadUrlToolIntoFrame(url, iframe, errorBox) {
@@ -2105,7 +2122,6 @@
                 }
 
                 iframe.srcdoc = html;
-                htmlViewerHasContent = true;
                 errorBox.classList.add('hidden');
                 errorBox.classList.remove('flex');
             } catch (err) {
@@ -2147,14 +2163,13 @@
         function closeHtmlModal() {
             const modal = document.getElementById('htmlModal');
             const iframe = document.getElementById('htmlSandboxFrame');
-            if (!modal) return;
 
-            // JANGAN kosongkan srcdoc/src di sini.
-            // Mengosongkan iframe akan memusnahkan dokumen aplikasi dan boleh
-            // mematikan session-based authentication (contohnya Firebase Auth).
-            // Kita hanya sembunyikan viewer; iframe kekal hidup di DOM.
             modal.classList.add('hidden');
+            iframe.srcdoc = '';
+            iframe.removeAttribute('src');
+            iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox');
             document.body.classList.remove('tool-viewer-open');
+            activeHtmlTool = null;
         }
 
         function renderTools() {
