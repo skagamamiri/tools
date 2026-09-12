@@ -172,7 +172,7 @@ function downloadReport(){
     a.download=filename;
     a.style.display='none';
     document.body.appendChild(a);
-    a.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));
+    a.click();
     setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},5000);
     toast('Laporan CSV sedang dimuat turun.');
   }catch(e){
