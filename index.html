@@ -2091,14 +2091,32 @@
         }
 
         function navigateToSessionPortal(url) {
+            // DELIMa/eRPH ialah portal ber-authentication. Jangan navigate top-level
+            // kerana itu meninggalkan dokumen ICT HUB dan boleh menyebabkan Firebase
+            // UI kembali ke keadaan login apabila pengguna menekan Back.
+            //
+            // Sebaliknya buka portal dalam TAB berasingan. ICT HUB kekal hidup dalam
+            // tab asal, manakala DELIMa menjadi first-party pada tab baharu. Ini juga
+            // mengelakkan srcdoc/fetch dan masalah third-party session.
             try {
-                // Simpan penanda supaya browser Back kembali ke ICT HUB dengan normal.
-                sessionStorage.setItem('ictHubReturnFromPortal', '1');
-            } catch (e) {}
+                const portalWindow = window.open(url, 'ICT_HUB_DELIMA_PORTAL');
+                if (portalWindow) {
+                    try { portalWindow.focus(); } catch (e) {}
+                    showToast('eRPH dibuka dalam tab baharu. Tutup tab eRPH untuk kembali ke ICT HUB.', 'info');
+                    return;
+                }
+            } catch (e) {
+                console.error('Gagal membuka tab DELIMa:', e);
+            }
 
-            // Top-level navigation ialah penting: cookie/session DELIMa menjadi first-party,
-            // bukan third-party iframe/srcdoc. Jangan guna fetch, srcdoc atau sandbox di sini.
-            window.location.assign(url);
+            // Jika popup disekat browser, berikan arahan yang jelas tanpa merosakkan
+            // halaman ICT HUB yang sedang login.
+            const errorBox = document.getElementById('toolFrameError');
+            if (errorBox) {
+                errorBox.classList.remove('hidden');
+                errorBox.classList.add('flex');
+                errorBox.innerHTML = '<div class="text-center p-6"><p class="font-semibold text-rose-600">Tab eRPH disekat oleh browser.</p><p class="text-xs mt-2 text-slate-500">Benarkan pop-up untuk laman ICT HUB, kemudian klik eRPH sekali lagi.</p></div>';
+            }
         }
 
         async function loadUrlToolIntoFrame(url, iframe, errorBox) {
@@ -2137,6 +2155,10 @@
             const iframe = document.getElementById('htmlSandboxFrame');
 
             if (activeHtmlTool.type === 'URL') {
+                if (isSessionPortalUrl(activeHtmlTool.url)) {
+                    navigateToSessionPortal(activeHtmlTool.url);
+                    return;
+                }
                 iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation');
                 iframe.removeAttribute('src');
                 iframe.srcdoc = '<html><body style=\"font-family:sans-serif;padding:24px\"><p>Memuatkan semula...</p></body></html>';
