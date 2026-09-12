@@ -113,7 +113,7 @@ function switchTab(name){document.querySelectorAll('.tab').forEach(b=>b.classLis
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 $('loginBtn').onclick=async()=>{try{await signInWithPopup(auth,provider)}catch(e){try{await signInWithRedirect(auth,provider)}catch(x){toast('Login gagal: '+(x.message||e.message))}}};
 $('weekSelect').onchange=()=>{selectedWeek=$('weekSelect').value;const i=infoFor(selectedWeek);$('weekRange').textContent=i?.range||'';loadSubmission()};
-$('historyRefresh').onclick=loadHistory;$('reviewWeek').onchange=loadReview;$('reviewerSelect').onchange=loadReview;$('assignReviewer').onchange=renderAssignmentList;$('reportWeek').onchange=loadReport;$('reportRefresh').onclick=loadReport;$('downloadReport').onclick=downloadReport;
+$('historyRefresh').onclick=loadHistory;$('reviewWeek').onchange=loadReview;$('reviewerSelect').onchange=loadReview;$('assignReviewer').onchange=renderAssignmentList;$('reportWeek').onchange=loadReport;$('reportRefresh').onclick=loadReport;document.addEventListener('click',e=>{const b=e.target.closest('#downloadReport');if(b){e.preventDefault();downloadReport();}});
 $('selectAll').onclick=()=>{document.querySelectorAll('.teacher-cb').forEach(x=>x.checked=true);updateAssignCount()};$('clearAll').onclick=()=>{document.querySelectorAll('.teacher-cb').forEach(x=>x.checked=false);updateAssignCount()};
 $('submitBtn').onclick=submitErph;$('openBtn').onclick=()=>{if($('openBtn').dataset.url)window.open($('openBtn').dataset.url,'_blank','noopener,noreferrer')};$('closeGrade').onclick=closeGrade;$('saveReview').onclick=saveReview;
 
@@ -148,18 +148,39 @@ const sent=rows.filter(r=>r.s),lateRows=rows.filter(r=>r.status==='Lewat'),notSe
 $('reportStats').innerHTML=[['GURU',rows.length,'sky'],['DAH HANTAR',sent.length,'emerald'],['BELUM HANTAR',notSent.length,'amber'],['DAH DINILAI',reviewed.length,'violet']].map(x=>`<div class="rounded-2xl bg-${x[2]}-500/10 border border-${x[2]}-500/10 p-4 text-center"><div class="text-2xl font-black text-${x[2]}-400">${x[1]}</div><div class="text-[9px] font-black text-slate-500">${x[0]}</div></div>`).join('');
 list.innerHTML=`<div class="grid grid-cols-[2fr_2fr_1fr_1.2fr_1.2fr_2fr] gap-3 px-3 py-2 text-[9px] uppercase tracking-wider text-slate-500 font-black border-b border-slate-800"><div>Guru</div><div>Email</div><div>Minggu</div><div>Status</div><div>Penilaian</div><div>Tarikh Hantar</div></div>`+rows.map(r=>`<div class="grid grid-cols-[2fr_2fr_1fr_1.2fr_1.2fr_2fr] gap-3 items-center px-3 py-3 border-b border-slate-800/70 text-xs"><div class="font-bold">${esc(r.name)}</div><div class="text-slate-500 text-[10px] truncate">${esc(r.email)}</div><div class="font-black">${esc(r.week)}</div><div><span class="px-2 py-1 rounded-lg text-[9px] font-black ${r.status==='Dah Hantar'?'bg-emerald-500/10 text-emerald-400':r.status==='Lewat'?'bg-amber-500/10 text-amber-400':'bg-rose-500/10 text-rose-400'}">${r.status}</span></div><div class="text-[10px]">${r.grade?`Gred ${esc(r.grade)}${r.mark!==''?' • '+esc(r.mark)+'/100':''}`:'-'}</div><div class="text-[10px] text-slate-500">${esc(stamp(r.submittedAt)||'-')}</div></div>`).join('');
 }catch(e){console.error(e);list.innerHTML='<div class="text-xs text-rose-400 text-center py-6">Gagal memuatkan laporan. Semak Firestore Rules.</div>';}}
-function csvCell(v){return `"${String(v??'').replace(/"/g,'""')}"`;}
+function csvCell(v){
+  return '"'+String(v??'').replace(/"/g,'""')+'"';
+}
 function downloadReport(){
-if(!window._reportRows?.length){toast('Tiada data laporan untuk dimuat turun.');return;}
-const rows=window._reportRows;const header=['Nama Guru','Email','Minggu','Status Penghantaran','Tarikh Hantar','Gred','Markah','Ulasan Pentadbir','Pautan eRPH'];
-const lines=[header.map(csvCell).join(',')];
-rows.forEach(r=>lines.push([r.name,r.email,r.week,r.status,stamp(r.submittedAt)||'',r.grade,r.mark,r.comment,r.sheetUrl].map(csvCell).join(',')));
-const csv='\ufeff'+lines.join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Laporan_eRPH_${String($('reportWeek').value||'SEMUA').replace(/[^A-Za-z0-9_-]/g,'_')}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
-
-async function loadAssignments(){if(currentTeacher?.role!=='admin')return;try{const [ts,as]=await Promise.all([getDocs(collection(db,TEACHERS)),getDocs(collection(db,ASSIGN))]);teachers=ts.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.active!==false).sort((a,b)=>String(a.displayName||a.email||a.id).localeCompare(String(b.displayName||b.email||b.id)));assignments=as.docs.map(d=>({id:d.id,...d.data()}));if(!reviewers.length)await loadReviewers();renderAssignmentList()}catch(e){toast('Gagal memuatkan senarai guru.')}}
-function renderAssignmentList(){const reviewer=$('assignReviewer').value||'';const rkey=reviewer.trim().toLowerCase();const rp=reviewers.find(r=>String(r.displayName||r.email||r.id).trim().toLowerCase()===rkey);const remail=String(rp?.email||rp?.id||'').toLowerCase();const assigned=new Set(assignments.filter(a=>String(a.reviewerEmail||'').toLowerCase()===remail||String(a.reviewerName||'').trim().toLowerCase()===rkey).map(a=>String(a.teacherEmail||a.id||'').toLowerCase()));$('teacherAssignList').innerHTML=teachers.map(t=>{const email=String(t.email||t.id).toLowerCase(),name=t.displayName||email;return `<label class="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950 p-3 cursor-pointer"><input type="checkbox" class="teacher-cb w-4 h-4" data-email="${esc(email)}" data-name="${esc(name)}" ${assigned.has(email)?'checked':''}><span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-[10px] font-black">${esc(name.split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase())}</span><span class="min-w-0"><span class="block text-xs font-bold truncate">${esc(name)}</span><span class="block text-[9px] text-slate-500 truncate">${esc(email)}</span></span></label>`}).join('');document.querySelectorAll('.teacher-cb').forEach(x=>x.onchange=updateAssignCount);updateAssignCount()}
-function updateAssignCount(){$('assignCount').textContent=`${document.querySelectorAll('.teacher-cb:checked').length} dipilih`}
-$('saveAssign').onclick=async()=>{if(currentTeacher?.role!=='admin'){toast('Akses Admin diperlukan.');return}const reviewer=$('assignReviewer').value.trim();const rp=reviewers.find(r=>String(r.displayName||r.email||r.id).trim().toLowerCase()===reviewer.toLowerCase());const remail=String(rp?.email||rp?.id||'').toLowerCase();const selected=[...document.querySelectorAll('.teacher-cb:checked')].map(x=>({teacherEmail:x.dataset.email,teacherName:x.dataset.name}));try{const batch=writeBatch(db),selectedEmails=new Set(selected.map(x=>x.teacherEmail));for(const a of assignments){const aid=String(a.id||a.teacherEmail||'').trim(),ae=String(a.teacherEmail||a.id||'').toLowerCase(),same=String(a.reviewerName||'').trim().toLowerCase()===reviewer.toLowerCase(),moving=selectedEmails.has(ae);if((same||moving)&&!selectedEmails.has(aid.toLowerCase()))batch.delete(doc(db,ASSIGN,aid))}for(const t of selected)batch.set(doc(db,ASSIGN,t.teacherEmail),{teacherEmail:t.teacherEmail,teacherName:t.teacherName,reviewerEmail:remail,reviewerName:reviewer,updatedAt:serverTimestamp(),updatedBy:currentTeacher.email},{merge:true});await batch.commit();toast(`Pembahagian ${reviewer} berjaya disimpan (${selected.length} guru).`);await loadAssignments();}catch(e){toast('Gagal menyimpan pembahagian: '+(e.message||'Semak Firestore Rules.'))}};
+  const rows=Array.isArray(window._reportRows)?window._reportRows:[];
+  if(!rows.length){toast('Tiada data laporan untuk dimuat turun. Sila klik Papar terlebih dahulu.');return;}
+  try{
+    const header=['Nama Guru','Email','Minggu','Status Penghantaran','Tarikh Hantar','Gred','Markah','Ulasan Pentadbir','Pautan eRPH'];
+    const lines=[header.map(csvCell).join(',')];
+    for(const r of rows){
+      lines.push([r.name,r.email,r.week,r.status,stamp(r.submittedAt)||'',r.grade||'',r.mark??'',r.comment||'',r.sheetUrl||''].map(csvCell).join(','));
+    }
+    const csv='\ufeff'+lines.join('\r\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+    if(window.navigator && typeof navigator.msSaveOrOpenBlob==='function'){
+      navigator.msSaveOrOpenBlob(blob,`Laporan_eRPH_${String($('reportWeek').value||'SEMUA').replace(/[^A-Za-z0-9_-]/g,'_')}.csv`);
+      return;
+    }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const week=String($('reportWeek').value||'SEMUA').replace(/[^A-Za-z0-9_-]/g,'_');
+    a.href=url;
+    a.download=`Laporan_eRPH_${week}.csv`;
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));
+    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},5000);
+    toast('Laporan CSV sedang dimuat turun.');
+  }catch(e){
+    console.error('CSV download error:',e);
+    toast('Gagal memuat turun CSV. Cuba lagi.');
+  }
+}
 </script>
 </body>
 </html>
