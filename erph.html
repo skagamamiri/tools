@@ -69,11 +69,11 @@ body{font-family:Inter,sans-serif}.tab{cursor:pointer}.tab.active{background:#0f
     <section id="panel-report" class="panel hide space-y-4">
       <div class="rounded-3xl bg-slate-900 border border-slate-800 p-5">
         <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-          <div><div class="text-[9px] uppercase tracking-widest text-sky-400 font-black">Pentadbir</div><h3 class="text-xl font-black">Laporan Penghantaran eRPH</h3><p class="text-xs text-slate-400 mt-1">Lihat status penghantaran semua guru dan muat turun laporan CSV.</p></div>
+          <div><div class="text-[9px] uppercase tracking-widest text-sky-400 font-black">Pentadbir</div><h3 class="text-xl font-black">Laporan Penghantaran eRPH</h3><p class="text-xs text-slate-400 mt-1">Lihat status penghantaran semua guru dan muat turun laporan CSV atau PDF.</p></div>
           <div class="flex flex-wrap gap-2">
             <select id="reportWeek" class="px-3 py-3 rounded-xl bg-slate-950 border border-slate-700 text-sm font-bold"></select>
             <button id="reportRefresh" class="px-4 py-3 rounded-xl bg-slate-800 text-xs font-black">↻ Papar</button>
-            <button id="downloadReport" class="px-4 py-3 rounded-xl bg-emerald-600 text-xs font-black">⬇ Muat Turun CSV</button>
+            <button id="downloadReport" class="px-4 py-3 rounded-xl bg-emerald-600 text-xs font-black">⬇ Muat Turun CSV</button><button id="downloadReportPdf" class="px-4 py-3 rounded-xl bg-rose-600 text-xs font-black">⬇ Muat Turun PDF</button>
           </div>
         </div>
       </div>
@@ -89,6 +89,7 @@ body{font-family:Inter,sans-serif}.tab{cursor:pointer}.tab.active{background:#0f
 
 <div id="gradeModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hide items-center justify-center p-4"><div class="w-full max-w-xl rounded-3xl bg-slate-900 border border-slate-700 shadow-2xl overflow-hidden"><div class="p-5 bg-emerald-700"><div class="text-[9px] uppercase tracking-widest text-emerald-100 font-black">Penilaian eRPH</div><h3 id="gradeName" class="text-lg font-black">Guru</h3><p id="gradeEmail" class="text-[10px] text-emerald-100"></p></div><div class="p-5 space-y-4"><div class="flex gap-2"><a id="gradeLink" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl bg-slate-800 text-xs font-black">📊 Buka Google Sheet</a><span id="gradeWeek" class="px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 text-xs font-black">M31</span></div><div class="grid sm:grid-cols-2 gap-3"><div><label class="block text-xs font-bold mb-2">Gred</label><select id="grade" class="w-full px-3 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-sm font-bold"><option value="">Belum Dinilai</option><option value="A">A — Cemerlang (90–100)</option><option value="B">B — Baik (80–89)</option><option value="C">C — Memuaskan (70–79)</option><option value="D">D — Perlu Penambahbaikan (60–69)</option><option value="E">E — Tidak Memuaskan (&lt;60)</option></select></div><div><label class="block text-xs font-bold mb-2">Markah (0–100)</label><input id="mark" type="number" min="0" max="100" step="1" class="w-full px-3 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-sm font-bold"></div></div><div><label class="block text-xs font-bold mb-2">Ulasan Pentadbir</label><textarea id="comment" rows="4" class="w-full px-3 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-sm"></textarea></div><div class="flex gap-2"><button id="saveReview" class="flex-1 py-3 rounded-2xl bg-emerald-600 text-xs font-black">Simpan Penilaian</button><button id="closeGrade" class="px-5 py-3 rounded-2xl bg-slate-800 text-xs font-black">Batal</button></div></div></div></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
@@ -179,6 +180,63 @@ function downloadReport(){
     console.error('CSV download error:',e);
     toast('Gagal memuat turun CSV. Cuba lagi.');
   }
+}
+
+
+document.addEventListener('click',e=>{const b=e.target.closest('#downloadReportPdf');if(b){e.preventDefault();downloadReportPdf();}});
+
+function pdfText(doc,text,x,y,maxWidth,fontSize=8){
+  doc.setFontSize(fontSize);
+  const lines=doc.splitTextToSize(String(text??''),maxWidth);
+  doc.text(lines,x,y);
+  return Math.max(1,lines.length)*4;
+}
+
+function downloadReportPdf(){
+  const rows=Array.isArray(window._reportRows)?window._reportRows:[];
+  if(!rows.length){toast('Tiada data laporan untuk dimuat turun. Sila klik Papar terlebih dahulu.');return;}
+  if(!window.jspdf?.jsPDF){toast('Komponen PDF belum dimuatkan. Sila cuba lagi.');return;}
+  try{
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    const pageW=297,pageH=210,margin=10;
+    const week=String($('reportWeek').value||'SEMUA');
+    const title='LAPORAN PENGHANTARAN eRPH GURU';
+    const cols=[
+      {h:'Bil.',w:9,key:'n'},
+      {h:'Nama Guru',w:50,key:'name'},
+      {h:'Email',w:58,key:'email'},
+      {h:'Minggu',w:18,key:'week'},
+      {h:'Status',w:30,key:'status'},
+      {h:'Tarikh Hantar',w:35,key:'submitted'},
+      {h:'Gred',w:17,key:'grade'},
+      {h:'Markah',w:20,key:'mark'}
+    ];
+    const tableW=cols.reduce((a,c)=>a+c.w,0);
+    let y=10;
+    const drawHeader=()=>{
+      doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text(title,margin,y);y+=7;
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text('Minggu: '+week,margin,y);doc.text('Jumlah guru: '+rows.length,margin+65,y);y+=6;
+      let x=margin;doc.setFillColor(230,230,230);doc.setDrawColor(160,160,160);doc.setFont('helvetica','bold');doc.setFontSize(7);
+      doc.rect(margin,y,tableW,8,'FD');
+      for(const c of cols){doc.text(c.h,x+2,y+5.2);x+=c.w;if(x<margin+tableW)doc.line(x,y,x,y+8)}
+      y+=8;doc.setFont('helvetica','normal');
+    };
+    const cell=(text,x,w,y0,h)=>{doc.rect(x,y0,w,h);pdfText(doc,text,x+2,y0+4,w-4,7)};
+    drawHeader();
+    rows.forEach((r,i)=>{
+      const vals={n:i+1,name:r.name||'',email:r.email||'',week:r.week||'',status:r.status||'',submitted:stamp(r.submittedAt)||'-',grade:r.grade||'-',mark:r.mark!==''&&r.mark!==null&&r.mark!==undefined?String(r.mark)+'/100':'-'};
+      const heights=cols.map(c=>{doc.setFontSize(7);return Math.max(7,doc.splitTextToSize(String(vals[c.key]??''),c.w-4).length*4+3)});
+      const h=Math.min(14,Math.max(...heights));
+      if(y+h>pageH-10){doc.addPage();y=10;drawHeader();}
+      let x=margin;cols.forEach(c=>{cell(vals[c.key],x,c.w,y,h);x+=c.w});y+=h;
+    });
+    const pages=doc.getNumberOfPages();
+    for(let pg=1;pg<=pages;pg++){doc.setPage(pg);doc.setFontSize(7);doc.setFont('helvetica','normal');doc.text(`Halaman ${pg} / ${pages}`,pageW-margin,pageH-5,{align:'right'});}
+    const filename=`Laporan_eRPH_${week.replace(/[^A-Za-z0-9_-]/g,'_')}.pdf`;
+    doc.save(filename);
+    toast('Laporan PDF sedang dimuat turun.');
+  }catch(e){console.error('PDF download error:',e);toast('Gagal menghasilkan PDF. Cuba lagi.');}
 }
 
 async function loadAssignments(){if(currentTeacher?.role!=='admin')return;try{const [ts,as]=await Promise.all([getDocs(collection(db,TEACHERS)),getDocs(collection(db,ASSIGN))]);teachers=ts.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.active!==false).sort((a,b)=>String(a.displayName||a.email||a.id).localeCompare(String(b.displayName||b.email||b.id)));assignments=as.docs.map(d=>({id:d.id,...d.data()}));if(!reviewers.length)await loadReviewers();renderAssignmentList()}catch(e){toast('Gagal memuatkan senarai guru.')}}
