@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OPR Generator — SK Agama (MIS) Miri</title>
+<style>
+:root{--blue:#0756b7;--blue2:#0b3f91;--yellow:#ffbf43;--bg:#f4f7fb;--text:#172033;--muted:#6b7280;--line:#dbe2ea;--ok:#16834a;--danger:#c62828}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:1050px;margin:28px auto;padding:0 16px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 28px rgba(15,40,80,.08);overflow:hidden}
+.head{background:linear-gradient(135deg,var(--blue2),var(--blue));color:#fff;padding:24px 26px}.head h1{margin:0 0 5px;font-size:24px}.head p{margin:0;opacity:.9}
+.body{padding:24px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.full{grid-column:1/-1}
+label{display:block;font-weight:700;font-size:14px;margin-bottom:7px}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;background:#fff;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(7,86,183,.1)}
+textarea{min-height:115px;resize:vertical}.section{font-size:17px;font-weight:800;color:var(--blue2);border-bottom:2px solid #e9eef5;padding-bottom:8px;margin:24px 0 15px}
+.photos{display:grid;grid-template-columns:1fr 1fr;gap:16px}.photo{border:2px dashed #cbd5e1;border-radius:14px;padding:14px;background:#fafcff}
+.preview{height:190px;border-radius:10px;background:#edf2f7;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-top:10px;color:#94a3b8;font-size:13px}.preview img{width:100%;height:100%;object-fit:cover;display:block}
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:24px}
+button{border:0;border-radius:10px;padding:12px 18px;font-weight:800;cursor:pointer}.primary{background:var(--blue);color:#fff}.primary:hover{background:var(--blue2)}.secondary{background:#e9eef5;color:#1f2937}
+button:disabled{opacity:.55;cursor:not-allowed}.status{margin-top:18px;padding:14px;border-radius:10px;display:none;line-height:1.5}.status.show{display:block}.status.ok{background:#eaf8f0;color:var(--ok)}.status.err{background:#fff0f0;color:var(--danger)}.status.info{background:#eef5ff;color:#174a9c}
+.links{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}.links a{display:inline-block;padding:9px 12px;border-radius:8px;background:#fff;border:1px solid var(--line);color:var(--blue);text-decoration:none;font-weight:700}.small{font-size:12px;color:var(--muted)}
+@media(max-width:720px){.grid,.photos{grid-template-columns:1fr}.full{grid-column:auto}.wrap{margin:10px auto}.body{padding:16px}}
+
+/* V1.7 UI polish */
+.head{position:relative}
+.head:after{content:"OPR • 2026";position:absolute;right:24px;top:24px;font-size:11px;font-weight:800;letter-spacing:.08em;background:rgba(255,255,255,.14);padding:7px 10px;border-radius:999px}
+.date-time-card{background:linear-gradient(180deg,#f8fbff,#f4f8fd);border:1px solid #dbe7f4;border-radius:14px;padding:14px 14px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.8)}
+.dt-title{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--blue2);font-size:14px;margin-bottom:10px}
+.dt-icon{width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:#e7f0ff;font-size:15px}
+.dt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dt-field label{font-size:12px;color:#42526a;margin-bottom:6px}
+input[type=date],input[type=time]{padding:11px 12px;cursor:pointer}
+.dt-preview{margin-top:9px;font-size:12px;color:#607089;background:#fff;border:1px solid #e5ebf2;border-radius:9px;padding:8px 10px}
+.section{display:flex;align-items:center;gap:10px}
+.section:before{content:"";width:5px;height:19px;border-radius:999px;background:var(--yellow);display:inline-block}
+.photos .photo{transition:.18s ease}
+.photos .photo:hover{border-color:#9db8dc;box-shadow:0 5px 18px rgba(15,40,80,.06)}
+input,select,textarea{transition:border-color .15s,box-shadow .15s}
+button{transition:transform .12s,box-shadow .12s}
+button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgba(15,40,80,.12)}
+.primary{padding-left:22px;padding-right:22px}
+@media(max-width:720px){.dt-grid{grid-template-columns:1fr}.head:after{display:none}}
+
+/* V1.9 — OPR text formatting + freehand signature */
+.editor-wrap{position:relative}
+.editor-toolbar{display:flex;gap:7px;align-items:center;background:#f6f9fd;border:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;padding:7px 8px}
+.editor-toolbar .format-btn{background:#fff;color:#174a9c;border:1px solid #d7e1ed;border-radius:7px;padding:7px 10px;font-size:12px;line-height:1;font-weight:800;box-shadow:none;transform:none}
+.editor-toolbar .format-btn:hover{background:#eef5ff;border-color:#b9cce4;box-shadow:none;transform:none}
+.editor-wrap textarea{border-radius:0 0 10px 10px;min-height:115px}
+.editor-hint{font-size:11px;color:#7a8798;margin-top:5px}
+ .ai-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:7px 0 8px}.ai-btn{border:1px solid #c9d9ee;background:#eef5ff;color:#0b4d9e;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:800;cursor:pointer}.ai-btn:hover{background:#e3efff;border-color:#a9c5e7}.ai-btn.all{background:#fff7df;color:#8a5a00;border-color:#f0d58a}.ai-btn:disabled{opacity:.55;cursor:not-allowed}.ai-note{font-size:11px;color:#7a8798}
+
+/* V1.9 — freehand signature pad */
+.signature-card{
+  margin-top:10px;
+  border:1px solid #dbe7f4;
+  border-radius:14px;
+  background:linear-gradient(180deg,#f8fbff,#f4f8fd);
+  padding:14px;
+}
+.signature-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-bottom:9px;
+}
+.signature-title{
+  display:flex;align-items:center;gap:8px;font-weight:800;color:var(--blue2);font-size:14px;
+}
+.signature-icon{
+  width:30px;height:30px;display:grid;place-items:center;border-radius:8px;
+  background:#e7f0ff;font-size:16px;
+}
+.signature-tools{display:flex;gap:7px;align-items:center}
+.signature-btn{
+  border:1px solid #d7e1ed;background:#fff;color:#174a9c;border-radius:8px;
+  padding:7px 10px;font-size:12px;font-weight:800;cursor:pointer;
+}
+.signature-btn:hover{background:#eef5ff;border-color:#b9cce4}
+.signature-canvas-wrap{
+  background:#fff;border:1px solid #cfd9e6;border-radius:11px;
+  overflow:hidden;box-shadow:inset 0 1px 2px rgba(15,40,80,.04);
+}
+#signatureCanvas{
+  display:block;width:100%;height:145px;touch-action:none;cursor:crosshair;
+}
+.signature-meta{
+  display:flex;justify-content:space-between;gap:10px;margin-top:8px;
+  font-size:11px;color:#718096;
+}
+.signature-status{font-weight:700}
+.signature-status.ready{color:#16734b}
+.signature-status.empty{color:#718096}
+@media(max-width:720px){#signatureCanvas{height:130px}.signature-head{align-items:flex-start;flex-direction:column}.signature-tools{width:100%}}
+
+/* V1.10 — mobile camera capture */
+.file-camera-row{display:flex;gap:8px;align-items:center}
+.file-camera-row>input[type=file]{flex:1;min-width:0}
+.camera-btn{border:1px solid #cbd8e8;background:#eef5ff;color:#0b55ad;border-radius:9px;padding:10px 12px;font-weight:800;font-size:12px;white-space:nowrap;cursor:pointer}
+.camera-btn:hover{background:#e2efff;border-color:#9fb9da;transform:translateY(-1px)}
+.camera-input{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
+@media(max-width:760px){.file-camera-row{flex-direction:column;align-items:stretch}.camera-btn{width:100%;padding:11px 12px;font-size:13px}.file-camera-row>input[type=file]{width:100%}}
+
+
+.result-btn{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+  min-width:155px !important;
+  min-height:44px !important;
+  box-sizing:border-box !important;
+  margin:8px 10px 0 0 !important;
+  padding:11px 18px !important;
+  border-radius:9px !important;
+  background:#0b5dbb !important;
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  text-decoration:none !important;
+  font-weight:800 !important;
+  font-size:13px !important;
+  line-height:1.2 !important;
+  font-family:Arial,sans-serif !important;
+  border:1px solid #0b5dbb !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+.result-btn:visited,
+.result-btn:hover,
+.result-btn:active{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  text-decoration:none !important;
+}
+.result-btn.pdf{
+  background:#14804a !important;
+  border-color:#14804a !important;
+}
+
+/* V1.30 — PREMIUM SCHOOL HEADER / LOGO + PHOTO */
+.head{
+  position:relative;
+  min-height:390px;
+  padding:34px 34px 28px;
+  overflow:hidden;
+  isolation:isolate;
+  background:
+    linear-gradient(90deg,rgba(5,48,112,.98) 0%,rgba(7,78,160,.94) 43%,rgba(7,78,160,.70) 62%,rgba(4,45,96,.30) 100%),
+    url('assets/sekolah-sk-agama-miri.jpg') center right/cover no-repeat;
+  color:#fff;
+}
+.head:before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:radial-gradient(circle at 15% 10%,rgba(58,198,255,.28),transparent 34%),linear-gradient(180deg,transparent 58%,rgba(2,29,63,.35));
+}
+.head:after{
+  content:"OPR • 2026";
+  position:absolute;right:28px;top:24px;
+  font-size:13px;font-weight:900;letter-spacing:.05em;
+  background:rgba(15,108,214,.88);
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:0 8px 22px rgba(0,30,80,.22),inset 0 1px 0 rgba(255,255,255,.18);
+  padding:10px 16px;border-radius:999px;
+  backdrop-filter:blur(8px);
+}
+.head-inner{position:relative;z-index:2;display:grid;grid-template-columns:150px minmax(0,1fr);gap:24px;align-items:center;max-width:100%;padding-top:12px}
+.head-logo-wrap{width:132px;height:132px;border-radius:24px;background:rgba(255,255,255,.96);padding:8px;box-shadow:0 12px 32px rgba(0,25,70,.30),0 0 0 1px rgba(255,255,255,.28);display:grid;place-items:center}
+.head-logo{width:100%;height:100%;object-fit:contain;border-radius:17px;display:block}
+.head-copy{min-width:0;padding-right:175px}
+.head h1{margin:0;font-size:clamp(34px,4vw,56px);line-height:1.02;letter-spacing:-.035em;font-weight:900;text-shadow:0 3px 18px rgba(0,25,70,.22)}
+.head h1 span{color:#9ee8ff}
+.head p{margin:10px 0 0;font-size:clamp(15px,1.7vw,19px);line-height:1.45;opacity:.96}
+.head-sub{font-size:14px!important;opacity:.86!important;margin-top:7px!important}
+.head-line{width:250px;height:4px;border-radius:99px;margin-top:15px;background:linear-gradient(90deg,#24c8ff,#ffd23f);box-shadow:0 0 14px rgba(36,200,255,.35)}
+.head-features{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px}
+.head-feature{display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid rgba(255,255,255,.17);border-radius:12px;background:rgba(5,32,75,.30);backdrop-filter:blur(7px);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.head-feature-icon{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.32);font-size:15px}
+.head-feature strong{display:block;font-size:12px;letter-spacing:.04em}.head-feature small{display:block;font-size:10px;opacity:.76;margin-top:1px}
+.head-slogan{position:absolute;right:30px;bottom:24px;z-index:2;max-width:245px;text-align:right;font-size:16px;line-height:1.2;font-style:italic;font-weight:800;text-shadow:0 2px 10px rgba(0,0,0,.35)}
+.head-slogan:after{content:"";display:block;width:105px;height:3px;background:#ffd23f;border-radius:99px;margin:8px 0 0 auto;transform:rotate(-3deg)}
+@media(max-width:820px){
+  .head{min-height:355px;padding:25px 22px 24px;background-position:center right}
+  .head-inner{grid-template-columns:92px minmax(0,1fr);gap:16px;align-items:start;padding-top:15px}
+  .head-logo-wrap{width:88px;height:88px;border-radius:18px;padding:6px}
+  .head-copy{padding-right:0}
+  .head h1{font-size:34px}.head p{font-size:14px}.head-sub{font-size:12px!important}
+  .head-features{gap:6px;margin-top:14px}.head-feature{padding:6px 8px}.head-feature-icon{width:25px;height:25px;font-size:12px}.head-feature strong{font-size:10px}.head-feature small{font-size:9px}
+  .head-slogan{display:none}.head:after{right:18px;top:16px;font-size:11px;padding:8px 11px}
+}
+@media(max-width:520px){
+  .head{min-height:300px;padding:20px 16px 18px;background-position:65% center}
+  .head:after{top:14px;right:14px}.head-inner{grid-template-columns:62px minmax(0,1fr);gap:12px;padding-top:34px}
+  .head-logo-wrap{width:60px;height:60px;border-radius:14px;padding:4px}.head h1{font-size:27px}.head p{font-size:12px;line-height:1.3;margin-top:6px}.head-sub{font-size:10px!important;margin-top:4px!important}.head-line{width:150px;height:3px;margin-top:9px}.head-features{display:none}
+}
+
+/* V1.29 — MOBILE AI CONNECTION FIX + REKOD OPR */
+.history-modal{position:fixed;inset:0;background:rgba(10,24,45,.62);z-index:9999;display:none;padding:18px}
+.history-modal.show{display:flex;align-items:center;justify-content:center}
+.history-panel{width:min(1180px,100%);height:min(92vh,900px);background:#fff;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;display:flex;flex-direction:column}
+.history-head{background:linear-gradient(135deg,var(--blue2),var(--blue));color:#fff;padding:17px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.history-head h2{margin:0;font-size:19px}.history-head p{margin:4px 0 0;font-size:11px;opacity:.9}
+.history-close{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);padding:8px 12px;border-radius:9px}
+.history-tools{padding:13px 16px;border-bottom:1px solid var(--line);background:#f8fbff;display:grid;grid-template-columns:2fr 1fr 1.2fr 1fr auto;gap:8px}
+.history-tools input,.history-tools select{padding:9px 10px;font-size:12px}.history-tools button{padding:9px 13px;font-size:12px}
+.history-summary{padding:9px 16px;font-size:12px;color:#64748b;border-bottom:1px solid #edf1f5}
+.history-list{padding:14px 16px;overflow:auto;flex:1;background:#f4f7fb}
+.history-card{background:#fff;border:1px solid #dbe3ed;border-radius:13px;padding:13px;margin-bottom:10px;box-shadow:0 3px 12px rgba(15,40,80,.05)}
+.history-title{font-weight:800;color:#123f78;font-size:15px;margin-bottom:6px}.history-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.history-chip{background:#eef5ff;color:#345b86;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:700}.history-chip.ok{background:#eaf8f0;color:#16734b}.history-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;font-size:11px;color:#526276}.history-grid b{color:#27384f}.history-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.history-actions a{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border-radius:8px;background:#0b5dbb;color:#fff;text-decoration:none;font-size:11px;font-weight:800}.history-actions a.pdf{background:#14804a}.history-actions a.folder{background:#6b5b00}.history-detail{margin-top:9px;border-top:1px dashed #dbe3ed;padding-top:8px}.history-detail summary{cursor:pointer;color:#174a9c;font-size:11px;font-weight:800}.history-detail pre{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:11px;line-height:1.45;color:#42526a;margin:8px 0 0}.history-empty{text-align:center;padding:50px 20px;color:#718096}.history-loading{text-align:center;padding:30px;color:#526276}
+.history-more{display:flex;justify-content:center;padding:6px 0 16px}.history-more button{min-width:150px}
+@media(max-width:820px){.history-tools{grid-template-columns:1fr 1fr}.history-tools input{grid-column:1/-1}.history-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.history-modal{padding:0}.history-panel{height:100vh;border-radius:0}.history-head{padding:14px}.history-tools{grid-template-columns:1fr}.history-grid{grid-template-columns:1fr}.history-list{padding:10px}}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="card">
+<div class="head">
+  <div class="head-inner">
+    <div class="head-logo-wrap"><img class="head-logo" src="assets/logo-sk-agama-miri.png" alt="Logo SK Agama (MIS) Miri"></div>
+    <div class="head-copy">
+      <h1>OPR <span>Generator</span></h1>
+      <p><strong>SK Agama (MIS) Miri</strong></p>
+      <p class="head-sub">Jana One Page Report daripada template Google Slides</p>
+      <div class="head-line"></div>
+      <div class="head-features" aria-label="Kelebihan OPR Generator">
+        <div class="head-feature"><span class="head-feature-icon">▣</span><span><strong>MUDAH</strong><small>Digunakan</small></span></div>
+        <div class="head-feature"><span class="head-feature-icon">ϟ</span><span><strong>PANTAS</strong><small>&amp; Efisien</small></span></div>
+        <div class="head-feature"><span class="head-feature-icon">◆</span><span><strong>TERATUR</strong><small>&amp; Konsisten</small></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="head-slogan">Bersama Membina<br>Pendidikan Cemerlang</div>
+</div>
+<div class="body">
+<form id="oprForm" autocomplete="off">
+<div class="grid">
+<div><label for="tahun">Tahun</label><input id="tahun" name="tahun" type="number" min="2020" max="2100" required></div>
+<div><label for="unit">Unit</label><select id="unit" name="unit" required></select></div>
+<div><label for="subunit">Subunit</label><select id="subunit" name="subunit"></select><input id="subunitManual" type="text" placeholder="Masukkan subunit" style="display:none;margin-top:8px"></div>
+<div><label for="tajuk">Tajuk Program</label><input id="tajuk" name="tajuk" maxlength="180" required></div>
+<div class="date-time-card">
+  <div class="dt-title"><span class="dt-icon">📅</span><span>Tarikh dan Masa</span></div>
+  <div class="dt-grid">
+    <div class="dt-field">
+      <label for="tarikh">Tarikh</label>
+      <input id="tarikh" type="date" required>
+    </div>
+    <div class="dt-field">
+      <label for="masa">Masa</label>
+      <input id="masa" type="time" required>
+    </div>
+  </div>
+  <input id="tarikh_masa" name="tarikh_masa" type="hidden">
+  <div class="dt-preview" id="tarikhMasaPreview">Pilih tarikh dan masa program</div>
+</div>
+<div><label for="tempat">Tempat</label><input id="tempat" name="tempat" maxlength="160" required></div>
+<div><label for="anjuran">Anjuran</label><input id="anjuran" name="anjuran" maxlength="160" required></div>
+<div><label for="sasaran">Sasaran</label><input id="sasaran" name="sasaran" maxlength="160" required></div>
+<div class="full"><label for="disediakan_oleh">Disediakan Oleh</label><input id="disediakan_oleh" name="disediakan_oleh" maxlength="160" required></div>
+<div class="full signature-card">
+  <div class="signature-head">
+    <div class="signature-title"><span class="signature-icon">✍️</span><span>Tandatangan Guru</span></div>
+    <div class="signature-tools">
+      <button type="button" class="signature-btn" id="clearSignature">Kosongkan</button>
+    </div>
+  </div>
+  <div class="signature-canvas-wrap">
+    <canvas id="signatureCanvas" aria-label="Ruang tandatangan free hand"></canvas>
+  </div>
+  <div class="signature-meta">
+    <span>Tandatangan secara free hand menggunakan tetikus, touchpad atau skrin sentuh.</span>
+    <span id="signatureStatus" class="signature-status empty">Belum ditandatangani</span>
+  </div>
+</div>
+
+</div>
+<div class="section">Kandungan OPR</div>
+<div class="grid">
+<div class="full editor-wrap">
+<label for="objektif">Objektif Program</label>
+<div class="ai-toolbar"><button type="button" class="ai-btn" data-ai-field="objektif">✨ Jana Objektif dengan AI</button><span class="ai-note">AI akan guna maklumat program di atas. Semak dan ubah jika perlu.</span></div>
+<div class="editor-toolbar" role="toolbar" aria-label="Format Objektif Program">
+  <button type="button" class="format-btn" data-editor="objektif" data-format="bullet" title="Tambah bullet pada baris terpilih">• Bullet</button>
+  <button type="button" class="format-btn" data-editor="objektif" data-format="number" title="Tambah numbering pada baris terpilih">1. Numbering</button>
+</div>
+<textarea id="objektif" name="objektif" maxlength="1500" required placeholder="Nyatakan objektif program..."></textarea>
+<div class="editor-hint">Tip: Taip setiap isi pada baris berasingan, kemudian pilih <b>Bullet</b> atau <b>Numbering</b>.</div>
+</div>
+<div class="full editor-wrap">
+<label for="aktiviti">Aktiviti Program</label>
+<div class="ai-toolbar"><button type="button" class="ai-btn" data-ai-field="aktiviti">✨ Jana Aktiviti dengan AI</button></div>
+<div class="editor-toolbar" role="toolbar" aria-label="Format Aktiviti Program">
+  <button type="button" class="format-btn" data-editor="aktiviti" data-format="bullet" title="Tambah bullet pada baris terpilih">• Bullet</button>
+  <button type="button" class="format-btn" data-editor="aktiviti" data-format="number" title="Tambah numbering pada baris terpilih">1. Numbering</button>
+</div>
+<textarea id="aktiviti" name="aktiviti" maxlength="1800" required placeholder="Nyatakan aktiviti utama..."></textarea>
+<div class="editor-hint">Tip: Taip setiap isi pada baris berasingan, kemudian pilih <b>Bullet</b> atau <b>Numbering</b>.</div>
+</div>
+<div class="full editor-wrap">
+<label for="impak">Impak Program</label>
+<div class="ai-toolbar"><button type="button" class="ai-btn" data-ai-field="impak">✨ Jana Impak dengan AI</button></div>
+<div class="editor-toolbar" role="toolbar" aria-label="Format Impak Program">
+  <button type="button" class="format-btn" data-editor="impak" data-format="bullet" title="Tambah bullet pada baris terpilih">• Bullet</button>
+  <button type="button" class="format-btn" data-editor="impak" data-format="number" title="Tambah numbering pada baris terpilih">1. Numbering</button>
+</div>
+<textarea id="impak" name="impak" maxlength="1500" required placeholder="Nyatakan impak/hasil program..."></textarea>
+<div class="editor-hint">Tip: Taip setiap isi pada baris berasingan, kemudian pilih <b>Bullet</b> atau <b>Numbering</b>.</div>
+</div>
+</div>
+<div class="section">2 Gambar Program</div>
+<div class="photos">
+<div class="photo"><label for="gambar1">Gambar 1</label><div class="file-camera-row"><input id="gambar1" type="file" accept="image/*" required><button type="button" class="camera-btn" id="camera1">📷 Ambil Gambar</button></div><input id="cameraInput1" type="file" accept="image/*" capture="environment" class="camera-input" tabindex="-1" aria-hidden="true"><div class="preview" id="preview1">Belum pilih gambar</div></div>
+<div class="photo"><label for="gambar2">Gambar 2</label><div class="file-camera-row"><input id="gambar2" type="file" accept="image/*" required><button type="button" class="camera-btn" id="camera2">📷 Ambil Gambar</button></div><input id="cameraInput2" type="file" accept="image/*" capture="environment" class="camera-input" tabindex="-1" aria-hidden="true"><div class="preview" id="preview2">Belum pilih gambar</div></div>
+</div>
+<div class="actions"><button type="button" class="secondary ai-btn all" id="aiAllBtn">✨ BANTUAN AI — JANA 3 BAHAGIAN</button><button type="submit" class="primary" id="generateBtn">JANA OPR</button><button type="button" class="secondary" id="historyBtn">📚 REKOD OPR</button><button type="button" class="secondary" id="resetBtn">Kosongkan</button><span class="small">Template Master Google Slides cikgu. Design borang dan fungsi asal dikekalkan.</span></div>
+</form>
+<div id="status" class="status"></div><div id="resultLinks" class="links"></div>
+</div></div></div>
+
+<div id="historyModal" class="history-modal" aria-hidden="true">
+  <div class="history-panel" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+    <div class="history-head">
+      <div><h2 id="historyTitle">📚 Rekod OPR</h2><p>Senarai OPR yang telah disimpan dalam Google Sheet OPR_DATA.</p></div>
+      <button type="button" class="history-close" id="historyClose">✕ Tutup</button>
+    </div>
+    <div class="history-tools">
+      <input id="historySearch" type="search" placeholder="Cari tajuk, tempat, anjuran, guru, unit...">
+      <input id="historyYear" type="number" min="2020" max="2100" placeholder="Tahun">
+      <select id="historyUnit"><option value="">Semua Unit</option></select>
+      <select id="historyStatus"><option value="BERJAYA">Berjaya sahaja</option><option value="SEMUA">Semua status</option><option value="GAGAL">Gagal</option><option value="DITERIMA">Diterima</option></select>
+      <button type="button" class="primary" id="historyRefresh">🔄 Muat Semula</button>
+    </div>
+    <div id="historySummary" class="history-summary">Belum dimuatkan.</div>
+    <div id="historyList" class="history-list"><div class="history-empty">Tekan “Muat Semula” untuk melihat rekod OPR.</div></div>
+    <div id="historyMore" class="history-more" style="display:none"><button type="button" class="secondary" id="historyLoadMore">Muat Lagi</button></div>
+  </div>
+</div>
+
+<script>
+const CONFIG={WEB_APP_URL:"https://script.google.com/macros/s/AKfycbyfUpxmk6fHSHbI1yK9aABrapYbbLZn752ta-LilTUVeg6BlL4iiaLuayo4bfJkAEsOTA/exec"};
+
+const STRUCTURE={
+"Kurikulum":["Pengurusan Kurikulum","Pentaksiran","Panitia","Pusat Sumber","Pembestarian","Tahun 1","Pemantauan/Pencerapan","Program Akademik","Pelaksanaan 2026"],
+"HEM":["Disiplin & Pengawas","Kebajikan & Bantuan","3K","Bimbingan & Kaunseling","Pengurusan Murid","Kerohanian","Program Khas HEM","Peraturan Sekolah"],
+"Kokurikulum":[]
+};
+const KURIKULUM={
+"Pengurusan Kurikulum":["Dasar Kurikulum","KPI Kurikulum","TS25","KBAT","PAK21","i-Think","PLC","STEM/STEAM","PBL","Kajian Tindakan","J-QAF"],
+"Pentaksiran":["PBD","PETAPAK 1","PETAPAK 2","UASA","UPDLP","UPBA","SEGAK","BMI 5T–9T"],
+"Panitia":["Bahasa Melayu","Bahasa Inggeris","Matematik","Sains","Bahasa Arab","Pendidikan Islam","Sejarah","PJPK","PSV","Muzik","RBT"],
+"Pusat Sumber":["Perpustakaan","NILAM","Sudut Pidato","ICT PSS","TV PSS Al-Mawardi","Papan Kenyataan","Dokumentasi"],
+"Pembestarian":["e-RPH","DELIMa","PKSK","PKL","TMK","Smartboard","QR Code MMI"],
+"Tahun 1":["Transisi","Guru Penyayang","Teach In"],
+"Pemantauan/Pencerapan":["Standard 4","e-RPH","Buku Latihan (BM)","Buku Latihan (BI)","Buku Latihan (Matematik)","Buku Latihan (Sains)","Buku Latihan (Bahasa Arab)","Buku Latihan (Pendidikan Islam)","Buku Latihan (PSV)","Buku Latihan (Muzik)","Buku Latihan (PJPK)","Buku Latihan (Sejarah)","Buku Latihan (RBT)"],
+"Program Akademik":["Program Kecemerlangan Akademik","Program Intervensi Al-Quran Tahun 6","Kelas Gemilang","Dialog Prestasi","Program Literasi & Numerasi","PLAN/JEMUR","Remedial","Pasca Tahun 6"],
+"Pelaksanaan 2026":["Mesyuarat Kurikulum","Mesyuarat Panitia","Pencerapan Guru","Semakan e-RPH","Semakan Buku Latihan","Penilaian PBD","PETAPAK 1","PETAPAK 2","UASA/UPDLP/UPBA","PLC Panitia","UPKK","Hari Pelaporan Akademik","Majlis Khatam Tahun 6","Majlis Anugerah Kecemerlangan"]
+};
+const HEM={
+"Disiplin & Pengawas":["JK Disiplin","Pengawas","Ponteng"],
+"Kebajikan & Bantuan":["BAP","KWAPM","SPBT","Zakat","eSarana","PIBK"],
+"3K":["Kebersihan","Kesihatan","Keselamatan"],
+"Bimbingan & Kaunseling":[],
+"Pengurusan Murid":["Guru Kelas","Kehadiran","Keciciran","Ponteng","Kemasukan","Perhimpunan"],
+"Kerohanian":["Yaasin","Asma al-Husna","Hadis 40","5S"],
+"Program Khas HEM":["Lawatan","RIMUP","Hari Kanak-kanak","Guru Penyayang"],
+"Peraturan Sekolah":[]
+};
+
+const $=id=>document.getElementById(id);
+function setStatus(message,type="info"){const e=$("status");e.className="status show "+type;e.innerHTML=message}
+function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function populateUnits(){const u=$("unit");u.innerHTML="";Object.keys(STRUCTURE).forEach(x=>u.add(new Option(x,x)));u.add(new Option("Lain-lain","Lain-lain"));populateSubunits()}
+function populateSubunits(){const unit=$("unit").value,s=$("subunit"),manual=$("subunitManual");s.innerHTML="";manual.style.display="none";(STRUCTURE[unit]||[]).forEach(x=>s.add(new Option(x,x)));s.add(new Option("Lain-lain / Masukkan sendiri","__MANUAL__"));if(!(STRUCTURE[unit]||[]).length){s.value="__MANUAL__";manual.style.display="block"}updateChildren()}
+function updateChildren(){let old=$("categoryWrap");if(old)old.remove();const unit=$("unit").value,map=unit==="Kurikulum"?KURIKULUM:unit==="HEM"?HEM:null;if(map){const p=$("subunit").parentElement,w=document.createElement("div");w.id="categoryWrap";w.style.marginTop="8px";const l=document.createElement("label");l.textContent="Kategori / Bidang (jika ada)";const sel=document.createElement("select");sel.id="category";sel.name="category";sel.add(new Option("— Tidak berkenaan / pilih jika perlu —",""));(map[$("subunit").value]||[]).forEach(x=>sel.add(new Option(x,x)));w.append(l,sel);p.appendChild(w)}$("subunitManual").style.display=$("subunit").value==="__MANUAL__"?"block":"none"}
+$("unit").addEventListener("change",populateSubunits);$("subunit").addEventListener("change",updateChildren);
+function getSubunit(){return $("subunit").value==="__MANUAL__"?$("subunitManual").value.trim():$("subunit").value}
+function readImage(file,maxSide=1000,quality=.72){return new Promise((resolve,reject)=>{if(!file)return reject(new Error("Gambar belum dipilih."));const r=new FileReader();r.onerror=()=>reject(new Error("Gagal membaca gambar."));r.onload=()=>{const img=new Image();img.onload=()=>{const TARGET=4/3;let sw=img.naturalWidth,sh=img.naturalHeight;const srcRatio=sw/sh;if(srcRatio>TARGET){sw=Math.round(sh*TARGET)}else if(srcRatio<TARGET){sh=Math.round(sw/TARGET)}let sx=Math.round((img.naturalWidth-sw)/2),sy=Math.round((img.naturalHeight-sh)/2);let w=sw,h=sh;const s=Math.min(1,maxSide/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,sx,sy,sw,sh,0,0,w,h);resolve(c.toDataURL("image/jpeg",quality))};img.onerror=()=>reject(new Error("Fail gambar tidak sah."));img.src=r.result};r.readAsDataURL(file)})}
+async function preview(file,id){if(!file)return;try{const data=await readImage(file,1000,.84);$(id).innerHTML=`<img src="${data}" alt="Preview">`}catch(err){$(id).innerHTML="";setStatus(err.message,"err")}}
+$("gambar1").addEventListener("change",e=>preview(e.target.files[0],"preview1"));$("gambar2").addEventListener("change",e=>preview(e.target.files[0],"preview2"));
+
+function setFileFromCamera(cameraId, fileId, previewId){
+  const camera=$(cameraId);
+  const target=$(fileId);
+  if(!camera.files || !camera.files[0]) return;
+  try{
+    const dt=new DataTransfer();
+    dt.items.add(camera.files[0]);
+    target.files=dt.files;
+    target.dispatchEvent(new Event("change",{bubbles:true}));
+  }catch(err){
+    setStatus("Tidak dapat mengambil gambar daripada kamera. Sila cuba semula atau gunakan Choose File.","err");
+  }
+}
+$("camera1").addEventListener("click",()=>$("cameraInput1").click());
+$("camera2").addEventListener("click",()=>$("cameraInput2").click());
+$("cameraInput1").addEventListener("change",()=>setFileFromCamera("cameraInput1","gambar1","preview1"));
+$("cameraInput2").addEventListener("change",()=>setFileFromCamera("cameraInput2","gambar2","preview2"));
+
+
+function updateTarikhMasa(){
+  const d=$("tarikh").value;
+  const t=$("masa").value;
+  if(!d || !t){
+    $("tarikh_masa").value="";
+    $("tarikhMasaPreview").textContent="Pilih tarikh dan masa program";
+    return;
+  }
+  const [y,m,day]=d.split("-");
+  $("tarikh_masa").value=`${day}/${m}/${y}, ${t}`;
+  const dt=new Date(`${d}T${t}`);
+  const formatted=new Intl.DateTimeFormat("ms-MY",{
+    day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false
+  }).format(dt);
+  $("tarikhMasaPreview").textContent=formatted;
+}
+$("tarikh").addEventListener("change",updateTarikhMasa);
+$("masa").addEventListener("change",updateTarikhMasa);
+$("tarikh").addEventListener("input",updateTarikhMasa);
+$("masa").addEventListener("input",updateTarikhMasa);
+
+
+/* V1.8 — Bullet & Numbering formatter
+   Uses plain text prefixes so Google Slides keeps the formatting reliably. */
+(function initTextFormatting(){
+  let activeEditor=null;
+  let savedStart=0, savedEnd=0;
+
+  function remember(editor){
+    activeEditor=editor;
+    savedStart=editor.selectionStart;
+    savedEnd=editor.selectionEnd;
+  }
+
+  document.querySelectorAll('.editor-wrap textarea').forEach(editor=>{
+    editor.addEventListener('focus',()=>remember(editor));
+    editor.addEventListener('keyup',()=>remember(editor));
+    editor.addEventListener('mouseup',()=>remember(editor));
+    editor.addEventListener('select',()=>remember(editor));
+    editor.addEventListener('click',()=>remember(editor));
+  });
+
+  function formatLines(editor, type){
+    if(!editor)return;
+    const start=Math.min(savedStart,editor.value.length);
+    const end=Math.min(savedEnd,editor.value.length);
+    const hasSelection=end>start;
+    let value=editor.value;
+    let blockStart=start;
+    let blockEnd=end;
+    if(!hasSelection){
+      blockStart=value.lastIndexOf('\n',start-1)+1;
+      blockEnd=value.indexOf('\n',start);
+      if(blockEnd<0)blockEnd=value.length;
+    }else{
+      blockStart=value.lastIndexOf('\n',start-1)+1;
+      blockEnd=value.indexOf('\n',end);
+      if(blockEnd<0)blockEnd=value.length;
+    }
+
+    const block=value.slice(blockStart,blockEnd);
+    const lines=block.split('\n');
+    let n=1;
+    const formatted=lines.map(line=>{
+      const clean=line.replace(/^\s*(?:•\s+|[-*]\s+|\d+[.)]\s+)/,'');
+      if(!clean.trim()) return line;
+      if(type==='bullet') return '• '+clean;
+      return (n++)+'. '+clean;
+    }).join('\n');
+
+    editor.value=value.slice(0,blockStart)+formatted+value.slice(blockEnd);
+    const newStart=blockStart;
+    const newEnd=blockStart+formatted.length;
+    editor.focus();
+    editor.setSelectionRange(newStart,newEnd);
+    remember(editor);
+    editor.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+
+  document.querySelectorAll('.format-btn').forEach(btn=>{
+    btn.addEventListener('mousedown',e=>e.preventDefault());
+    btn.addEventListener('click',()=>{
+      const editor=document.getElementById(btn.dataset.editor);
+      if(editor){
+        if(activeEditor!==editor){
+          activeEditor=editor;
+          savedStart=editor.selectionStart;
+          savedEnd=editor.selectionEnd;
+        }
+        formatLines(editor,btn.dataset.format);
+      }
+    });
+  });
+})();
+
+
+/* =====================================================
+ * V1.34 — AI JSONP STABLE FIX
+ *
+ * AI kembali menggunakan JSONP secara terus.
+ * Tiada iframe fallback untuk AI kerana Apps Script
+ * HtmlService boleh mempunyai nested sandbox iframe.
+ * Timeout panjang supaya respons OpenAI/Gemini sempat siap.
+ * ===================================================== */
+let aiRequestBusy = false;
+let aiScriptNode = null;
+let aiTimeout = null;
+let aiCallbackName = null;
+let aiAttempt = 0;
+const AI_MAX_ATTEMPTS = 2;
+const AI_TIMEOUT_MS = 180000;
+let aiRequestId="";
+
+function aiContext(){
+  return {
+    tajuk: ($("tajuk")?.value || "").trim(),
+    tarikh: ($("tarikh")?.value || "").trim(),
+    masa: ($("masa")?.value || "").trim(),
+    tempat: ($("tempat")?.value || "").trim(),
+    anjuran: ($("anjuran")?.value || "").trim(),
+    sasaran: ($("sasaran")?.value || "").trim(),
+    tahun: ($("tahun")?.value || "").trim(),
+    unit: ($("unit")?.value || "").trim(),
+    subunit: getSubunit(),
+    kategori: ($("category")?.value || "").trim()
+  };
+}
+
+function aiSetBusy(busy, label){
+  aiRequestBusy = busy;
+  document.querySelectorAll(".ai-btn").forEach(btn=>{ btn.disabled = busy; });
+  if(label) setStatus(label, "info");
+}
+
+function aiCleanup(){
+  if(aiTimeout){ clearTimeout(aiTimeout); aiTimeout=null; }
+  if(aiScriptNode){ try{ aiScriptNode.remove(); }catch(_){} aiScriptNode=null; }
+  if(aiCallbackName){ try{ delete window[aiCallbackName]; }catch(_){} aiCallbackName=null; }
+  aiRequestId="";
+  aiRequestBusy=false;
+  document.querySelectorAll(".ai-btn").forEach(btn=>btn.disabled=false);
+}
+
+function aiStart(field){
+  if(aiRequestBusy) return;
+  if(!CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL.includes("PASTE_")){
+    setStatus("Sila masukkan URL Web App Apps Script pada CONFIG.WEB_APP_URL dahulu.","err"); return;
+  }
+  const ctx=aiContext();
+  if(!ctx.tajuk){ setStatus("Sila isi Tajuk Program dahulu sebelum menggunakan AI.","err"); $("tajuk").focus(); return; }
+  aiAttempt=0;
+  aiSetBusy(true,"✨ AI sedang menyediakan ayat untuk "+fieldLabel(field)+"... Cuba sambungan 1/2.\n⏳ Permintaan boleh mengambil sehingga 3 minit.");
+  try{ aiLoadJsonp(field); }
+  catch(err){ aiRetryOrFail(field,"Ralat memulakan sambungan AI: "+(err&&err.message?err.message:String(err))); }
+}
+
+function aiLoadJsonp(field){
+  aiAttempt++;
+  if(aiScriptNode){try{aiScriptNode.remove()}catch(_){}aiScriptNode=null;}
+  if(aiTimeout){clearTimeout(aiTimeout);aiTimeout=null;}
+
+  aiRequestId="ai_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+  const cbName="oprAiCallback";
+  aiCallbackName=cbName;
+
+  const context=aiContext();
+  const pairs=[
+    ["mode","ai"],["callback",cbName],["requestId",aiRequestId],["field",field]
+  ];
+  Object.entries(context).forEach(([k,v])=>pairs.push([k,String(v??"")]));
+  pairs.push(["_",String(Date.now())+"_"+Math.random().toString(36).slice(2)]);
+  const query=pairs.map(([k,v])=>encodeURIComponent(k)+"="+encodeURIComponent(v)).join("&");
+
+  const script=document.createElement("script");
+  script.async=false;
+  script.type="text/javascript";
+  script.src=CONFIG.WEB_APP_URL+(CONFIG.WEB_APP_URL.includes("?")?"&":"?")+query;
+  script.onerror=()=>{
+    if(!aiRequestBusy || aiScriptNode!==script) return;
+    aiRetryOrFail(field,"Browser tidak berjaya memuatkan respons Web App AI.");
+  };
+  aiScriptNode=script;
+  document.body.appendChild(script);
+
+  aiTimeout=setTimeout(()=>{
+    if(!aiRequestBusy || aiScriptNode!==script) return;
+    aiRetryOrFail(field,"Web App tidak memberi respons AI dalam 3 minit.");
+  },AI_TIMEOUT_MS);
+}
+
+function aiRetryOrFail(field,reason){
+  if(aiTimeout){clearTimeout(aiTimeout);aiTimeout=null;}
+  if(aiScriptNode){try{aiScriptNode.remove()}catch(_){}aiScriptNode=null;}
+  if(aiCallbackName){try{delete window[aiCallbackName]}catch(_){}aiCallbackName=null;}
+
+  if(aiAttempt<AI_MAX_ATTEMPTS){
+    const next=aiAttempt+1;
+    setStatus("⚠️ "+escapeHtml(reason)+"<br>Cuba sambungan "+next+"/"+AI_MAX_ATTEMPTS+"...","warn");
+    setTimeout(()=>{if(aiRequestBusy) aiLoadJsonp(field);},1200);
+    return;
+  }
+  aiCleanup();
+  setStatus("❌ AI tidak memberi respons selepas "+AI_MAX_ATTEMPTS+" cubaan.<br><small>Jika mesej ini muncul, buka ujian AI sekali lagi selepas memastikan Web App Apps Script sudah di-deploy sebagai versi terbaru.</small>","err");
+}
+
+function fieldLabel(field){
+  return field==="objektif"?"Objektif Program":field==="aktiviti"?"Aktiviti Program":"Impak Program";
+}
+
+function oprAiCallback(data){
+  if(!data || data.type!=="oprAi") return;
+  if(aiRequestId && data.requestId && data.requestId!==aiRequestId) return;
+  if(aiTimeout){clearTimeout(aiTimeout);aiTimeout=null;}
+  if(aiScriptNode){try{aiScriptNode.remove()}catch(_){}aiScriptNode=null;}
+  if(aiCallbackName){try{delete window[aiCallbackName]}catch(_){}aiCallbackName=null;}
+  aiRequestId="";
+  aiRequestBusy=false;
+  document.querySelectorAll(".ai-btn").forEach(btn=>btn.disabled=false);
+
+  if(!data.success){ setStatus("🟡 AI belum dapat menjana ayat: "+escapeHtml(data.error||"Ralat tidak diketahui"),"err"); return; }
+  if(data.field && $(data.field)){ $(data.field).value=String(data.text||"").trim(); $(data.field).dispatchEvent(new Event("input",{bubbles:true})); }
+  if(data.generated){
+    ["objektif","aktiviti","impak"].forEach(field=>{ if(data.generated[field] && $(field)){ $(field).value=String(data.generated[field]).trim(); $(field).dispatchEvent(new Event("input",{bubbles:true})); }});
+    setStatus("✓ AI telah menjana Objektif, Aktiviti dan Impak. Sila semak sebelum JANA OPR.","ok");
+  }else{
+    setStatus("✓ AI telah menjana "+fieldLabel(data.field)+". Sila semak dan ubah jika perlu.","ok");
+  }
+}
+
+document.querySelectorAll("[data-ai-field]").forEach(btn=>btn.addEventListener("click",()=>aiStart(btn.dataset.aiField)));
+$("aiAllBtn").addEventListener("click",()=>{
+  if(aiRequestBusy) return;
+  if(!CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL.includes("PASTE_")){setStatus("Sila masukkan URL Web App Apps Script pada CONFIG.WEB_APP_URL dahulu.","err");return;}
+  const ctx=aiContext();
+  if(!ctx.tajuk){setStatus("Sila isi Tajuk Program dahulu sebelum menggunakan AI.","err");$("tajuk").focus();return;}
+  aiAttempt=0;
+  aiSetBusy(true,"✨ AI sedang menjana Objektif, Aktiviti dan Impak... Cuba sambungan 1/2.\n⏳ Permintaan boleh mengambil sehingga 3 minit.");
+  try{ aiLoadJsonp("all"); }
+  catch(err){ aiRetryOrFail("all", "Ralat memulakan sambungan AI: "+(err&&err.message?err.message:String(err))); }
+});
+
+/* =====================================================
+ * V1.10 — FREEHAND SIGNATURE + CAMERA
+ * ===================================================== */
+const signatureCanvas = $("signatureCanvas");
+const signatureCtx = signatureCanvas.getContext("2d");
+let signatureDrawing = false;
+let signatureHasInk = false;
+let signatureDpr = 1;
+
+function resizeSignatureCanvas(preserve=true){
+  const rect = signatureCanvas.getBoundingClientRect();
+  const old = preserve && signatureCanvas.width > 0 ? signatureCanvas.toDataURL("image/png") : null;
+  signatureDpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+  signatureCanvas.width = Math.round(rect.width * signatureDpr);
+  signatureCanvas.height = Math.round(rect.height * signatureDpr);
+  signatureCtx.setTransform(signatureDpr,0,0,signatureDpr,0,0);
+  signatureCtx.lineCap = "round";
+  signatureCtx.lineJoin = "round";
+  signatureCtx.lineWidth = 2.2;
+  signatureCtx.strokeStyle = "#111827";
+  if(old){
+    const img = new Image();
+    img.onload = ()=>signatureCtx.drawImage(img,0,0,rect.width,rect.height);
+    img.src = old;
+  }
+}
+function signaturePoint(ev){
+  const r=signatureCanvas.getBoundingClientRect();
+  return {x:ev.clientX-r.left,y:ev.clientY-r.top};
+}
+signatureCanvas.addEventListener("pointerdown",ev=>{
+  ev.preventDefault();
+  signatureDrawing=true;
+  signatureHasInk=true;
+  signatureCanvas.setPointerCapture(ev.pointerId);
+  const p=signaturePoint(ev);
+  signatureCtx.beginPath();
+  signatureCtx.moveTo(p.x,p.y);
+  signatureCtx.lineTo(p.x+0.01,p.y+0.01);
+  signatureCtx.stroke();
+  $("signatureStatus").textContent="Tandatangan telah direkod";
+  $("signatureStatus").className="signature-status ready";
+});
+signatureCanvas.addEventListener("pointermove",ev=>{
+  if(!signatureDrawing)return;
+  ev.preventDefault();
+  const p=signaturePoint(ev);
+  signatureCtx.lineTo(p.x,p.y);
+  signatureCtx.stroke();
+});
+function endSignature(ev){
+  if(!signatureDrawing)return;
+  signatureDrawing=false;
+  try{signatureCanvas.releasePointerCapture(ev.pointerId)}catch(_){}
+}
+signatureCanvas.addEventListener("pointerup",endSignature);
+signatureCanvas.addEventListener("pointercancel",endSignature);
+signatureCanvas.addEventListener("pointerleave",()=>{});
+$("clearSignature").addEventListener("click",()=>{
+  signatureCtx.clearRect(0,0,signatureCanvas.width/signatureDpr,signatureCanvas.height/signatureDpr);
+  signatureHasInk=false;
+  $("signatureStatus").textContent="Belum ditandatangani";
+  $("signatureStatus").className="signature-status empty";
+});
+window.addEventListener("resize",()=>resizeSignatureCanvas(true));
+setTimeout(()=>resizeSignatureCanvas(false),50);
+
+
+let currentSubmissionId = "";
+
+function showGeneratedLinks(data){
+  const a=[];
+  if(data.pdfUrl){
+    a.push(`<a class="result-btn pdf" href="${data.pdfUrl}" target="_blank" rel="noopener">📄 BUKA PDF</a>`);
+  }
+  if(data.slidesUrl){
+    a.push(`<a class="result-btn" href="${data.slidesUrl}" target="_blank" rel="noopener">📊 BUKA GOOGLE SLIDES</a>`);
+  }
+  if(data.folderUrl){
+    a.push(`<a class="result-btn" href="${data.folderUrl}" target="_blank" rel="noopener">📁 BUKA FOLDER</a>`);
+  }
+  $("resultLinks").innerHTML=a.join("");
+}
+
+let sheetPollTimer=null;
+let sheetPollScript=null;
+let sheetPollWaiting=false;
+
+function stopSheetPolling(){
+  if(sheetPollTimer){clearTimeout(sheetPollTimer);sheetPollTimer=null}
+  if(sheetPollScript){try{sheetPollScript.remove()}catch(_){ }sheetPollScript=null}
+  sheetPollWaiting=false;
+}
+
+function pollSheetStatus(id){
+  if(!id || id!==currentSubmissionId || sheetPollWaiting) return;
+
+  sheetPollWaiting=true;
+
+  if(sheetPollScript){
+    try{sheetPollScript.remove()}catch(_){}
+    sheetPollScript=null;
+  }
+
+  const script=document.createElement("script");
+  script.async=true;
+  script.src=CONFIG.WEB_APP_URL+
+    (CONFIG.WEB_APP_URL.includes("?")?"&":"?")+
+    "id="+encodeURIComponent(id)+
+    "&callback=oprStatusCallback"+
+    "&_="+Date.now();
+
+  script.onload=()=>{
+    sheetPollWaiting=false;
+    try{script.remove()}catch(_){}
+    if(sheetPollScript===script)sheetPollScript=null;
+
+    if(id===currentSubmissionId){
+      sheetPollTimer=setTimeout(()=>pollSheetStatus(id),2000);
+    }
+  };
+
+  script.onerror=()=>{
+    sheetPollWaiting=false;
+    try{script.remove()}catch(_){}
+    if(sheetPollScript===script)sheetPollScript=null;
+
+    if(id===currentSubmissionId){
+      sheetPollTimer=setTimeout(()=>pollSheetStatus(id),3000);
+    }
+  };
+
+  document.body.appendChild(script);
+  sheetPollScript=script;
+}
+
+function oprStatusCallback(data){
+  if(!data || data.type!=="oprStatus") return;
+  if(data.id && data.id!==currentSubmissionId) return;
+
+  const status=String(data.status||"").trim().toUpperCase();
+
+  if(status==="BERJAYA"){
+    stopSheetPolling();
+
+    const btn=$("generateBtn");
+    btn.disabled=false;
+    btn.textContent="JANA OPR";
+
+    setStatus("✓ OPR BERJAYA DIJANA! PDF telah disimpan ke Google Drive.","ok");
+    showGeneratedLinks(data);
+    return;
+  }
+
+  if(status==="GAGAL"){
+    stopSheetPolling();
+
+    const btn=$("generateBtn");
+    btn.disabled=false;
+    btn.textContent="JANA OPR";
+
+    setStatus(
+      "Gagal menjana OPR: "+escapeHtml(data.error||"Ralat tidak diketahui"),
+      "err"
+    );
+    $("resultLinks").innerHTML="";
+    return;
+  }
+
+  // DITERIMA / belum siap: poll seterusnya akan dibuat oleh onload.
+}
+
+$("oprForm").addEventListener("submit",async e=>{
+e.preventDefault();
+if(!CONFIG.WEB_APP_URL||CONFIG.WEB_APP_URL.includes("PASTE_")){setStatus("Sila masukkan URL Web App Apps Script pada CONFIG.WEB_APP_URL dahulu.","err");return}
+const f1=$("gambar1").files[0],f2=$("gambar2").files[0];
+if(!f1||!f2){setStatus("Sila pilih kedua-dua gambar OPR.","err");return}
+if(!signatureHasInk){setStatus("Sila buat tandatangan guru sebelum menjana OPR.","err");return}
+const btn=$("generateBtn");
+btn.disabled=true;
+btn.textContent="SEDANG MENJANA...";
+$("resultLinks").innerHTML="";
+setStatus("Sedang menghantar data. Sistem akan semak status terus daripada Google Sheet sehingga PDF siap.","info");
+
+currentSubmissionId = (crypto && crypto.randomUUID)
+  ? crypto.randomUUID()
+  : ("OPR-"+Date.now()+"-"+Math.random().toString(36).slice(2));
+try{
+const [img1,img2]=await Promise.all([readImage(f1),readImage(f2)]);
+const fd=new FormData();
+["tajuk","tarikh","masa","tarikh_masa","tempat","anjuran","sasaran","disediakan_oleh","objektif","aktiviti","impak","tahun","unit"].forEach(k=>fd.append(k,$(k).value.trim()));
+fd.append("subunit",getSubunit());fd.append("kategori",$("category")?$("category").value:"");fd.append("gambar1",img1);fd.append("gambar2",img2);fd.append("tandatangan",signatureCanvas.toDataURL("image/png"));fd.append("email","");fd.append("clientTimestamp",new Date().toISOString());fd.append("clientSubmissionId",currentSubmissionId);
+
+const iframe=document.createElement("iframe");iframe.name="opr_submit_"+Date.now();iframe.style.display="none";document.body.appendChild(iframe);
+const form=document.createElement("form");form.method="POST";form.action=CONFIG.WEB_APP_URL;form.target=iframe.name;form.style.display="none";
+for(const [k,v] of fd.entries()){const i=document.createElement("input");i.type="hidden";i.name=k;i.value=v;form.appendChild(i)}
+document.body.appendChild(form);
+let done=false;
+/*
+ * V1.22:
+ * Jangan anggap proses gagal selepas 120 saat.
+ * Dua gambar + Google Slides + PDF + Drive + Sheet boleh mengambil masa
+ * lebih daripada 2 minit. Naikkan timeout kepada 5 minit.
+ */
+const timeout=setTimeout(()=>{
+  if(done)return;
+  btn.disabled=false;
+  btn.textContent="JANA OPR";
+  setStatus("⏳ Masih memproses. Sistem terus menyemak Google Sheet. Jangan hantar semula OPR.","warn");
+},300000);
+function cleanup(){clearTimeout(timeout);try{form.remove()}catch(_){}try{iframe.remove()}catch(_){}}
+function onMessage(ev){
+  let data = ev && ev.data;
+  if(typeof data === "string"){
+    try{ data = JSON.parse(data); }catch(_){ return; }
+  }
+  if(!data || typeof data !== "object" || typeof data.success !== "boolean") return;
+
+  done=true;
+  cleanup();
+  stopSheetPolling();
+  btn.disabled=false;
+  btn.textContent="JANA OPR";
+
+  if(data.success){
+    setStatus("✓ OPR BERJAYA DIJANA! PDF telah disimpan ke Google Drive.","ok");
+
+    const a=[];
+    if(data.pdfUrl){
+      a.push(`<a class="result-btn pdf" href="${data.pdfUrl}" target="_blank" rel="noopener">📄 BUKA PDF</a>`);
+    }
+    if(data.slidesUrl){
+      a.push(`<a class="result-btn" href="${data.slidesUrl}" target="_blank" rel="noopener">📊 BUKA GOOGLE SLIDES</a>`);
+    }
+    if(data.folderUrl){
+      a.push(`<a class="result-btn" href="${data.folderUrl}" target="_blank" rel="noopener">📁 BUKA FOLDER</a>`);
+    }
+
+    $("resultLinks").innerHTML = a.join("");
+  }else{
+    setStatus("Gagal menjana OPR: "+escapeHtml(data.message||"Ralat tidak diketahui"),"err");
+    $("resultLinks").innerHTML="";
+  }
+}
+window.addEventListener("message",onMessage);form.submit();pollSheetStatus(currentSubmissionId);
+}catch(err){btn.disabled=false;btn.textContent="JANA OPR";setStatus("Ralat: "+escapeHtml(err.message),"err")}
+});
+
+
+/* =====================================================
+ * V1.31 — HYBRID TRANSPORT + REKOD OPR DARIPADA GOOGLE SHEET
+ * ===================================================== */
+let historyOffset=0;
+const HISTORY_PAGE_SIZE=50;
+let historyScriptNode=null;
+let historyLoading=false;
+let historyRequestId="";
+
+function openHistory(){ $("historyModal").classList.add("show"); $("historyModal").setAttribute("aria-hidden","false"); populateHistoryUnits(); loadHistory(true); }
+function closeHistory(){ $("historyModal").classList.remove("show"); $("historyModal").setAttribute("aria-hidden","true"); if(historyScriptNode){try{historyScriptNode.remove()}catch(_){}historyScriptNode=null;} historyLoading=false; historyRequestId=""; }
+function populateHistoryUnits(){ const select=$("historyUnit"); if(!select||select.options.length>1)return; Object.keys(STRUCTURE).forEach(unit=>select.add(new Option(unit,unit))); }
+function historyQueryParams(requestId){
+  const pairs={
+    mode:"history", callback:"oprHistoryCallback", requestId,
+    offset:String(historyOffset), limit:String(HISTORY_PAGE_SIZE),
+    q:$('historySearch').value.trim(), year:$('historyYear').value.trim(),
+    unit:$('historyUnit').value, status:$('historyStatus').value
+  };
+  return Object.entries(pairs).map(([k,v])=>encodeURIComponent(k)+"="+encodeURIComponent(String(v??""))).join("&");
+}
+
+function loadHistory(reset){
+  if(historyLoading)return;
+  if(!CONFIG.WEB_APP_URL||CONFIG.WEB_APP_URL.includes("PASTE_")){ $('historySummary').textContent="URL Web App Apps Script belum ditetapkan."; return; }
+  if(reset){ historyOffset=0; $('historyList').innerHTML='<div class="history-loading">⏳ Sedang membaca data daripada Google Sheet...</div>'; $('historyMore').style.display='none'; }
+  historyLoading=true;
+  if(historyScriptNode){try{historyScriptNode.remove()}catch(_){}historyScriptNode=null;}
+  historyRequestId="hist_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+
+  const script=document.createElement("script");
+  script.async=false;
+  script.type="text/javascript";
+  script.src=CONFIG.WEB_APP_URL+(CONFIG.WEB_APP_URL.includes("?")?"&":"?")+historyQueryParams(historyRequestId)+"&_="+Date.now();
+  script.onerror=()=>{
+    if(!historyLoading||historyScriptNode!==script)return;
+    historyLoading=false; historyScriptNode=null; try{script.remove()}catch(_){}
+    $('historySummary').textContent="Browser tidak berjaya memuatkan Rekod OPR.";
+    if(historyOffset===0)$('historyList').innerHTML='<div class="history-empty">Tidak dapat membaca rekod OPR. Cuba Muat Semula.</div>';
+  };
+  historyScriptNode=script;
+  document.body.appendChild(script);
+  setTimeout(()=>{
+    if(historyLoading&&historyScriptNode===script){
+      historyLoading=false; historyScriptNode=null; try{script.remove()}catch(_){}
+      $('historySummary').textContent="Google Sheet tidak memberi respons dalam masa 30 saat.";
+      if(historyOffset===0)$('historyList').innerHTML='<div class="history-empty">Tidak dapat membaca rekod OPR. Cuba Muat Semula.</div>';
+    }
+  },30000);
+}
+
+function historyText(v){return escapeHtml(v==null?"":String(v));}
+
+function renderHistoryRecords(records,append){
+  const list=$("historyList");
+  if(!append) list.innerHTML="";
+  if(!records || !records.length){
+    if(!append) list.innerHTML='<div class="history-empty">Tiada rekod OPR ditemui.</div>';
+    return;
+  }
+
+  const html=records.map(r=>{
+    const links=[];
+    if(r.pdfUrl) links.push(`<a class="pdf" href="${historyText(r.pdfUrl)}" target="_blank" rel="noopener">📄 PDF</a>`);
+    if(r.slidesUrl) links.push(`<a href="${historyText(r.slidesUrl)}" target="_blank" rel="noopener">📊 Google Slides</a>`);
+    if(r.folderUrl) links.push(`<a class="folder" href="${historyText(r.folderUrl)}" target="_blank" rel="noopener">📁 Folder</a>`);
+    const detail=(r.objektif||r.aktiviti||r.impak)?`<details class="history-detail"><summary>Lihat Objektif, Aktiviti & Impak</summary><pre><b>OBJEKTIF</b>
+${historyText(r.objektif)}
+
+<b>AKTIVITI</b>
+${historyText(r.aktiviti)}
+
+<b>IMPAK</b>
+${historyText(r.impak)}</pre></details>`:"";
+    const statusClass=r.status==="BERJAYA"?"ok":"";
+    return `<article class="history-card">
+      <div class="history-title">${historyText(r.tajuk||"Tanpa tajuk")}</div>
+      <div class="history-meta">
+        <span class="history-chip ${statusClass}">${historyText(r.status||"-")}</span>
+        <span class="history-chip">📅 ${historyText(r.tarikhMasa||"-")}</span>
+        <span class="history-chip">🏷️ ${historyText(r.tahun||"-")}</span>
+        <span class="history-chip">📂 ${historyText(r.unit||"-")}</span>
+      </div>
+      <div class="history-grid">
+        <div><b>Tempat:</b> ${historyText(r.tempat||"-")}</div>
+        <div><b>Anjuran:</b> ${historyText(r.anjuran||"-")}</div>
+        <div><b>Sasaran:</b> ${historyText(r.sasaran||"-")}</div>
+        <div><b>Disediakan oleh:</b> ${historyText(r.disediakanOleh||"-")}</div>
+        <div><b>Subunit:</b> ${historyText(r.subunit||"-")}</div>
+        <div><b>Kategori:</b> ${historyText(r.kategori||"-")}</div>
+      </div>
+      ${links.length?`<div class="history-actions">${links.join("")}</div>`:""}
+      ${detail}
+    </article>`;
+  }).join("");
+  list.insertAdjacentHTML("beforeend",html);
+}
+
+function oprHistoryCallback(data){
+  if(!data || data.type!=="oprHistory") return;
+  if(historyRequestId && data.requestId && data.requestId!==historyRequestId) return;
+  historyLoading=false;
+  if(historyScriptNode){try{historyScriptNode.remove()}catch(_){}historyScriptNode=null;}
+  historyRequestId="";
+  if(!data.success){
+    $("historySummary").textContent="Ralat: "+(data.error||"Tidak dapat membaca Google Sheet.");
+    if(historyOffset===0)$("historyList").innerHTML='<div class="history-empty">Tidak dapat membaca rekod OPR.</div>';
+    return;
+  }
+  const append=historyOffset>0; renderHistoryRecords(data.records||[],append);
+  historyOffset=(Number(data.offset)||0)+(data.records||[]).length;
+  $("historySummary").textContent=`Menunjukkan ${Math.min(historyOffset,Number(data.total)||0)} daripada ${Number(data.total)||0} rekod OPR.`;
+  $("historyMore").style.display=data.hasMore?"flex":"none";
+}
+
+window.addEventListener("message",function(ev){
+  let data=ev&&ev.data; if(typeof data==="string"){try{data=JSON.parse(data)}catch(_){return;}}
+  if(!data||typeof data!=="object")return;
+  if(data.type==="oprAi") oprAiCallback(data);
+  else if(data.type==="oprHistory") oprHistoryCallback(data);
+});
+
+$("historyBtn").addEventListener("click",openHistory);
+$("historyClose").addEventListener("click",closeHistory);
+$("historyRefresh").addEventListener("click",()=>loadHistory(true));
+$("historyLoadMore").addEventListener("click",()=>loadHistory(false));
+["historySearch","historyYear","historyUnit","historyStatus"].forEach(id=>{
+  const el=$(id);
+  el.addEventListener("change",()=>loadHistory(true));
+});
+$("historySearch").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();loadHistory(true)}});
+$("historyModal").addEventListener("click",e=>{if(e.target===$("historyModal"))closeHistory()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape" && $("historyModal").classList.contains("show"))closeHistory()});
+
+$("resetBtn").addEventListener("click",()=>{
+  stopSheetPolling();
+  currentSubmissionId="";
+  $("oprForm").reset();
+  $("tahun").value=new Date().getFullYear();
+  $("tarikh").value=new Date().toISOString().slice(0,10);
+  $("masa").value="08:00";
+  updateTarikhMasa();
+  populateSubunits();
+  $("preview1").textContent="Belum pilih gambar";
+  $("preview2").textContent="Belum pilih gambar";
+  $("cameraInput1").value="";
+  $("cameraInput2").value="";
+  $("resultLinks").innerHTML="";
+  $("status").className="status";
+  signatureCtx.clearRect(0,0,signatureCanvas.width/signatureDpr,signatureCanvas.height/signatureDpr);
+  signatureHasInk=false;
+  $("signatureStatus").textContent="Belum ditandatangani";
+  $("signatureStatus").className="signature-status empty";
+});
+$("tahun").value=new Date().getFullYear();
+$("tarikh").value=new Date().toISOString().slice(0,10);
+$("masa").value="08:00";
+updateTarikhMasa();
+populateUnits();
+</script>
+</body>
+</html>
