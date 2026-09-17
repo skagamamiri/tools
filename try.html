@@ -1,0 +1,28 @@
+<!doctype html><html lang="ms"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OPR Mobile Diagnostic V1</title>
+<style>
+body{font-family:Arial;margin:0;background:#f5f7fb;color:#172033}.wrap{max-width:760px;margin:auto;padding:18px}
+.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px #0001}
+button{border:0;border-radius:10px;padding:12px 16px;margin:4px;background:#173b8f;color:#fff;font-weight:700}
+pre{white-space:pre-wrap;word-break:break-word;background:#111827;color:#d1fae5;padding:12px;border-radius:10px;font-size:12px}
+</style></head><body><div class="wrap">
+<div class="card"><h2>🔧 OPR Mobile Diagnostic V1</h2>
+<p>Jalankan dalam Chrome biasa, kemudian ulang dalam Incognito. Jangan tukar akaun antara ujian.</p>
+<button onclick="runAll()">▶ Jalankan Ujian</button><button onclick="log.textContent=''">🧹 Clear</button></div>
+<div class="card"><pre id="log">Belum diuji.</pre></div></div>
+<script>
+const API="https://script.google.com/macros/s/AKfycbyfUpxmk6fHSHbI1yK9aABrapYbbLZn752ta-LilTUVeg6BlL4iiaLuayo4bfJkAEsOTA/exec";
+function out(s){log.textContent+=s+"\n";}
+function jsonp(url,ms=15000){return new Promise((ok,no)=>{let cb="__d"+Date.now()+Math.random().toString(36).slice(2),done=0,s=document.createElement("script");
+let t=setTimeout(()=>fin(false,"timeout"),ms);function fin(a,v){if(done)return;done=1;clearTimeout(t);try{delete window[cb]}catch(e){}s.remove();a?ok(v):no(new Error(v))}
+window[cb]=d=>fin(true,d);s.onerror=()=>fin(false,"script error");s.src=url+(url.includes("?")?"&":"?")+"callback="+cb+"&_diag="+Date.now();document.head.appendChild(s)})}
+async function runAll(){log.textContent="";
+out("URL: "+location.href);out("UA: "+navigator.userAgent);out("Online: "+navigator.onLine);out("Cookie enabled: "+navigator.cookieEnabled);
+try{localStorage.setItem("__d","1");out("localStorage: OK")}catch(e){out("localStorage: FAIL "+e.message)}
+try{sessionStorage.setItem("__d","1");out("sessionStorage: OK")}catch(e){out("sessionStorage: FAIL "+e.message)}
+try{let r=await jsonp(API+"?mode=ping");out("Apps Script JSONP: "+(r&&r.success?"OK ":"FAIL ")+JSON.stringify(r))}catch(e){out("Apps Script JSONP: FAIL — "+e.message)}
+try{let r=await jsonp(API+"?mode=history&limit=1");out("OPR History JSONP: "+(r&&r.success?"OK ":"FAIL ")+JSON.stringify(r).slice(0,1000))}catch(e){out("OPR History JSONP: FAIL — "+e.message)}
+out("Context: "+(window.top===window.self?"TOP LEVEL":"IFRAME"));
+out("SELESAI — jalankan halaman sama dalam Incognito dan bandingkan keputusan.");}
+</script></body></html>
