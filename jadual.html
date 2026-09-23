@@ -349,6 +349,16 @@ function showMySchedule(){
   setupSelect();render();save();
 }
 
+// Expose the canonical teacher name for the background-push module.
+window.getJadualCurrentTeacherName = function(){
+  try{
+    const teachers = activeData().teachers || [];
+    const t = teachers[selectedTeacher];
+    if(t && t.name) return t.name;
+  }catch(e){}
+  try{ return ictHubUser?.name || ""; }catch(e){ return ""; }
+};
+
 // SERVICE WORKER NOTIFICATION BRIDGE (PC + Android)
 let jadualSWRegistration = null;
 async function getJadualSWRegistration(){
@@ -706,15 +716,115 @@ try {
 import {getApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import {getMessaging,getToken} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-const FCM_VAPID_KEY="BAM3eSep-pnSS5MHXaosIKrXWX2K_toT1bFtEavxWJZQ06GO-Hu3IuA0OWoozJABJL6_DRcF-buP4j4iMar8dmk";
-const SUPABASE_PUSH_SYNC_URL="https://ifqgstspfxagzstccsin.supabase.co/functions/v1/save-push-token";
-const app=getApp(); const auth=getAuth(app); let pushUser=null;
-function pushStatus(msg,ok=false){const el=document.getElementById("accountStatus");if(el)el.textContent=msg;if(ok){const b=document.getElementById("enablePushButton");if(b)b.textContent="✅ Push Background Aktif";}}
-function currentTeacherName(){try{return window.ictHubUser?.name||window.ictHubUser?.displayName||window.loggedInTeacher?.displayName||window.currentTeacher?.displayName||pushUser?.displayName||"";}catch(e){return pushUser?.displayName||"";}}
-async function enablePush(){try{if(!pushUser?.email){alert("Akaun guru belum dikesan. Sila tunggu sehingga nama guru muncul dahulu.");return;}if(!("Notification"in window))throw new Error("Browser ini tidak menyokong notification.");if(!("serviceWorker"in navigator))throw new Error("Browser ini tidak menyokong Service Worker.");pushStatus("Meminta kebenaran notification...");const permission=Notification.permission==="granted"?"granted":await Notification.requestPermission();if(permission!=="granted")throw new Error("Notification belum dibenarkan.");pushStatus("Mendaftarkan Firebase Push...");const reg=await navigator.serviceWorker.register("./firebase-messaging-sw.js",{scope:"./"});await navigator.serviceWorker.ready;const messaging=getMessaging(app);const token=await getToken(messaging,{vapidKey:FCM_VAPID_KEY,serviceWorkerRegistration:reg});if(!token)throw new Error("Firebase tidak menghasilkan FCM token.");pushStatus("Menyimpan token push ke Supabase...");const idToken=await pushUser.getIdToken(true);const teacherName=currentTeacherName();const r=await fetch(SUPABASE_PUSH_SYNC_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+idToken},body:JSON.stringify({email:pushUser.email,teacherName,token})});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw new Error(j.error||`Sync token gagal (${r.status})`);pushStatus("Push Background aktif untuk akaun ini.",true);alert("Push Background berjaya diaktifkan untuk akaun ini.");}catch(e){console.error("Push Background error:",e);const msg=e?.message||String(e);pushStatus("Push gagal: "+msg);alert("Gagal mengaktifkan Push Background.
 
-"+msg);}}
-function bindPushButton(){const b=document.getElementById("enablePushButton");if(b&&!b.dataset.bound){b.dataset.bound="1";b.addEventListener("click",enablePush);}}bindPushButton();onAuthStateChanged(auth,user=>{pushUser=user;bindPushButton();});
+const FCM_VAPID_KEY="BAM3eSep-pnSS5MHXaosIKrXWX2K_toT1bFtEavxWJZQ06GO-Hu3IuA0OWoozJABJL6_DRcF-buP4j4iMar8dmk";
+const SUPABASE_PUSH_URL="https://ifqgstspfxagzstccsin.supabase.co/functions/v1/save-push-token";
+const app=getApp();
+const auth=getAuth(app);
+let pushUser=null;
+
+function pushStatus(msg,ok=false){
+  const el=document.getElementById("accountStatus");
+  if(el) el.textContent=msg;
+  if(ok){
+    const b=document.getElementById("enablePushButton");
+    if(b) b.textContent="✅ Push Background Aktif";
+  }
+}
+
+async function enablePush(){
+  try{
+    if(!pushUser?.email){
+      alert("Akaun guru belum dikesan. Sila tunggu sehingga nama guru muncul dahulu.");
+      return;
+    }
+    if(!("Notification" in window)){
+      alert("Browser ini tidak menyokong notification.");
+      return;
+    }
+    if(!("serviceWorker" in navigator)){
+      alert("Browser ini tidak menyokong Service Worker.");
+      return;
+    }
+
+    pushStatus("Meminta kebenaran notification...");
+    const permission = Notification.permission === "granted"
+      ? "granted"
+      : await Notification.requestPermission();
+    if(permission !== "granted"){
+      alert("Notification belum dibenarkan. Sila benarkan notification untuk laman ini.");
+      return;
+    }
+
+    pushStatus("Mendaftarkan Firebase Push...");
+    const reg = await navigator.serviceWorker.register("./firebase-messaging-sw.js",{scope:"./"});
+    await navigator.serviceWorker.ready;
+
+    const messaging=getMessaging(app);
+    const token=await getToken(messaging,{
+      vapidKey:FCM_VAPID_KEY,
+      serviceWorkerRegistration:reg
+    });
+
+    if(!token){
+      throw new Error("Firebase tidak menghasilkan FCM token.");
+    }
+
+    const teacherName = window.getJadualCurrentTeacherName
+      ? String(window.getJadualCurrentTeacherName() || "").trim()
+      : "";
+
+    if(!teacherName){
+      throw new Error("Nama guru untuk jadual tidak dapat dikenal pasti.");
+    }
+
+    pushStatus("Mengesahkan akaun dan menyimpan token ke Supabase...");
+
+    const idToken = await pushUser.getIdToken();
+
+    const saveResponse = await fetch(SUPABASE_PUSH_URL,{
+      method:"POST",
+      headers:{
+        "Authorization":"Bearer "+idToken,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        email:pushUser.email,
+        teacherName,
+        token
+      })
+    });
+
+    const saveData = await saveResponse.json().catch(()=>({}));
+
+    if(!saveResponse.ok || !saveData.ok){
+      throw new Error(saveData.error || saveData.details || ("Supabase HTTP "+saveResponse.status));
+    }
+
+    pushStatus("Push Background aktif untuk akaun ini.",true);
+    alert("Push Background berjaya diaktifkan untuk akaun ini.");
+  }catch(e){
+    console.error("Push Background error:",e);
+    const msg=e?.message||String(e);
+    pushStatus("Push gagal: "+msg);
+    alert("Gagal mengaktifkan Push Background.\n\n"+msg);
+  }
+}
+
+function bindPushButton(){
+  const b=document.getElementById("enablePushButton");
+  if(b && !b.dataset.bound){
+    b.dataset.bound="1";
+    b.addEventListener("click",enablePush);
+  }
+}
+
+bindPushButton();
+onAuthStateChanged(auth,user=>{
+  pushUser=user||null;
+  bindPushButton();
+  if(user?.email) pushStatus("Akaun guru dikesan: "+user.email);
+});
 </script>
 </body>
 </html>
