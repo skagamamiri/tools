@@ -773,7 +773,7 @@ async function enablePush(){
     }
 
     pushStatus("Mendaftarkan Firebase Push...");
-    const reg = await navigator.serviceWorker.register("./firebase-messaging-sw.js",{scope:"./"});
+    const reg = await navigator.serviceWorker.register("./sw.js",{scope:"./"});
     await navigator.serviceWorker.ready;
 
     const messaging=getMessaging(app);
@@ -855,7 +855,7 @@ async function runFcmDiagnostic(){
   d('diagSW','CHECKING'); d('diagMessaging','CHECKING'); d('diagToken','CHECKING');
   try{
     if(!('serviceWorker' in navigator)) throw new Error('Service Worker tidak disokong');
-    const reg=await navigator.serviceWorker.register('./firebase-messaging-sw.js',{scope:'./'});
+    const reg=await navigator.serviceWorker.register('./sw.js',{scope:'./'});
     await reg.update().catch(()=>{});
     await navigator.serviceWorker.ready;
     d('diagSW','OK');
