@@ -191,7 +191,7 @@ border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:
       </div>
     </div>
     <div class="fcm-diagnostic" id="fcmDiagnostic">
-      <div class="version-label">🧪 FCM Diagnostic V25</div>
+      <div class="version-label">🧪 FCM Diagnostic V26</div>
       <div class="diag-grid">
         <div>Notification <b id="diagNotification">—</b></div>
         <div>Service Worker <b id="diagSW">—</b></div>
@@ -203,7 +203,7 @@ border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:
       <div class="diag-url" id="diagSWUrl">SW URL: —</div>
       <button class="btn2" id="runFcmDiagnostic" type="button">🔎 Jalankan Diagnostic FCM</button>
       <button class="btn2" id="copyFcmToken" type="button" style="display:none">📋 Salin Token</button>
-      <div class="diag-note">V25 menggunakan satu Service Worker sahaja: <b>firebase-messaging-sw.js</b>. Token dipaparkan untuk tujuan diagnosis sahaja.</div>
+      <div class="diag-note">V26 menggunakan Service Worker utama ICT HUB: <b>sw.js</b> untuk FCM Background Push. Token dipaparkan untuk tujuan diagnosis sahaja.</div>
     </div>
     <div class="version-bar">
       <div class="version-box">
@@ -379,13 +379,13 @@ window.getJadualCurrentTeacherName = function(){
   try{ return ictHubUser?.name || ""; }catch(e){ return ""; }
 };
 
-// FIREBASE SERVICE WORKER NOTIFICATION BRIDGE (V25)
+// FIREBASE SERVICE WORKER NOTIFICATION BRIDGE (V26)
 let jadualSWRegistration = null;
 async function getJadualSWRegistration(){
   if(!('serviceWorker' in navigator)) return null;
   try{
     if(jadualSWRegistration) return jadualSWRegistration;
-    jadualSWRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js', {scope:'./'});
+    jadualSWRegistration = await navigator.serviceWorker.register('./sw.js', {scope:'./'});
     await jadualSWRegistration.update().catch(()=>{});
     await navigator.serviceWorker.ready;
     return jadualSWRegistration;
@@ -877,7 +877,7 @@ async function runFcmDiagnostic(){
       d('diagMessaging','ERROR'); d('diagToken','ERROR'); throw e;
     }
   }catch(e){
-    console.error('V25 FCM diagnostic:',e);
+    console.error('V26 FCM diagnostic:',e);
     alert('FCM Diagnostic gagal:\n\n'+(e?.message||String(e)));
   }
 }
