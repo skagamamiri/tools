@@ -731,7 +731,6 @@ try {
 <script type="module">
 import {getApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import {getApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getMessaging,getToken} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
 
 const FCM_VAPID_KEY="BAM3eSep-pnSS5MHXaosIKrXWX2K_toT1bFtEavxWJZQ06GO-Hu3IuA0OWoozJABJL6_DRcF-buP4j4iMar8dmk";
@@ -845,6 +844,7 @@ onAuthStateChanged(auth,user=>{
 </script>
 
 <script type="module">
+import {getApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getMessaging,getToken} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
 const DIAG_VAPID="BAM3eSep-pnSS5MHXaosIKrXWX2K_toT1bFtEavxWJZQ06GO-Hu3IuA0OWoozJABJL6_DRcF-buP4j4iMar8dmk";
 let diagToken="";
