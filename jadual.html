@@ -159,6 +159,11 @@ border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:
 .account-box{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:11px 13px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .account-name{font-weight:950;font-size:16px;margin-top:2px}.account-status{font-size:12px;color:#047857;margin-top:2px}.account-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.notify-btn,.test-notify-btn,.mine-btn{border:0;border-radius:10px;padding:9px 11px;font-weight:850;cursor:pointer}.notify-btn{background:#047857;color:#fff}.test-notify-btn{background:#f59e0b;color:#fff}.mine-btn{background:#fff;border:1px solid #86efac;color:#166534}
 @media(max-width:620px){.account-box{align-items:flex-start;flex-direction:column}.account-actions{width:100%;justify-content:flex-start}.notify-btn,.test-notify-btn,.mine-btn{flex:1}}
+
+.fcm-diagnostic{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:11px 13px;margin-bottom:10px}
+.diag-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0;font-size:12px}
+.diag-grid div{background:#fff;border-radius:9px;padding:7px 8px}.diag-grid b{float:right}.diag-url{font-size:10px;color:#475569;word-break:break-all;margin:7px 0}.diag-note{font-size:10px;color:#475569;margin-top:7px;line-height:1.4}
+@media(max-width:620px){.diag-grid{grid-template-columns:1fr}.fcm-diagnostic .btn2{width:100%;margin-top:5px}}
 </style>
 </head>
 <body>
@@ -184,6 +189,21 @@ border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:
         <button class="btn2" id="enablePushButton" type="button">📲 Aktifkan Push Background</button>
         <button class="mine-btn" id="mineBtn" onclick="showMySchedule()" style="display:none">👤 Jadual Saya</button>
       </div>
+    </div>
+    <div class="fcm-diagnostic" id="fcmDiagnostic">
+      <div class="version-label">🧪 FCM Diagnostic V25</div>
+      <div class="diag-grid">
+        <div>Notification <b id="diagNotification">—</b></div>
+        <div>Service Worker <b id="diagSW">—</b></div>
+        <div>SW Controller <b id="diagController">—</b></div>
+        <div>Firebase Messaging <b id="diagMessaging">—</b></div>
+        <div>FCM Token <b id="diagToken">—</b></div>
+        <div>Token Length <b id="diagTokenLen">—</b></div>
+      </div>
+      <div class="diag-url" id="diagSWUrl">SW URL: —</div>
+      <button class="btn2" id="runFcmDiagnostic" type="button">🔎 Jalankan Diagnostic FCM</button>
+      <button class="btn2" id="copyFcmToken" type="button" style="display:none">📋 Salin Token</button>
+      <div class="diag-note">V25 menggunakan satu Service Worker sahaja: <b>firebase-messaging-sw.js</b>. Token dipaparkan untuk tujuan diagnosis sahaja.</div>
     </div>
     <div class="version-bar">
       <div class="version-box">
@@ -359,18 +379,18 @@ window.getJadualCurrentTeacherName = function(){
   try{ return ictHubUser?.name || ""; }catch(e){ return ""; }
 };
 
-// SINGLE SERVICE WORKER NOTIFICATION BRIDGE
-// Firebase Messaging Service Worker menjadi satu-satunya SW untuk scope './'.
+// FIREBASE SERVICE WORKER NOTIFICATION BRIDGE (V25)
 let jadualSWRegistration = null;
 async function getJadualSWRegistration(){
   if(!('serviceWorker' in navigator)) return null;
   try{
     if(jadualSWRegistration) return jadualSWRegistration;
     jadualSWRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js', {scope:'./'});
+    await jadualSWRegistration.update().catch(()=>{});
     await navigator.serviceWorker.ready;
     return jadualSWRegistration;
   }catch(e){
-    console.warn('Firebase Messaging SW gagal didaftarkan:', e);
+    console.warn('Firebase SW gagal didaftarkan:', e);
     return null;
   }
 }
@@ -711,6 +731,7 @@ try {
 <script type="module">
 import {getApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getMessaging,getToken} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
 
 const FCM_VAPID_KEY="BAM3eSep-pnSS5MHXaosIKrXWX2K_toT1bFtEavxWJZQ06GO-Hu3IuA0OWoozJABJL6_DRcF-buP4j4iMar8dmk";
@@ -821,6 +842,54 @@ onAuthStateChanged(auth,user=>{
   bindPushButton();
   if(user?.email) pushStatus("Akaun guru dikesan: "+user.email);
 });
+</script>
+
+<script type="module">
+import {getMessaging,getToken} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
+const DIAG_VAPID="BAM3eSep-pnSS5MHXaosIKrXWX2K_toT1bFtEavxWJZQ06GO-Hu3IuA0OWoozJABJL6_DRcF-buP4j4iMar8dmk";
+let diagToken="";
+function d(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+async function runFcmDiagnostic(){
+  d('diagNotification', 'Notification' in window ? Notification.permission : 'UNSUPPORTED');
+  d('diagController', navigator.serviceWorker?.controller ? 'OK' : 'NONE');
+  d('diagSW','CHECKING'); d('diagMessaging','CHECKING'); d('diagToken','CHECKING');
+  try{
+    if(!('serviceWorker' in navigator)) throw new Error('Service Worker tidak disokong');
+    const reg=await navigator.serviceWorker.register('./firebase-messaging-sw.js',{scope:'./'});
+    await reg.update().catch(()=>{});
+    await navigator.serviceWorker.ready;
+    d('diagSW','OK');
+    d('diagSWUrl', 'SW URL: '+reg.active?.scriptURL);
+    try{
+      const app=getApp();
+      const messaging=getMessaging(app);
+      d('diagMessaging','OK');
+      const permission=Notification.permission==='granted'?'granted':await Notification.requestPermission();
+      d('diagNotification',permission);
+      if(permission!=='granted') throw new Error('Notification permission bukan granted');
+      diagToken=await getToken(messaging,{vapidKey:DIAG_VAPID,serviceWorkerRegistration:reg});
+      if(!diagToken) throw new Error('FCM token kosong');
+      d('diagToken',diagToken.slice(0,18)+'…'+diagToken.slice(-12));
+      d('diagTokenLen',String(diagToken.length));
+      const c=document.getElementById('copyFcmToken');
+      if(c)c.style.display='inline-block';
+    }catch(e){
+      d('diagMessaging','ERROR'); d('diagToken','ERROR'); throw e;
+    }
+  }catch(e){
+    console.error('V25 FCM diagnostic:',e);
+    alert('FCM Diagnostic gagal:\n\n'+(e?.message||String(e)));
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('runFcmDiagnostic')?.addEventListener('click',runFcmDiagnostic);
+  document.getElementById('copyFcmToken')?.addEventListener('click',async()=>{
+    if(!diagToken)return;
+    try{await navigator.clipboard.writeText(diagToken);alert('FCM token telah disalin.');}
+    catch(e){prompt('Salin FCM token ini:',diagToken);}
+  });
+});
+window.runFcmDiagnostic=runFcmDiagnostic;
 </script>
 </body>
 </html>
