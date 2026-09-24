@@ -359,17 +359,18 @@ window.getJadualCurrentTeacherName = function(){
   try{ return ictHubUser?.name || ""; }catch(e){ return ""; }
 };
 
-// SERVICE WORKER NOTIFICATION BRIDGE (PC + Android)
+// SINGLE SERVICE WORKER NOTIFICATION BRIDGE
+// Firebase Messaging Service Worker menjadi satu-satunya SW untuk scope './'.
 let jadualSWRegistration = null;
 async function getJadualSWRegistration(){
   if(!('serviceWorker' in navigator)) return null;
   try{
     if(jadualSWRegistration) return jadualSWRegistration;
-    jadualSWRegistration = await navigator.serviceWorker.register('./jadual-waktu-sw.js', {scope:'./'});
+    jadualSWRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js', {scope:'./'});
     await navigator.serviceWorker.ready;
     return jadualSWRegistration;
   }catch(e){
-    console.warn('Jadual SW gagal didaftarkan:', e);
+    console.warn('Firebase Messaging SW gagal didaftarkan:', e);
     return null;
   }
 }
@@ -379,11 +380,6 @@ async function showJadualNotification(title, options={}){
     const reg = await getJadualSWRegistration();
     if(reg && typeof reg.showNotification === 'function'){
       await reg.showNotification(title, options);
-      return true;
-    }
-    // Fallback untuk desktop/browser yang masih menyokong constructor.
-    if(typeof Notification === 'function'){
-      new Notification(title, options);
       return true;
     }
   }catch(e){
