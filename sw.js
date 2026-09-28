@@ -41,7 +41,7 @@ self.addEventListener("fetch", event => {
 
     const injected = html.replace(
       /<\/body>/i,
-      '<script src="./jadual-v4-data.js?v=20260927"></script></body>'
+      '<script>(function(){window.__jadualNativeAtob=window.atob;window.atob=function(s){s=String(s).replace(/\\s/g,"").replace(/-/g,"+").replace(/_/g,"/");s += "=".repeat((4-s.length%4)%4);return window.__jadualNativeAtob(s);};})();</script><script src="./jadual-v4-data.js?v=20260927"></script><script>(function(){if(window.__jadualNativeAtob){window.atob=window.__jadualNativeAtob;delete window.__jadualNativeAtob;}})();</script></body>'
     );
 
     const headers = new Headers(response.headers);
