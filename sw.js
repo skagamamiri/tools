@@ -3,9 +3,6 @@
 // Service Worker utama untuk /tools/
 // ============================================================
 
-// ------------------------------------------------------------
-// ICT HUB INSTALLABILITY
-// ------------------------------------------------------------
 self.addEventListener("install", event => {
   self.skipWaiting();
 });
@@ -16,15 +13,41 @@ self.addEventListener("activate", event => {
 
 // ------------------------------------------------------------
 // JADUAL VERSI 4.0 MODULE INJECTION
-// Tidak mengubah sistem FCM. Hanya menambah modul data selepas
-// halaman jadual selesai dimuat supaya VERSION_DATA sedia ada
-// boleh menambah pilihan V4 tanpa menggantikan baseline.
+// Tidak mengubah sistem FCM. Hanya menguruskan pemuatan V4.
 // ------------------------------------------------------------
 self.addEventListener("fetch", event => {
   const request = event.request;
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
+
+  // V4: normalise Base64 di dalam fail sebelum browser menjalankannya.
+  // Ini mengelakkan InvalidCharacterError daripada atob().
+  if (url.pathname.endsWith("/jadual-v4-data.js")) {
+    event.respondWith((async () => {
+      const response = await fetch(request);
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("javascript") && !contentType.includes("text")) return response;
+
+      const js = await response.text();
+      const fixed = js.replace(
+        'const bytes = Uint8Array.from(atob(DATA_B64), c=>c.charCodeAt(0));',
+        'const normalizedB64 = String(DATA_B64).replace(/\\s/g, "").replace(/-/g, "+").replace(/_/g, "/").replace(/[^A-Za-z0-9+/=]/g, ""); const paddedB64 = normalizedB64 + "=".repeat((4 - normalizedB64.length % 4) % 4); const bytes = Uint8Array.from(atob(paddedB64), c=>c.charCodeAt(0));'
+      );
+
+      const headers = new Headers(response.headers);
+      headers.delete("content-length");
+
+      return new Response(fixed, {
+        status: response.status,
+        statusText: response.statusText,
+        headers
+      });
+    })());
+    return;
+  }
+
+  // Jadual HTML: inject V4 jika belum ada.
   if (!url.pathname.endsWith("/jadual.html")) return;
 
   event.respondWith((async () => {
@@ -41,7 +64,7 @@ self.addEventListener("fetch", event => {
 
     const injected = html.replace(
       /<\/body>/i,
-      '<script>(function(){window.__jadualNativeAtob=window.atob;window.atob=function(s){s=String(s).replace(/\\s/g,"").replace(/-/g,"+").replace(/_/g,"/");s += "=".repeat((4-s.length%4)%4);return window.__jadualNativeAtob(s);};})();</script><script src="./jadual-v4-data.js?v=20260927"></script><script>(function(){if(window.__jadualNativeAtob){window.atob=window.__jadualNativeAtob;delete window.__jadualNativeAtob;}})();</script></body>'
+      '<script src="./jadual-v4-data.js?v=20260927"></script></body>'
     );
 
     const headers = new Headers(response.headers);
@@ -67,7 +90,7 @@ importScripts(
 );
 
 firebase.initializeApp({
-  apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE",
+  apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnY",
   authDomain: "skamis-hubtool.firebaseapp.com",
   projectId: "skamis-hubtool",
   storageBucket: "skamis-hubtool.firebasestorage.app",
@@ -77,9 +100,6 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ------------------------------------------------------------
-// Hantar mesej kepada halaman yang sedang terbuka
-// ------------------------------------------------------------
 function broadcast(type, data) {
   return self.clients
     .matchAll({
