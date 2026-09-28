@@ -8,7 +8,6 @@ self.addEventListener('fetch',event=>{
   if(req.method!=='GET')return;
   const u=new URL(req.url);
 
-  // JADUAL data compatibility fix.
   if(u.pathname.endsWith('/jadual-v4-data.js')){
     event.respondWith((async()=>{
       const r=await fetch(req);
@@ -26,7 +25,6 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  // Inject the shared timetable data into jadual.html only.
   if(u.pathname.endsWith('/jadual.html')){
     event.respondWith((async()=>{
       const r=await fetch(req);
@@ -49,7 +47,7 @@ importScripts(
 );
 
 firebase.initializeApp({
-  apiKey:'AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnK3',
+  apiKey:'AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnK',
   authDomain:'skamis-hubtool.firebaseapp.com',
   projectId:'skamis-hubtool',
   storageBucket:'skamis-hubtool.firebasestorage.app',
@@ -58,37 +56,7 @@ firebase.initializeApp({
 });
 
 const messaging=firebase.messaging();
-
-function broadcast(type,data){
-  return self.clients.matchAll({type:'window',includeUncontrolled:true})
-    .then(list=>list.forEach(c=>c.postMessage({source:'jadual-fcm-sw',type,data})));
-}
-
-messaging.onBackgroundMessage(payload=>{
-  const d=payload?.data||{};
-  const n=payload?.notification||{};
-  const title=d.title||n.title||'🔔 Jadual Waktu';
-  const body=d.body||n.body||'Kelas anda bermula sekarang.';
-  const tag=d.tag||'jadual-fcm';
-  broadcast('backgroundMessage',{title,body,tag,hasData:!!payload?.data,hasNotification:!!payload?.notification});
-  return self.registration.showNotification(title,{
-    body,
-    tag,
-    renotify:true,
-    icon:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Ctext y='.9em' font-size='100'%3E%F0%9F%93%85%3C/text%3E%3C/svg%3E"
-  });
-});
-
-self.addEventListener('message',e=>{
-  if(e.data?.type==='ping')broadcast('pong',{time:Date.now()});
-});
-
-self.addEventListener('notificationclick',e=>{
-  e.notification.close();
-  e.waitUntil(
-    clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{
-      for(const c of list)if('focus'in c)return c.focus();
-      return clients.openWindow('./');
-    })
-  );
-});
+function broadcast(type,data){return self.clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>list.forEach(c=>c.postMessage({source:'jadual-fcm-sw',type,data})))}
+messaging.onBackgroundMessage(payload=>{const d=payload?.data||{},n=payload?.notification||{},title=d.title||n.title||'🔔 Jadual Waktu',body=d.body||n.body||'Kelas anda bermula sekarang.',tag=d.tag||'jadual-fcm';broadcast('backgroundMessage',{title,body,tag,hasData:!!payload?.data,hasNotification:!!payload?.notification});return self.registration.showNotification(title,{body,tag,renotify:true,icon:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Ctext y='.9em' font-size='100'%3E%F0%9F%93%85%3C/text%3E%3C/svg%3E"})});
+self.addEventListener('message',e=>{if(e.data?.type==='ping')broadcast('pong',{time:Date.now()})});
+self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{for(const c of list)if('focus'in c)return c.focus();return clients.openWindow('./')}))});
