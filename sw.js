@@ -1,36 +1,94 @@
 // ICT HUB + JADUAL + FCM service worker
+// MOBILE SHELL DISABLED TEMPORARILY: keep core page untouched while repairing mobile UI.
 self.addEventListener('install',e=>self.skipWaiting());
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
 
-const MOBILE_CSS=`<style id="ictMobileShellStyle">
-@media(max-width:768px){
-#headerInstallAppBtn,#teacherAuthContainer,#themeToggleBtn{display:none!important}
-body> .mobile-bottom-nav{display:none!important} body{padding-bottom:86px!important}
-.ict-nav{position:fixed;left:0;right:0;bottom:0;height:72px;padding:7px 22px;display:flex;justify-content:space-around;align-items:flex-start;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);border-top:1px solid #e2e8f0;box-shadow:0 -8px 28px rgba(15,118,110,.1);z-index:99999}
-.dark .ict-nav{background:rgba(15,23,42,.97);border-color:#334155}.ict-nb{border:0;background:transparent;color:#94a3b8;width:72px;height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:16px}.ict-nb i{font-size:20px}.ict-nb span{font:800 10px Inter,sans-serif}.ict-nb.active{color:#059669}.ict-nb.active:before{content:"";position:absolute;top:-7px;width:36px;height:3px;border-radius:99px;background:linear-gradient(90deg,#16a34a,#0891b2)}.ict-qr{width:62px!important;height:62px!important;margin-top:-21px;border-radius:50%!important;background:linear-gradient(135deg,#059669,#0891b2)!important;color:#fff!important;border:5px solid #fff!important;box-shadow:0 8px 24px #05966955!important}
-.dark .ict-qr{border-color:#0f172a!important}.ict-sheet-bg,.ict-qr-bg{position:fixed;inset:0;background:#02081799;backdrop-filter:blur(4px);z-index:100000;display:none;align-items:flex-end}.ict-sheet-bg.open,.ict-qr-bg.open{display:flex}.ict-sheet{width:100%;max-height:88vh;overflow:auto;background:#fff;border-radius:28px 28px 0 0;padding:12px 18px 30px;font-family:Inter,sans-serif;box-shadow:0 -18px 60px #02081755}.dark .ict-sheet{background:#0f172a;color:#f8fafc}.ict-handle{width:44px;height:5px;border-radius:99px;background:#cbd5e1;margin:0 auto 16px}.ict-title{font:800 24px Outfit,Inter,sans-serif}.ict-sub{font-size:12px;color:#64748b;margin:6px 0 18px}.ict-card{width:100%;border:1px solid #e2e8f0;background:#fff;border-radius:18px;padding:14px;display:flex;align-items:center;gap:12px;margin:0 0 10px}.dark .ict-card{background:#1e293b;border-color:#334155}.ict-icon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#f0fdf4;color:#059669;flex:0 0 auto}.ict-google{background:#fff1f2;color:#ea4335}.ict-install{background:#eff6ff;color:#0284c7}.ict-main{min-width:0;flex:1;text-align:left}.ict-main b{display:block;font-size:14px}.ict-main small{display:block;font-size:11px;color:#64748b;margin-top:4px}.dark .ict-main small{color:#94a3b8}.ict-theme{display:flex;gap:4px;padding:4px;background:#f1f5f9;border-radius:99px}.dark .ict-theme{background:#334155}.ict-theme button{width:34px;height:30px;border:0;border-radius:99px;background:transparent;color:#64748b}.ict-theme button.on{background:#fff;color:#059669;box-shadow:0 2px 7px #0001}.ict-about{margin-top:16px;padding-top:15px;border-top:1px solid #e2e8f0;color:#64748b;font-size:12px;line-height:1.5}.ict-qr-bg{align-items:center;justify-content:center;padding:20px}.ict-qr-box{width:min(390px,100%);background:#fff;border-radius:28px;padding:22px;text-align:center;font-family:Inter,sans-serif}.dark .ict-qr-box{background:#0f172a;color:#fff}.ict-qr-frame{width:220px;height:220px;margin:18px auto;border:4px solid #059669;border-radius:24px;display:grid;place-items:center;background:#ecfdf5}.ict-qr-frame i{font-size:72px;color:#059669}.ict-note{font-size:12px;color:#64748b;line-height:1.5}.ict-close{border:0;background:#f1f5f9;border-radius:12px;padding:10px 16px;font-weight:800;margin-top:15px}
+self.addEventListener('fetch',event=>{
+  const req=event.request;
+  if(req.method!=='GET')return;
+  const u=new URL(req.url);
+
+  // JADUAL data compatibility fix.
+  if(u.pathname.endsWith('/jadual-v4-data.js')){
+    event.respondWith((async()=>{
+      const r=await fetch(req);
+      const ct=r.headers.get('content-type')||'';
+      if(!ct.includes('javascript')&&!ct.includes('text'))return r;
+      const js=await r.text();
+      const fixed=js.replace(
+        'const bytes = Uint8Array.from(atob(DATA_B64), c=>c.charCodeAt(0));',
+        'const normalizedB64 = String(DATA_B64).replace(/\\s/g, "").replace(/-/g, "+").replace(/_/g, "/").replace(/[^A-Za-z0-9+/=]/g, ""); const paddedB64 = normalizedB64 + "=".repeat((4 - normalizedB64.length % 4) % 4); const bytes = Uint8Array.from(atob(paddedB64), c=>c.charCodeAt(0));'
+      );
+      const hd=new Headers(r.headers);
+      hd.delete('content-length');
+      return new Response(fixed,{status:r.status,statusText:r.statusText,headers:hd});
+    })());
+    return;
+  }
+
+  // Inject the shared timetable data into jadual.html only.
+  if(u.pathname.endsWith('/jadual.html')){
+    event.respondWith((async()=>{
+      const r=await fetch(req);
+      const ct=r.headers.get('content-type')||'';
+      if(!ct.includes('text/html'))return r;
+      const h=await r.text();
+      if(h.includes('jadual-v4-data.js'))return new Response(h,{status:r.status,statusText:r.statusText,headers:r.headers});
+      const out=h.replace(/<\\/body>/i,'<script src="./jadual-v4-data.js?v=20260927"></script></body>');
+      const hd=new Headers(r.headers);
+      hd.delete('content-length');
+      return new Response(out,{status:r.status,statusText:r.statusText,headers:hd});
+    })());
+    return;
+  }
+});
+
+importScripts(
+  'https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js'
+);
+
+firebase.initializeApp({
+  apiKey:'AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnK3',
+  authDomain:'skamis-hubtool.firebaseapp.com',
+  projectId:'skamis-hubtool',
+  storageBucket:'skamis-hubtool.firebasestorage.app',
+  messagingSenderId:'236769370780',
+  appId:'1:236769370780:web:9dfa07d772a721ecfe0359'
+});
+
+const messaging=firebase.messaging();
+
+function broadcast(type,data){
+  return self.clients.matchAll({type:'window',includeUncontrolled:true})
+    .then(list=>list.forEach(c=>c.postMessage({source:'jadual-fcm-sw',type,data})));
 }
-</style>`;
 
-const MOBILE_HTML=`${MOBILE_CSS}<div id="ictMobileShell">
-<nav class="ict-nav"><button id="ictHome" class="ict-nb active"><i class="fa-solid fa-house"></i><span>Home</span></button><button id="ictQR" class="ict-nb ict-qr"><i class="fa-solid fa-qrcode"></i><span>QR Scan</span></button><button id="ictProfile" class="ict-nb"><i class="fa-regular fa-user"></i><span>Profil</span></button></nav>
-<div id="ictSheetBg" class="ict-sheet-bg"><section class="ict-sheet"><div class="ict-handle"></div><div class="ict-title">Profil Pengguna</div><div class="ict-sub">Tetapan akaun dan aplikasi ICT HUB</div>
-<button id="ictLogin" class="ict-card"><div class="ict-icon ict-google"><i class="fa-brands fa-google"></i></div><div class="ict-main"><b>Login dengan Google</b><small id="ictLoginStatus">Log masuk untuk menggunakan semua ciri</small></div><i class="fa-solid fa-chevron-right"></i></button>
-<div class="ict-card"><div class="ict-icon"><i class="fa-solid fa-sun"></i></div><div class="ict-main"><b>Mod Paparan</b><small>Tukar antara mod cerah dan gelap</small></div><div class="ict-theme"><button id="ictLight"><i class="fa-solid fa-sun"></i></button><button id="ictDark"><i class="fa-solid fa-moon"></i></button></div></div>
-<button id="ictInstall" class="ict-card"><div class="ict-icon ict-install"><i class="fa-solid fa-download"></i></div><div class="ict-main"><b>Pasang Aplikasi</b><small>Pasang ICT HUB pada peranti anda</small></div><i class="fa-solid fa-chevron-right"></i></button>
-<div class="ict-about"><b>ICT HUB</b><br>Pusat Aplikasi &amp; Perkhidmatan Digital Sekolah<br>SK Agama (MIS) Miri • Unit ICT</div></section></div>
-<div id="ictQRBg" class="ict-qr-bg"><section class="ict-qr-box"><div style="font:800 22px Outfit,Inter,sans-serif">QR Scanner</div><div class="ict-qr-frame"><i class="fa-solid fa-qrcode"></i></div><div class="ict-note">Paparan dummy dahulu. Fungsi scan sebenar akan kita sambungkan kemudian untuk membuka tool ICT HUB melalui QR.</div><button id="ictCloseQR" class="ict-close">Tutup</button></section></div>
-<script>(function(){if(window.__ICT_MOBILE__)return;window.__ICT_MOBILE__=1;const q=s=>document.querySelector(s),S=q('#ictSheetBg'),Q=q('#ictQRBg');function sheet(v){S.classList.toggle('open',v)}function qr(v){Q.classList.toggle('open',v)}function theme(v){document.documentElement.classList.toggle('dark',v==='dark');try{localStorage.setItem('ict_hub_theme',v)}catch(e){}q('#ictLight')?.classList.toggle('on',v!=='dark');q('#ictDark')?.classList.toggle('on',v==='dark')}function status(){let t=window.currentTeacher||window.loggedInTeacher;if(t)q('#ictLoginStatus').textContent='Log masuk: '+(t.name||t.email||'Akaun guru aktif')}document.addEventListener('DOMContentLoaded',()=>{q('#ictHome')?.addEventListener('click',()=>{sheet(0);qr(0);q('#ictHome').classList.add('active');q('#ictProfile').classList.remove('active');scrollTo({top:0,behavior:'smooth'});if(typeof setCategory==='function')setCategory('ALL')});q('#ictProfile')?.addEventListener('click',()=>{qr(0);sheet(1);q('#ictProfile').classList.add('active');q('#ictHome').classList.remove('active');status()});q('#ictQR')?.addEventListener('click',()=>{sheet(0);qr(1);q('#ictProfile').classList.remove('active');q('#ictHome').classList.remove('active')});q('#ictLogin')?.addEventListener('click',()=>typeof openTeacherLoginModal==='function'?openTeacherLoginModal():q('#teacherLoginHeaderBtn')?.click());q('#ictInstall')?.addEventListener('click',()=>typeof installICTHubApp==='function'&&installICTHubApp());q('#ictLight')?.addEventListener('click',()=>theme('light'));q('#ictDark')?.addEventListener('click',()=>theme('dark'));q('#ictCloseQR')?.addEventListener('click',()=>qr(0));S?.addEventListener('click',e=>{if(e.target===S)sheet(0)});Q?.addEventListener('click',e=>{if(e.target===Q)qr(0)});let v='light';try{v=localStorage.getItem('ict_hub_theme')|| (document.documentElement.classList.contains('dark')?'dark':'light')}catch(e){}theme(v);setInterval(status,1500)})})();</script></div>`;
+messaging.onBackgroundMessage(payload=>{
+  const d=payload?.data||{};
+  const n=payload?.notification||{};
+  const title=d.title||n.title||'🔔 Jadual Waktu';
+  const body=d.body||n.body||'Kelas anda bermula sekarang.';
+  const tag=d.tag||'jadual-fcm';
+  broadcast('backgroundMessage',{title,body,tag,hasData:!!payload?.data,hasNotification:!!payload?.notification});
+  return self.registration.showNotification(title,{
+    body,
+    tag,
+    renotify:true,
+    icon:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Ctext y='.9em' font-size='100'%3E%F0%9F%93%85%3C/text%3E%3C/svg%3E"
+  });
+});
 
-async function injectICT(request){const r=await fetch(request);const ct=r.headers.get('content-type')||'';if(!ct.includes('text/html'))return r;const h=await r.text();if(h.includes('id="ictMobileShell"'))return new Response(h,{status:r.status,statusText:r.statusText,headers:r.headers});const out=h.replace(/<\/body>/i,MOBILE_HTML+'</body>');const hd=new Headers(r.headers);hd.delete('content-length');return new Response(out,{status:r.status,statusText:r.statusText,headers:hd})}
+self.addEventListener('message',e=>{
+  if(e.data?.type==='ping')broadcast('pong',{time:Date.now()});
+});
 
-self.addEventListener('fetch',event=>{const req=event.request;if(req.method!=='GET')return;const u=new URL(req.url);
-if(req.mode==='navigate'&&(u.pathname==='/tools/'||u.pathname.endsWith('/tools/index.html'))){event.respondWith(injectICT(req));return}
-if(u.pathname.endsWith('/jadual-v4-data.js')){event.respondWith((async()=>{const r=await fetch(req),ct=r.headers.get('content-type')||'';if(!ct.includes('javascript')&&!ct.includes('text'))return r;const js=await r.text();const fixed=js.replace('const bytes = Uint8Array.from(atob(DATA_B64), c=>c.charCodeAt(0));','const normalizedB64 = String(DATA_B64).replace(/\\s/g, "").replace(/-/g, "+").replace(/_/g, "/").replace(/[^A-Za-z0-9+/=]/g, ""); const paddedB64 = normalizedB64 + "=".repeat((4 - normalizedB64.length % 4) % 4); const bytes = Uint8Array.from(atob(paddedB64), c=>c.charCodeAt(0));');const hd=new Headers(r.headers);hd.delete('content-length');return new Response(fixed,{status:r.status,statusText:r.statusText,headers:hd})})());return}
-if(!u.pathname.endsWith('/jadual.html'))return;event.respondWith((async()=>{const r=await fetch(req),ct=r.headers.get('content-type')||'';if(!ct.includes('text/html'))return r;const h=await r.text();if(h.includes('jadual-v4-data.js'))return new Response(h,{status:r.status,statusText:r.statusText,headers:r.headers});const out=h.replace(/<\/body>/i,'<script src="./jadual-v4-data.js?v=20260927"></script></body>');const hd=new Headers(r.headers);hd.delete('content-length');return new Response(out,{status:r.status,statusText:r.statusText,headers:hd})})())});
-
-importScripts('https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js','https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js');
-firebase.initializeApp({apiKey:'AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE',authDomain:'skamis-hubtool.firebaseapp.com',projectId:'skamis-hubtool',storageBucket:'skamis-hubtool.firebasestorage.app',messagingSenderId:'236769370780',appId:'1:236769370780:web:9dfa07d772a721ecfe0359'});
-const messaging=firebase.messaging();function broadcast(type,data){return self.clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>list.forEach(c=>c.postMessage({source:'jadual-fcm-sw',type,data})))}
-messaging.onBackgroundMessage(payload=>{const d=payload?.data||{},n=payload?.notification||{},title=d.title||n.title||'🔔 Jadual Waktu',body=d.body||n.body||'Kelas anda bermula sekarang.',tag=d.tag||'jadual-fcm';broadcast('backgroundMessage',{title,body,tag,hasData:!!payload?.data,hasNotification:!!payload?.notification});return self.registration.showNotification(title,{body,tag,renotify:true,icon:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Ctext y='.9em' font-size='100'%3E%F0%9F%93%85%3C/text%3E%3C/svg%3E"})});
-self.addEventListener('message',e=>{if(e.data?.type==='ping')broadcast('pong',{time:Date.now()})});self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{for(const c of list)if('focus'in c)return c.focus();return clients.openWindow('./')}))});
+self.addEventListener('notificationclick',e=>{
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{
+      for(const c of list)if('focus'in c)return c.focus();
+      return clients.openWindow('./');
+    })
+  );
+});
