@@ -15,6 +15,47 @@ self.addEventListener("activate", event => {
 });
 
 // ------------------------------------------------------------
+// JADUAL VERSI 4.0 MODULE INJECTION
+// Tidak mengubah sistem FCM. Hanya menambah modul data selepas
+// halaman jadual selesai dimuat supaya VERSION_DATA sedia ada
+// boleh menambah pilihan V4 tanpa menggantikan baseline.
+// ------------------------------------------------------------
+self.addEventListener("fetch", event => {
+  const request = event.request;
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+  if (!url.pathname.endsWith("/jadual.html")) return;
+
+  event.respondWith((async () => {
+    const response = await fetch(request);
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("text/html")) return response;
+
+    const html = await response.text();
+    if (html.includes("jadual-v4-data.js")) return new Response(html, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    });
+
+    const injected = html.replace(
+      /<\/body>/i,
+      '<script src="./jadual-v4-data.js?v=20260927"></script></body>'
+    );
+
+    const headers = new Headers(response.headers);
+    headers.delete("content-length");
+
+    return new Response(injected, {
+      status: response.status,
+      statusText: response.statusText,
+      headers
+    });
+  })());
+});
+
+// ------------------------------------------------------------
 // FIREBASE CLOUD MESSAGING
 // ------------------------------------------------------------
 importScripts(
