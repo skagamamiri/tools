@@ -1,134 +1,34 @@
-/* ICT HUB — Mobile Tools UI
-   UI-only layer. Desktop remains unchanged.
+/* ICT HUB — Mobile Tools UI V2
+   Mobile-only presentation layer. Desktop remains untouched.
+   Preserves the original card structure.
 */
-@media (max-width: 640px) {
-  #toolsGrid {
-    display:flex !important;
-    flex-direction:column !important;
-    gap:10px !important;
-  }
-
-  #toolsGrid > div {
-    position:relative !important;
-    display:grid !important;
-    grid-template-columns:48px minmax(0,1fr) 42px !important;
-    align-items:center !important;
-    column-gap:12px !important;
-    width:100% !important;
-    min-height:78px !important;
-    padding:11px 12px !important;
-    margin:0 !important;
-    border-radius:18px !important;
-    background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(248,250,252,.98)) !important;
-    border:1px solid rgba(226,232,240,.95) !important;
-    box-shadow:0 5px 16px rgba(15,23,42,.06) !important;
-    transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease !important;
-  }
-
-  .dark #toolsGrid > div {
-    background:linear-gradient(135deg,rgba(30,41,59,.98),rgba(15,23,42,.98)) !important;
-    border-color:rgba(71,85,105,.55) !important;
-    box-shadow:0 5px 18px rgba(0,0,0,.18) !important;
-  }
-
-  #toolsGrid > div:active { transform:scale(.985) !important; }
-
-  #toolsGrid > div .w-11.h-11 {
-    width:46px !important;
-    height:46px !important;
-    min-width:46px !important;
-    border-radius:15px !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    font-size:17px !important;
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),0 4px 10px rgba(15,23,42,.08) !important;
-  }
-
-  #toolsGrid > div h4 {
-    font-size:14px !important;
-    line-height:1.15 !important;
-    font-weight:800 !important;
-    margin:0 !important;
-    color:#0f172a !important;
-  }
-
-  .dark #toolsGrid > div h4 { color:#f8fafc !important; }
-
-  #toolsGrid > div p {
-    font-size:10px !important;
-    line-height:1.35 !important;
-    margin-top:3px !important;
-    color:#64748b !important;
-    display:-webkit-box !important;
-    -webkit-line-clamp:2 !important;
-    -webkit-box-orient:vertical !important;
-    overflow:hidden !important;
-  }
-
-  .dark #toolsGrid > div p { color:#94a3b8 !important; }
-
-  #toolsGrid > div .mt-4 {
-    margin-top:0 !important;
-    padding-top:0 !important;
-    border-top:0 !important;
-  }
-
-  #toolsGrid > div button[onclick^="launchTool"] {
-    min-width:42px !important;
-    width:42px !important;
-    height:42px !important;
-    min-height:42px !important;
-    padding:0 !important;
-    border-radius:14px !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    font-size:0 !important;
-    background:linear-gradient(135deg,#16a34a,#0ea5e9) !important;
-    box-shadow:0 5px 14px rgba(22,163,74,.20) !important;
-  }
-
-  #toolsGrid > div button[onclick^="launchTool"]::after {
-    content:"\f061";
-    font-family:"Font Awesome 6 Free";
-    font-weight:900;
-    font-size:14px;
-    color:white;
-  }
-
-  #toolsGrid > div > * { min-width:0; }
-
-  @media (hover:hover) {
-    #toolsGrid > div:hover {
-      transform:translateY(-1px) !important;
-      border-color:rgba(34,197,94,.35) !important;
-      box-shadow:0 9px 24px rgba(15,23,42,.10) !important;
-    }
-  }
+@media (max-width:640px){
+  #toolsGrid{display:grid!important;grid-template-columns:1fr!important;gap:12px!important;width:100%!important}
+  #toolsGrid>div{display:flex!important;flex-direction:column!important;justify-content:space-between!important;width:100%!important;min-width:0!important;min-height:154px!important;padding:14px!important;margin:0!important;box-sizing:border-box!important;border-radius:20px!important;background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(248,250,252,.98))!important;border:1px solid rgba(226,232,240,.95)!important;box-shadow:0 7px 22px rgba(15,23,42,.07)!important;overflow:hidden!important;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease!important}
+  .dark #toolsGrid>div{background:linear-gradient(145deg,rgba(30,41,59,.98),rgba(15,23,42,.98))!important;border-color:rgba(71,85,105,.55)!important;box-shadow:0 7px 22px rgba(0,0,0,.20)!important}
+  #toolsGrid>div:active{transform:scale(.985)!important}
+  #toolsGrid>div>div:first-child{width:100%!important;min-width:0!important}
+  #toolsGrid>div>div:first-child>div:first-child{margin-bottom:10px!important}
+  #toolsGrid>div .w-11.h-11{width:46px!important;height:46px!important;min-width:46px!important;border-radius:15px!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:17px!important;box-shadow:0 5px 12px rgba(15,23,42,.08)!important}
+  #toolsGrid>div>div:first-child>div:first-child button{padding:8px!important;font-size:15px!important}
+  #toolsGrid>div span[class*="rounded-md"]{font-size:9px!important;line-height:1!important;padding:6px 8px!important;border-radius:8px!important}
+  #toolsGrid>div h4{font-size:17px!important;line-height:1.15!important;font-weight:800!important;margin-top:7px!important;margin-bottom:3px!important;color:#0f172a!important}
+  .dark #toolsGrid>div h4{color:#f8fafc!important}
+  #toolsGrid>div p{font-size:11px!important;line-height:1.4!important;margin-top:0!important;color:#64748b!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important}
+  .dark #toolsGrid>div p{color:#94a3b8!important}
+  #toolsGrid>div>.mt-4{display:block!important;width:100%!important;margin-top:13px!important;padding-top:0!important;border-top:0!important}
+  #toolsGrid>div button[onclick^="launchTool"]{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-width:0!important;min-height:42px!important;height:42px!important;padding:0 13px!important;border:0!important;border-radius:13px!important;background:linear-gradient(135deg,#0f172a,#166534)!important;color:#fff!important;font-size:11px!important;font-weight:800!important;letter-spacing:.01em!important;box-shadow:0 6px 15px rgba(15,23,42,.14)!important}
+  #toolsGrid>div button[onclick^="launchTool"] span{display:inline!important;font-size:11px!important}
+  #toolsGrid>div button[onclick^="launchTool"] i{display:inline-block!important;margin-left:6px!important;font-size:10px!important}
+  #toolsGrid>div button[onclick^="launchTool"]::after{content:none!important}
+  .dark #toolsGrid>div button[onclick^="launchTool"]{background:linear-gradient(135deg,#22c55e,#0284c7)!important;color:#fff!important}
+  @media (hover:hover){#toolsGrid>div:hover{transform:translateY(-2px)!important;border-color:rgba(34,197,94,.35)!important;box-shadow:0 12px 28px rgba(15,23,42,.10)!important}}
 }
-
-@media (max-width:380px) {
-  #toolsGrid > div {
-    grid-template-columns:42px minmax(0,1fr) 38px !important;
-    column-gap:9px !important;
-    min-height:70px !important;
-    padding:9px !important;
-    border-radius:16px !important;
-  }
-  #toolsGrid > div .w-11.h-11 {
-    width:42px !important;
-    height:42px !important;
-    min-width:42px !important;
-    border-radius:13px !important;
-  }
-  #toolsGrid > div h4 { font-size:13px !important; }
-  #toolsGrid > div p { font-size:9px !important; }
-  #toolsGrid > div button[onclick^="launchTool"] {
-    width:38px !important;
-    height:38px !important;
-    min-width:38px !important;
-    min-height:38px !important;
-    border-radius:12px !important;
-  }
+@media (max-width:380px){
+  #toolsGrid{gap:10px!important}
+  #toolsGrid>div{min-height:146px!important;padding:12px!important;border-radius:18px!important}
+  #toolsGrid>div .w-11.h-11{width:42px!important;height:42px!important;min-width:42px!important;border-radius:13px!important;font-size:16px!important}
+  #toolsGrid>div h4{font-size:16px!important}
+  #toolsGrid>div p{font-size:10px!important}
+  #toolsGrid>div button[onclick^="launchTool"]{min-height:40px!important;height:40px!important;border-radius:12px!important}
 }
