@@ -1,174 +1,47 @@
-/* ICT HUB — Mobile Tools UI V4
+/* ICT HUB — Mobile Tools UI V5
    Mobile-only presentation layer.
-   Compact 3-column tool buttons for phones.
+   3-column compact tool cards on phones.
+   High-specificity override defeats legacy inline mobile CSS.
    Desktop remains untouched.
 */
 @media (max-width:640px){
-  #toolsGrid{
+  html body #toolsGrid{
     display:grid!important;
     grid-template-columns:repeat(3,minmax(0,1fr))!important;
     gap:10px!important;
     width:100%!important;
+    align-items:stretch!important;
   }
-
-  #toolsGrid>div{
-    position:relative!important;
-    display:flex!important;
-    flex-direction:column!important;
-    justify-content:flex-start!important;
-    width:100%!important;
-    min-width:0!important;
-    min-height:138px!important;
-    height:138px!important;
-    padding:11px!important;
-    margin:0!important;
-    box-sizing:border-box!important;
-    border-radius:18px!important;
+  html body #toolsGrid>div{
+    position:relative!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;
+    width:100%!important;min-width:0!important;min-height:138px!important;height:138px!important;
+    padding:11px!important;margin:0!important;box-sizing:border-box!important;border-radius:18px!important;
     background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(247,250,252,.99))!important;
-    border:1px solid rgba(226,232,240,.95)!important;
-    box-shadow:0 5px 16px rgba(15,23,42,.07)!important;
-    overflow:hidden!important;
-    transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease!important;
+    border:1px solid rgba(226,232,240,.95)!important;box-shadow:0 5px 16px rgba(15,23,42,.07)!important;overflow:hidden!important;
   }
-
-  .dark #toolsGrid>div{
-    background:linear-gradient(145deg,rgba(30,41,59,.99),rgba(15,23,42,.99))!important;
-    border-color:rgba(71,85,105,.6)!important;
-    box-shadow:0 5px 16px rgba(0,0,0,.2)!important;
-  }
-
-  #toolsGrid>div:active{transform:scale(.97)!important}
-
-  /* Icon row */
-  #toolsGrid>div>div:first-child{
-    width:100%!important;
-    min-width:0!important;
-  }
-  #toolsGrid>div>div:first-child>div:first-child{
-    margin-bottom:7px!important;
-    min-height:38px!important;
-  }
-  #toolsGrid>div .w-11.h-11{
-    width:38px!important;
-    height:38px!important;
-    min-width:38px!important;
-    border-radius:12px!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    font-size:15px!important;
-    box-shadow:0 4px 10px rgba(15,23,42,.07)!important;
-  }
-
-  /* Hide bookmark on compact cards */
-  #toolsGrid>div>div:first-child>div:first-child button{
-    display:none!important;
-  }
-
-  /* Category badges */
-  #toolsGrid>div span[class*="rounded-md"]{
-    font-size:7.5px!important;
-    line-height:1!important;
-    padding:4px 6px!important;
-    border-radius:6px!important;
-    white-space:nowrap!important;
-    max-width:100%!important;
-    overflow:hidden!important;
-    text-overflow:ellipsis!important;
-  }
-
-  /* Hide URL badge to keep the 3-column cards clean */
-  #toolsGrid>div span[class*="rounded-md"] + span[class*="rounded-md"]{display:none!important}
-
-  #toolsGrid>div h4{
-    font-size:13px!important;
-    line-height:1.15!important;
-    font-weight:800!important;
-    margin-top:7px!important;
-    margin-bottom:3px!important;
-    color:#0f172a!important;
-    white-space:nowrap!important;
-    overflow:hidden!important;
-    text-overflow:ellipsis!important;
-  }
-  .dark #toolsGrid>div h4{color:#f8fafc!important}
-
-  #toolsGrid>div p{
-    font-size:9px!important;
-    line-height:1.3!important;
-    margin-top:0!important;
-    color:#64748b!important;
-    display:-webkit-box!important;
-    -webkit-line-clamp:2!important;
-    -webkit-box-orient:vertical!important;
-    overflow:hidden!important;
-  }
-  .dark #toolsGrid>div p{color:#94a3b8!important}
-
-  /* Compact launch control */
-  #toolsGrid>div>.mt-4{
-    position:absolute!important;
-    right:9px!important;
-    bottom:9px!important;
-    width:auto!important;
-    margin:0!important;
-    padding:0!important;
-    border:0!important;
-  }
-  #toolsGrid>div button[onclick^="launchTool"]{
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    width:34px!important;
-    min-width:34px!important;
-    height:34px!important;
-    min-height:34px!important;
-    padding:0!important;
-    border:0!important;
-    border-radius:11px!important;
-    background:linear-gradient(135deg,#16a34a,#0891b2)!important;
-    color:#fff!important;
-    font-size:0!important;
-    font-weight:800!important;
-    box-shadow:0 5px 12px rgba(15,23,42,.16)!important;
-  }
-  #toolsGrid>div button[onclick^="launchTool"] span{display:none!important}
-  #toolsGrid>div button[onclick^="launchTool"] i{display:none!important}
-  #toolsGrid>div button[onclick^="launchTool"]::after{
-    content:'→'!important;
-    display:block!important;
-    font-size:18px!important;
-    line-height:1!important;
-    font-weight:800!important;
-  }
-
-  /* Subtle category accent */
-  #toolsGrid>div::before{
-    content:''!important;
-    position:absolute!important;
-    left:0!important;
-    top:12px!important;
-    bottom:12px!important;
-    width:3px!important;
-    border-radius:0 4px 4px 0!important;
-    background:linear-gradient(180deg,#16a34a,#0891b2)!important;
-  }
-
-  @media (hover:hover){
-    #toolsGrid>div:hover{
-      transform:translateY(-2px)!important;
-      border-color:rgba(34,197,94,.4)!important;
-      box-shadow:0 10px 22px rgba(15,23,42,.11)!important;
-    }
-  }
+  html body.dark #toolsGrid>div{background:linear-gradient(145deg,rgba(30,41,59,.99),rgba(15,23,42,.99))!important;border-color:rgba(71,85,105,.6)!important}
+  html body #toolsGrid>div>div:first-child{width:100%!important;min-width:0!important}
+  html body #toolsGrid>div>div:first-child>div:first-child{margin-bottom:7px!important;min-height:38px!important}
+  html body #toolsGrid>div .w-11.h-11{width:38px!important;height:38px!important;min-width:38px!important;border-radius:12px!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:15px!important}
+  html body #toolsGrid>div>div:first-child>div:first-child button{display:none!important}
+  html body #toolsGrid>div span[class*="rounded-md"]{font-size:7.5px!important;line-height:1!important;padding:4px 6px!important;border-radius:6px!important;white-space:nowrap!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  html body #toolsGrid>div span[class*="rounded-md"] + span[class*="rounded-md"]{display:none!important}
+  html body #toolsGrid>div h4{font-size:13px!important;line-height:1.15!important;font-weight:800!important;margin-top:7px!important;margin-bottom:3px!important;color:#0f172a!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  html body.dark #toolsGrid>div h4{color:#f8fafc!important}
+  html body #toolsGrid>div p{font-size:9px!important;line-height:1.3!important;margin-top:0!important;color:#64748b!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important}
+  html body.dark #toolsGrid>div p{color:#94a3b8!important}
+  html body #toolsGrid>div>.mt-4{position:absolute!important;right:9px!important;bottom:9px!important;width:auto!important;margin:0!important;padding:0!important;border:0!important}
+  html body #toolsGrid>div button[onclick^="launchTool"]{display:flex!important;align-items:center!important;justify-content:center!important;width:34px!important;min-width:34px!important;height:34px!important;min-height:34px!important;padding:0!important;border:0!important;border-radius:11px!important;background:linear-gradient(135deg,#16a34a,#0891b2)!important;color:#fff!important;font-size:0!important;font-weight:800!important}
+  html body #toolsGrid>div button[onclick^="launchTool"] span,html body #toolsGrid>div button[onclick^="launchTool"] i{display:none!important}
+  html body #toolsGrid>div button[onclick^="launchTool"]::after{content:'→'!important;display:block!important;font-size:18px!important;line-height:1!important;font-weight:800!important}
+  html body #toolsGrid>div::before{content:''!important;position:absolute!important;left:0!important;top:12px!important;bottom:12px!important;width:3px!important;border-radius:0 4px 4px 0!important;background:linear-gradient(180deg,#16a34a,#0891b2)!important}
 }
-
 @media (max-width:380px){
-  #toolsGrid{gap:8px!important}
-  #toolsGrid>div{min-height:132px!important;height:132px!important;padding:9px!important;border-radius:16px!important}
-  #toolsGrid>div .w-11.h-11{width:34px!important;height:34px!important;min-width:34px!important;border-radius:10px!important;font-size:14px!important}
-  #toolsGrid>div h4{font-size:12px!important}
-  #toolsGrid>div p{font-size:8px!important}
-  #toolsGrid>div button[onclick^="launchTool"]{width:31px!important;min-width:31px!important;height:31px!important;min-height:31px!important;border-radius:10px!important}
-  #toolsGrid>div button[onclick^="launchTool"]::after{font-size:16px!important}
+  html body #toolsGrid{gap:7px!important}
+  html body #toolsGrid>div{min-height:126px!important;height:126px!important;padding:8px!important;border-radius:15px!important}
+  html body #toolsGrid>div .w-11.h-11{width:33px!important;height:33px!important;min-width:33px!important;border-radius:10px!important;font-size:13px!important}
+  html body #toolsGrid>div h4{font-size:11px!important}
+  html body #toolsGrid>div p{font-size:7.5px!important}
+  html body #toolsGrid>div button[onclick^="launchTool"]{width:30px!important;min-width:30px!important;height:30px!important;min-height:30px!important;border-radius:9px!important}
+  html body #toolsGrid>div button[onclick^="launchTool"]::after{font-size:15px!important}
 }
