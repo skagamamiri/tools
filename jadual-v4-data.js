@@ -10,4 +10,7 @@
     shortLabel: "V4 — 27/09/2026",
     data: JSON.parse(JSON.stringify(base.data))
   });
+  try{
+    if(typeof setupVersions === "function") setupVersions();
+  }catch(e){ console.warn("Jadual V4: gagal refresh senarai versi",e); }
 })();
