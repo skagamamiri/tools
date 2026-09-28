@@ -90,7 +90,7 @@ importScripts(
 );
 
 firebase.initializeApp({
-  apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnY",
+  apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE",
   authDomain: "skamis-hubtool.firebaseapp.com",
   projectId: "skamis-hubtool",
   storageBucket: "skamis-hubtool.firebasestorage.app",
