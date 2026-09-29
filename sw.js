@@ -16,8 +16,8 @@ self.addEventListener('fetch',event=>{
       if(!ct.includes('text/html'))return r;
       let h=await r.text();
       if(!h.includes('mobile-bottom-nav.js')){
-        const tag='<script src="./mobile-bottom-nav.js?v=20260929-2"></script>';
-        h=h.replace(/<\/head>/i,tag+'</head>');
+        const tag='<script src="./mobile-bottom-nav.js?v=20260929-3"></script>';
+        h=h.replace(/<\\/head>/i,tag+'</head>');
       }
       const hd=new Headers(r.headers);hd.delete('content-length');
       return new Response(h,{status:r.status,statusText:r.statusText,headers:hd});
@@ -31,22 +31,47 @@ self.addEventListener('fetch',event=>{
       const ct=r.headers.get('content-type')||'';
       if(!ct.includes('text/html'))return r;
       let h=await r.text();
-      h=h.replace(/<script[^>]+mobile-bottom-nav\.js[^>]*><\/script>/gi,'');
-      const guard='<style id="ictHubToolNavGuard">#ictMobileNavV1,#ictMobileNavV2,#ictMobileNavV3,.mobile-bottom-nav,[id*="ictMobileNav"],#ictProfileSheetBg,#ictQrSheetBg{display:none!important}body{padding-bottom:0!important}</style>';
-      if(!h.includes('ictHubToolNavGuard'))h=h.replace(/<\/head>/i,guard+'</head>');
+
+      // Remove every known navigation script before the tool page reaches Chrome.
+      h=h.replace(/<script[^>]+mobile-bottom-nav(?:\\.js)?[^>]*><\\/script>/gi,'');
+      h=h.replace(/<script[^>]+(?:mobile-bottom-nav|mobile-nav|bottom-nav)[^>]*><\\/script>/gi,'');
+
+      // Hard guard: hide/remove any navigation accidentally created by an older cached script.
+      const guard=`<style id="ictHubToolNavGuard">
+@media(max-width:768px){
+#ictMobileNavV1,#ictMobileNavV2,#ictMobileNavV3,.mobile-bottom-nav,[id*="ictMobileNav"],#ictProfileSheetBg,#ictQrSheetBg{display:none!important;visibility:hidden!important;pointer-events:none!important;height:0!important;min-height:0!important;max-height:0!important;overflow:hidden!important}
+body{padding-bottom:0!important}
+}
+</style>
+<script id="ictHubToolNavCleanup">
+(function(){
+  function clean(){
+    ['#ictMobileNavV1','#ictMobileNavV2','#ictMobileNavV3','.mobile-bottom-nav','#ictProfileSheetBg','#ictQrSheetBg'].forEach(function(sel){document.querySelectorAll(sel).forEach(function(el){el.remove();});});
+    document.querySelectorAll('script[src*="mobile-bottom-nav"],script[src*="mobile-nav"],script[src*="bottom-nav"]').forEach(function(el){el.remove();});
+    if(document.body)document.body.style.removeProperty('padding-bottom');
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',clean,{once:true});else clean();
+  new MutationObserver(clean).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>`;
+      if(!h.includes('ictHubToolNavGuard')){
+        if(/<\\/head>/i.test(h)) h=h.replace(/<\\/head>/i,guard+'</head>');
+        else h=guard+h;
+      }
       const hd=new Headers(r.headers);hd.delete('content-length');
+      hd.set('Cache-Control','no-store, no-cache, must-revalidate, max-age=0');
       return new Response(h,{status:r.status,statusText:r.statusText,headers:hd});
     })());
     return;
   }
 
   if(u.pathname.endsWith('/jadual-v4-data.js')){
-    event.respondWith((async()=>{const r=await fetch(req);const ct=r.headers.get('content-type')||'';if(!ct.includes('javascript')&&!ct.includes('text'))return r;const js=await r.text();const fixed=js.replace('const bytes = Uint8Array.from(atob(DATA_B64), c=>c.charCodeAt(0));','const normalizedB64 = String(DATA_B64).replace(/\s/g, "").replace(/-/g, "+").replace(/_/g, "/").replace(/[^A-Za-z0-9+/=]/g, ""); const paddedB64 = normalizedB64 + "=".repeat((4 - normalizedB64.length % 4) % 4); const bytes = Uint8Array.from(atob(paddedB64), c=>c.charCodeAt(0));');const hd=new Headers(r.headers);hd.delete('content-length');return new Response(fixed,{status:r.status,statusText:r.statusText,headers:hd});})());
+    event.respondWith((async()=>{const r=await fetch(req);const ct=r.headers.get('content-type')||'';if(!ct.includes('javascript')&&!ct.includes('text'))return r;const js=await r.text();const fixed=js.replace('const bytes = Uint8Array.from(atob(DATA_B64), c=>c.charCodeAt(0));','const normalizedB64 = String(DATA_B64).replace(/\\s/g, "").replace(/-/g, "+").replace(/_/g, "/").replace(/[^A-Za-z0-9+/=]/g, ""); const paddedB64 = normalizedB64 + "=".repeat((4 - normalizedB64.length % 4) % 4); const bytes = Uint8Array.from(atob(paddedB64), c=>c.charCodeAt(0));');const hd=new Headers(r.headers);hd.delete('content-length');return new Response(fixed,{status:r.status,statusText:r.statusText,headers:hd});})());
     return;
   }
 
   if(u.pathname.endsWith('/jadual.html')){
-    event.respondWith((async()=>{const r=await fetch(req);const ct=r.headers.get('content-type')||'';if(!ct.includes('text/html'))return r;const h=await r.text();if(h.includes('jadual-v4-data.js'))return new Response(h,{status:r.status,statusText:r.statusText,headers:r.headers});const out=h.replace(/<\/body>/i,'<script src="./jadual-v4-data.js?v=20260927"></script></body>');const hd=new Headers(r.headers);hd.delete('content-length');return new Response(out,{status:r.status,statusText:r.statusText,headers:hd});})());
+    event.respondWith((async()=>{const r=await fetch(req);const ct=r.headers.get('content-type')||'';if(!ct.includes('text/html'))return r;const h=await r.text();if(h.includes('jadual-v4-data.js'))return new Response(h,{status:r.status,statusText:r.statusText,headers:r.headers});const out=h.replace(/<\\/body>/i,'<script src="./jadual-v4-data.js?v=20260927"></script></body>');const hd=new Headers(r.headers);hd.delete('content-length');return new Response(out,{status:r.status,statusText:r.statusText,headers:hd});})());
     return;
   }
 });
