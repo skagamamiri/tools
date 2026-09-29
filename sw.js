@@ -9,14 +9,17 @@ self.addEventListener('fetch',event=>{
   const u=new URL(req.url);
 
   // Main ICT HUB page: inject the mobile navigation script.
-  if(req.mode==='navigate' && (u.pathname==='/tools/' || u.pathname.endsWith('/tools/index.html'))){
+  // Accept /tools, /tools/ and /tools/index.html because Android Chrome
+  // may request the directory URL without the trailing slash.
+  const isHubHome=(u.pathname==='/tools' || u.pathname==='/tools/' || u.pathname.endsWith('/tools/index.html'));
+  if(req.mode==='navigate' && isHubHome){
     event.respondWith((async()=>{
       const r=await fetch(req);
       const ct=r.headers.get('content-type')||'';
       if(!ct.includes('text/html'))return r;
       const h=await r.text();
       if(h.includes('mobile-bottom-nav.js'))return new Response(h,{status:r.status,statusText:r.statusText,headers:r.headers});
-      const tag='<script src="./mobile-bottom-nav.js?v=20260928-3"></script>';
+      const tag='<script src="./mobile-bottom-nav.js?v=20260929-1"></script>';
       const out=h.replace(/<\\/head>/i,tag+'</head>');
       const hd=new Headers(r.headers);hd.delete('content-length');
       return new Response(out,{status:r.status,statusText:r.statusText,headers:hd});
