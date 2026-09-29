@@ -1,4 +1,4 @@
-/* ICT HUB — Mobile Tools UI V10
+/* ICT HUB — Mobile Tools UI V11
    Mobile-only presentation layer. Desktop remains untouched.
    3-column compact cards, full-card launch, no footer.
 */
@@ -26,6 +26,12 @@ html body [class*="footer" i]{display:none!important}
     box-shadow:0 4px 18px rgba(15,23,42,.045)!important;
   }
 
+  /* Login / install / theme controls now live under Profil */
+  html body #headerInstallAppBtn,
+  html body #teacherAuthContainer,
+  html body #teacherLoginHeaderBtn,
+  html body #themeToggleBtn{display:none!important}
+
   html body{
     padding-top:0!important;
     overflow-x:hidden!important;
@@ -46,7 +52,7 @@ html body [class*="footer" i]{display:none!important}
   html body main{
     padding-left:14px!important;
     padding-right:14px!important;
-    padding-bottom:24px!important;
+    padding-bottom:82px!important;
   }
 
   /* Hero */
