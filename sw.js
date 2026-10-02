@@ -77,7 +77,9 @@ body{padding-bottom:0!important}
         const vjs=await vr.text();
         const m=vjs.match(/JADUAL_V4_DATA_B64\s*=\s*["']([^"']+)["']/);
         if(m){
-          const bin=atob(m[1].replace(/\s/g,''));
+          const normalizedB64=String(m[1]).replace(/\s/g,'').replace(/-/g,'+').replace(/_/g,'/').replace(/[^A-Za-z0-9+/=]/g,'');
+          const paddedB64=normalizedB64+'='.repeat((4-normalizedB64.length%4)%4);
+          const bin=atob(paddedB64);
           const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));
           const ds=new DecompressionStream('gzip');
           const stream=new Blob([bytes]).stream().pipeThrough(ds);
