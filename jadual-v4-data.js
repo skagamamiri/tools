@@ -1,77 +1,16 @@
 // ============================================================
 // JADUAL VERSI 4.0 — 27 SEPTEMBER 2026
 // Sumber: Jadual Waktu Guru (7).pdf, Versi 4.0
-// Data dimampatkan supaya fail ringan; struktur kekal sama:
-// VERSION_DATA -> teachers -> entries(day,start,end,subject,class)
+// Data diekstrak terus daripada PDF dan disimpan sebagai JavaScript biasa.
+// Tiada Base64 / atob digunakan supaya tidak bergantung pada decoder.
 // ============================================================
 (function(){
   if(typeof VERSION_DATA === "undefined") return;
   if(VERSION_DATA.some(v=>v.id === "v4")) return;
-
-  const DATA_B64 = "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";
-
-  function installVersion(data){
-    VERSION_DATA.push({
-      id:"v4",
-      label:"Versi 4.0 — 27 September 2026",
-      shortLabel:"V4 — 27/09/2026",
-      data
-    });
-
-    try{
-      if(typeof setupVersions === "function") setupVersions();
-      const savedActive = localStorage.getItem("jadualActiveVersion");
-      const savedDefault = localStorage.getItem("jadualDefaultVersion");
-      if(savedActive === "v4" || savedDefault === "v4"){
-        activeVersionId = "v4";
-      }
-      if(typeof setupSelect === "function") setupSelect();
-      if(typeof render === "function") render();
-    }catch(e){
-      console.warn("Jadual V4: gagal refresh paparan",e);
-    }
-
-    // Sync pilihan V4 ke Supabase tanpa menyentuh FCM/sw.js.
-    const originalSetDefaultVersion = window.setDefaultVersion;
-    if(typeof originalSetDefaultVersion === "function" && !originalSetDefaultVersion.__v4Wrapped){
-      const wrapped = async function(){
-        const id = document.getElementById("versionSelect")?.value || "v4";
-        originalSetDefaultVersion();
-        if(id !== "v4") return;
-        try{
-          const mod = await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js");
-          const auth = mod.getAuth();
-          const user = auth.currentUser;
-          if(!user) return;
-          const idToken = await user.getIdToken();
-          const r = await fetch("https://ifqgstspfxagzstccsin.supabase.co/functions/v1/save-schedule-version",{
-            method:"POST",
-            headers:{"Authorization":"Bearer "+idToken,"Content-Type":"application/json"},
-            body:JSON.stringify({scheduleVersion:id})
-          });
-          const result = await r.json().catch(()=>({}));
-          if(!r.ok || !result.ok) throw new Error(result.error || "Gagal menyimpan versi jadual.");
-          console.log("Jadual version synced:", result.scheduleVersion);
-        }catch(e){
-          console.warn("Jadual V4: gagal sync versi ke Supabase",e);
-        }
-      };
-      wrapped.__v4Wrapped = true;
-      window.setDefaultVersion = wrapped;
-    }
-  }
-
-  async function load(){
-    try{
-      const bytes = Uint8Array.from(atob(DATA_B64), c=>c.charCodeAt(0));
-      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
-      const data = JSON.parse(await new Response(stream).text());
-      installVersion(data);
-      console.log("Jadual V4 loaded:", data.teachers?.length || 0, "guru");
-    }catch(e){
-      console.error("Jadual V4 gagal dimuatkan:",e);
-    }
-  }
-
-  load();
+  VERSION_DATA.push({
+    id: "v4",
+    label: "Versi 4.0 — 27 September 2026",
+    shortLabel: "V4 — 27/09/2026",
+    data: {"teachers":[{"name":"Abdullah bin Mohammad","entries":[{"day":"ISNIN","start":"07:00","end":"07:30","subject":"PI-Q","class":"4A"},{"day":"ISNIN","start":"07:30","end":"08:30","subject":"PI-Q","class":"4A"},{"day":"ISNIN","start":"10:30","end":"11:30","subject":"TAS","class":"5C"},{"day":"ISNIN","start":"12:00","end":"13:00","subject":"TAS","class":"4A"},{"day":"SELASA","start":"07:00","end":"07:30","subject":"PI-Q","class":"5D"},{"day":"SELASA","start":"08:30","end":"09:30","subject":"PI-U","class":"5B"},{"day":"SELASA","start":"11:30","end":"12:30","subject":"PI-Q","class":"5D"},{"day":"SELASA","start":"12:30","end":"13:00","subject":"PI-J","class":"4A"},{"day":"RABU","start":"07:00","end":"08:00","subject":"PI-Q","class":"6A"},{"day":"RABU","start":"09:00","end":"09:30","subject":"PI-Q","class":"6A"},{"day":"RABU","start":"10:00","end":"11:00","subject":"PI-Q","class":"5B"},{"day":"RABU","start":"12:00","end":"12:30","subject":"PI-Q","class":"5B"},{"day":"RABU","start":"12:30","end":"13:00","subject":"PI-J","class":"5B"},{"day":"KHAMIS","start":"07:30","end":"08:30","subject":"PI-U","class":"4A"},{"day":"KHAMIS","start":"09:00","end":"09:30","subject":"PI-Q","class":"5C"},{"day":"KHAMIS","start":"10:00","end":"11:00","subject":"PI-Q","class":"5C"},{"day":"KHAMIS","start":"12:00","end":"13:00","subject":"TAS","class":"5B"},{"day":"JUMAAT","start":"08:30","end":"09:30","subject":"TAS","class":"5D"},{"day":"JUMAAT","start":"10:00","end":"10:30","subject":"TAS","class":"4B"}]}]}
+  });
 })();
