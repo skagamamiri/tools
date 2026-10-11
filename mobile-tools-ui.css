@@ -498,3 +498,34 @@ html body [class*="footer" i]{display:none!important}
   .ict-welcome-greeting{font-size:16px!important}
   .ict-welcome-name{font-size:20px!important}
 }
+
+/* Header cleanup: move account/theme actions into the teacher profile banner */
+@media(max-width:2000px){
+  #teacherAuthContainer{display:none!important}
+  #headerInstallAppBtn{display:none!important}
+  #themeToggleBtn{display:none!important}
+}
+/* User requested no mobile bottom navigation */
+@media(max-width:768px){
+  .mobile-bottom-nav,#ictMobileNavV7{display:none!important;visibility:hidden!important;pointer-events:none!important}
+  body{padding-bottom:18px!important}
+  body main{padding-bottom:28px!important}
+}
+.ict-profile-actions{
+  display:flex;align-items:center;justify-content:flex-end;gap:10px;
+  flex:0 0 auto;align-self:flex-start;margin-left:auto;
+}
+.ict-profile-header-btn,.ict-profile-logout-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:42px;padding:10px 14px;border-radius:13px;font-size:13px;font-weight:800;
+  white-space:nowrap;cursor:pointer;transition:transform .15s ease,filter .15s ease;
+}
+.ict-profile-header-btn{color:#f8fafc;background:rgba(15,23,42,.22);border:1px solid rgba(255,255,255,.28)}
+.ict-profile-logout-btn{color:#fff;background:#e11d48;border:1px solid rgba(255,255,255,.15)}
+.ict-profile-header-btn:active,.ict-profile-logout-btn:active{transform:scale(.97)}
+.ict-welcome-identity{align-items:center!important;flex-wrap:wrap}
+@media(max-width:768px){
+  .ict-profile-actions{width:100%;margin:8px 0 0;justify-content:flex-end;gap:8px}
+  .ict-profile-header-btn,.ict-profile-logout-btn{min-height:36px;padding:8px 11px;font-size:11px;border-radius:11px}
+  .ict-profile-actions i{font-size:12px}
+}
