@@ -2965,8 +2965,7 @@
             const greeting = teacher ? 'Selamat Datang,' : 'Selamat Datang ke';
             const name = teacher ? safe(displayName) : 'ICT HUB';
             const details = teacher
-                ? '<div class="ict-profile-field"><span class="ict-profile-icon"><i class="fa-regular fa-user"></i></span><div><small>Nama</small><strong>' + safe(displayName) + '</strong></div></div>' +
-                  '<div class="ict-profile-field"><span class="ict-profile-icon"><i class="fa-regular fa-id-card"></i></span><div><small>ID DELIMa</small><strong class="ict-profile-id">' + safe(email || 'Tidak tersedia') + '</strong></div></div>' +
+                ? '<div class="ict-profile-field"><span class="ict-profile-icon"><i class="fa-regular fa-id-card"></i></span><div><small>ID DELIMa</small><strong class="ict-profile-id">' + safe(email || 'Tidak tersedia') + '</strong></div></div>' +
                   '<div class="ict-profile-field"><span class="ict-profile-icon"><i class="fa-solid fa-users"></i></span><div><small>Peranan</small><strong><span class="ict-role-pill"><i class="fa-solid fa-shield-halved"></i> ' + role + '</span></strong></div></div>'
                 : '<div class="ict-welcome-login-note"><i class="fa-brands fa-google"></i><span>Log masuk dengan akaun DELIMa untuk memaparkan profil guru.</span><button type="button" onclick="return window.__openLoginDirect ? window.__openLoginDirect(event) : false;">Login Google</button></div>';
             content.innerHTML =
