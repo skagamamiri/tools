@@ -528,3 +528,49 @@ html body [class*="footer" i]{display:none!important}
   .ict-profile-header-btn,.ict-profile-logout-btn{min-height:36px;padding:8px 11px;font-size:11px;border-radius:11px}
   .ict-profile-actions i{font-size:12px}
 }
+
+/* RESPONSIVE RESTORE — applies consistently before and after Firebase login */
+html{width:100%;min-width:0}
+body{width:100%;min-width:0;max-width:100%;overflow-x:hidden}
+main.max-w-6xl{width:100%;max-width:1152px;margin-left:auto;margin-right:auto;box-sizing:border-box}
+#welcomeProfileBanner{width:100%;box-sizing:border-box;min-width:0}
+#welcomeProfileContent{width:100%;min-width:0}
+.ict-welcome-identity{min-width:0}
+.ict-welcome-main{min-width:0;overflow-wrap:anywhere}
+.ict-welcome-name{max-width:100%;overflow-wrap:anywhere}
+#toolsGrid{width:100%;min-width:0;grid-template-columns:repeat(3,minmax(0,1fr))}
+#toolsGrid>div{min-width:0;max-width:100%;box-sizing:border-box}
+@media(min-width:641px) and (max-width:1023px){
+  main.max-w-6xl{padding-left:20px;padding-right:20px}
+  #toolsGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .ict-welcome-banner{padding:22px 20px!important}
+  .ict-welcome-identity{gap:16px!important}
+  .ict-profile-actions{width:100%;justify-content:flex-end;margin:8px 0 0}
+}
+@media(max-width:640px){
+  html,body{width:100%;min-width:0;overflow-x:hidden}
+  main.max-w-6xl{width:100%;max-width:none;padding:12px 12px 24px!important;margin:0}
+  #welcomeProfileBanner{width:100%;margin-bottom:14px!important}
+  .ict-welcome-banner{min-height:0!important;padding:16px 13px 14px!important}
+  .ict-welcome-identity{display:flex!important;flex-wrap:wrap!important;align-items:flex-start!important;gap:12px!important}
+  .ict-welcome-avatar-wrap{width:62px!important;height:62px!important;flex:0 0 62px!important}
+  .ict-welcome-main{flex:1 1 0!important;width:calc(100% - 74px);min-width:0}
+  .ict-welcome-greeting{font-size:clamp(16px,4.6vw,22px)!important}
+  .ict-welcome-name{font-size:clamp(20px,5.8vw,29px)!important;line-height:1.12!important;overflow-wrap:anywhere}
+  .ict-profile-fields{grid-template-columns:minmax(0,1fr)!important;width:100%}
+  .ict-profile-field{min-width:0}
+  .ict-profile-field strong{overflow-wrap:anywhere}
+  .ict-profile-actions{display:flex!important;width:100%;flex:1 0 100%;margin:4px 0 0!important;justify-content:flex-end}
+  #toolsGrid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  #toolsGrid>div{min-width:0;padding:12px!important}
+  #toolsGrid>div h4,#toolsGrid>div p{overflow-wrap:anywhere}
+  .mobile-bottom-nav,#ictMobileNavV7{display:none!important}
+  body{padding-bottom:18px!important}
+}
+@media(max-width:380px){
+  #toolsGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  #toolsGrid>div{padding:9px!important}
+  .ict-welcome-avatar-wrap{width:54px!important;height:54px!important;flex-basis:54px!important}
+  .ict-welcome-main{width:calc(100% - 64px)}
+  .ict-welcome-name{font-size:19px!important}
+}
