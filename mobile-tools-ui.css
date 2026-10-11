@@ -325,3 +325,135 @@ html body [class*="footer" i]{display:none!important}
   }
   html body #toolsGrid>div:active{transform:scale(.975)!important}
 }
+
+/* ICT HUB — responsive teacher profile welcome banner (desktop + mobile) */
+.ict-welcome-banner{
+  isolation:isolate;
+  padding:clamp(22px,3vw,42px);
+  min-height:320px;
+  border:1px solid rgba(255,255,255,.16);
+  background:
+    radial-gradient(circle at 88% 12%,rgba(45,212,191,.16),transparent 26%),
+    linear-gradient(125deg,#047867 0%,#075e61 46%,#17345f 100%);
+  box-shadow:0 18px 42px rgba(15,70,83,.18),inset 0 1px 0 rgba(255,255,255,.14);
+}
+.ict-welcome-banner::before{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(115deg,rgba(255,255,255,.045),transparent 48%,rgba(15,23,42,.14));
+}
+.ict-welcome-brand{
+  display:inline-flex;align-items:center;gap:10px;
+  max-width:100%;padding:10px 16px;border-radius:999px;
+  color:#f0fdfa;background:rgba(255,255,255,.13);
+  border:1px solid rgba(255,255,255,.16);
+  font-size:clamp(11px,.9vw,14px);font-weight:800;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.ict-welcome-brand i{color:#fbbf24;font-size:17px}
+.ict-welcome-identity{
+  display:flex;align-items:center;gap:clamp(20px,3vw,44px);
+  margin-top:24px;position:relative;z-index:2;min-width:0;
+}
+.ict-welcome-avatar-wrap{
+  width:clamp(108px,14vw,176px);height:clamp(108px,14vw,176px);
+  flex:0 0 auto;position:relative;border-radius:50%;padding:7px;
+  background:rgba(255,255,255,.94);box-shadow:0 10px 30px rgba(0,0,0,.2);
+}
+.ict-welcome-photo,.ict-welcome-avatar-fallback{
+  display:flex;width:100%;height:100%;border-radius:50%;object-fit:cover;
+  align-items:center;justify-content:center;background:linear-gradient(135deg,#0ea5e9,#2563eb);
+  color:#fff;font-size:clamp(26px,4vw,46px);font-weight:900;
+}
+.ict-welcome-online{
+  position:absolute;right:3px;bottom:12px;width:23px;height:23px;
+  border-radius:50%;background:#22c55e;border:4px solid #fff;
+}
+.ict-welcome-main{min-width:0;flex:1}
+.ict-welcome-greeting{margin:0;color:#f8fafc;font-size:clamp(22px,3.2vw,42px);font-weight:800;line-height:1.12;letter-spacing:-.035em}
+.ict-welcome-name{margin:3px 0 0!important;color:#fbbf24!important;font-size:clamp(30px,4.5vw,58px)!important;line-height:1.08!important;font-weight:900!important;letter-spacing:-.035em!important;overflow-wrap:anywhere}
+.ict-welcome-subtitle{margin:10px 0 0;color:#ccfbf1;font-size:clamp(12px,1.25vw,16px);line-height:1.5}
+.ict-profile-fields{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;
+  margin-top:24px;max-width:1050px;
+}
+.ict-profile-field{display:flex;align-items:center;gap:11px;min-width:0;padding-right:12px}
+.ict-profile-field:not(:last-child){border-right:1px solid rgba(204,251,241,.23)}
+.ict-profile-icon{
+  width:48px;height:48px;flex:0 0 48px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.13);color:#ecfeff;font-size:20px;
+  border:1px solid rgba(255,255,255,.10)
+}
+.ict-profile-field>div{min-width:0;display:flex;flex-direction:column;gap:5px}
+.ict-profile-field small{font-size:12px;color:#a7f3d0;font-weight:600}
+.ict-profile-field strong{font-size:clamp(12px,1.15vw,16px);line-height:1.25;color:#fff;font-weight:800;overflow-wrap:anywhere}
+.ict-profile-id{word-break:break-word}
+.ict-role-pill{
+  display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;
+  color:#17345f;background:#fbbf24;font-size:12px;font-weight:900;white-space:nowrap
+}
+.ict-profile-status{
+  align-self:flex-start;display:inline-flex;align-items:center;gap:7px;
+  color:#d1fae5;font-size:12px;font-weight:800;padding:9px 12px;
+  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);border-radius:999px
+}
+.ict-profile-status i{color:#86efac}
+.ict-welcome-login-note{
+  display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:18px;
+  color:#d1fae5;font-size:13px
+}
+.ict-welcome-login-note>i{font-size:18px}
+.ict-welcome-login-note button{
+  border:0;border-radius:999px;padding:9px 15px;background:#fbbf24;color:#17345f;
+  font-size:12px;font-weight:900;cursor:pointer
+}
+.ict-welcome-footer{
+  display:flex;align-items:center;gap:15px;margin-top:28px;padding:15px 18px;
+  border:1px solid rgba(255,255,255,.15);border-radius:22px;
+  background:rgba(255,255,255,.075);backdrop-filter:blur(10px);position:relative;z-index:2
+}
+.ict-welcome-footer-icon{
+  width:54px;height:54px;flex:0 0 54px;border-radius:15px;
+  display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.14);
+  color:#fff;font-size:24px
+}
+.ict-welcome-footer>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ict-welcome-footer strong{font-size:clamp(18px,2vw,26px);font-weight:900;color:#fff}
+.ict-welcome-footer span:not(.ict-welcome-footer-icon){font-size:clamp(11px,1.1vw,15px);color:#b7eee3}
+.ict-welcome-decoration{
+  position:absolute;right:4%;bottom:10%;z-index:0;color:rgba(255,255,255,.055);
+  font-size:clamp(100px,17vw,230px);pointer-events:none;line-height:1
+}
+.ict-welcome-logged-out .ict-welcome-identity{margin-top:22px}
+.ict-welcome-logged-out .ict-welcome-avatar-wrap{width:100px;height:100px}
+@media(max-width:768px){
+  .ict-welcome-banner{min-height:0;padding:18px 16px 15px;border-radius:22px!important}
+  .ict-welcome-brand{font-size:10px;padding:7px 10px;gap:7px}
+  .ict-welcome-brand i{font-size:13px}
+  .ict-welcome-identity{gap:13px;margin-top:18px;align-items:flex-start}
+  .ict-welcome-avatar-wrap{width:78px;height:78px;padding:4px}
+  .ict-welcome-online{width:17px;height:17px;right:0;bottom:5px;border-width:3px}
+  .ict-welcome-greeting{font-size:clamp(17px,4.6vw,24px)}
+  .ict-welcome-name{font-size:clamp(22px,6.2vw,32px)!important;line-height:1.12!important}
+  .ict-profile-fields{grid-template-columns:1fr;gap:10px;margin-top:15px}
+  .ict-profile-field{padding:0;border:0!important;gap:9px}
+  .ict-profile-icon{width:34px;height:34px;flex-basis:34px;border-radius:10px;font-size:14px}
+  .ict-profile-field>div{gap:2px}
+  .ict-profile-field small{font-size:10px}
+  .ict-profile-field strong{font-size:12px}
+  .ict-role-pill{font-size:10px;padding:5px 9px}
+  .ict-profile-status{font-size:10px;padding:7px 9px}
+  .ict-welcome-footer{margin-top:17px;padding:10px 11px;border-radius:16px;gap:10px}
+  .ict-welcome-footer-icon{width:38px;height:38px;flex-basis:38px;border-radius:11px;font-size:18px}
+  .ict-welcome-footer strong{font-size:16px}
+  .ict-welcome-footer span:not(.ict-welcome-footer-icon){font-size:9px;line-height:1.35}
+  .ict-welcome-decoration{right:-2%;bottom:12%;font-size:100px}
+  .ict-welcome-login-note{font-size:11px;gap:8px}
+}
+@media(max-width:380px){
+  .ict-welcome-banner{padding:15px 12px 12px}
+  .ict-welcome-avatar-wrap{width:64px;height:64px}
+  .ict-welcome-identity{gap:10px}
+  .ict-welcome-greeting{font-size:16px}
+  .ict-welcome-name{font-size:21px!important}
+}
