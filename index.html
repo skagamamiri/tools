@@ -2974,9 +2974,20 @@
                     '<div class="ict-welcome-main"><p class="ict-welcome-greeting">' + greeting + '</p><h2 class="ict-welcome-name">' + name + '</h2>' +
                     (teacher ? '<div class="ict-profile-fields">' + details + '</div>' : '<p class="ict-welcome-subtitle">Pusat Aplikasi & Perkhidmatan Digital Sekolah</p>' + details) +
                     '</div>' +
-                    (teacher ? '<div class="ict-profile-status"><i class="fa-solid fa-circle-check"></i><span>Profil Guru</span></div>' : '') +
+                    (teacher ? '<div class="ict-profile-actions"><button type="button" id="ictProfileThemeBtn" class="ict-profile-header-btn" title="Tukar mod cerah/gelap"><i class="fa-solid fa-sun"></i><span>' + (document.documentElement.classList.contains('dark') ? 'Mod Cerah' : 'Mod Gelap') + '</span></button><button type="button" id="ictProfileLogoutBtn" class="ict-profile-logout-btn" onclick="logoutTeacher()"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></button></div>' : '') +
                 '</div>' +
-                '<div class="ict-welcome-footer"><span class="ict-welcome-footer-icon"><i class="fa-solid fa-table-cells-large"></i></span><div><strong>ICT HUB</strong><span>Pusat Aplikasi & Perkhidmatan Digital Sekolah</span></div></div>';
+                '';
+            const profileThemeBtn = document.getElementById('ictProfileThemeBtn');
+            if (profileThemeBtn) profileThemeBtn.onclick = () => {
+                const currentThemeButton = document.getElementById('themeToggleBtn');
+                if (currentThemeButton) currentThemeButton.click();
+                else {
+                    document.documentElement.classList.toggle('dark');
+                    localStorage.setItem('skamis_theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+                }
+                const isDarkNow = document.documentElement.classList.contains('dark');
+                profileThemeBtn.innerHTML = '<i class="fa-solid ' + (isDarkNow ? 'fa-sun' : 'fa-moon') + '"></i><span>' + (isDarkNow ? 'Mod Cerah' : 'Mod Gelap') + '</span>';
+            };
             banner.classList.toggle('ict-welcome-logged-in', !!teacher);
             banner.classList.toggle('ict-welcome-logged-out', !teacher);
         }
