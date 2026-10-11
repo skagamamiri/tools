@@ -1953,10 +1953,13 @@
                 modal.setAttribute('aria-hidden', 'true');
             }
             document.documentElement.style.overflow = '';
+            document.documentElement.style.overflowX = '';
+            document.documentElement.style.overflowY = '';
             document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
-            document.body.style.overflow = '';
-            document.body.classList.remove('overflow-hidden');
+            document.body.style.overflowX = '';
+            document.body.style.overflowY = '';
+            document.body.style.position = '';
+            document.body.classList.remove('overflow-hidden', 'tool-viewer-open', 'erph-viewer-open');
             return false;
         };
 
@@ -2000,10 +2003,24 @@
             if (modal) {
                 modal.classList.add('hidden');
                 modal.style.display = '';
+                modal.style.visibility = '';
+                modal.style.opacity = '';
                 modal.style.pointerEvents = '';
+                modal.style.zIndex = '';
                 modal.setAttribute('aria-hidden', 'true');
             }
-            document.body.classList.remove('overflow-hidden');
+
+            // Penting: launcher login menetapkan overflow:hidden secara inline.
+            // Buang SEMUA lock selepas login supaya halaman boleh scroll dan
+            // breakpoint/responsive layout berfungsi tanpa perlu refresh.
+            document.documentElement.style.overflow = '';
+            document.documentElement.style.overflowX = '';
+            document.documentElement.style.overflowY = '';
+            document.body.style.overflow = '';
+            document.body.style.overflowX = '';
+            document.body.style.overflowY = '';
+            document.body.style.position = '';
+            document.body.classList.remove('overflow-hidden', 'tool-viewer-open', 'erph-viewer-open');
         }
 
         // Ekspos secara eksplisit kepada onclick HTML dan kod Firebase module.
