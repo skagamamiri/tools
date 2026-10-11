@@ -744,23 +744,25 @@
 
     <main class="max-w-6xl mx-auto px-4 py-5 w-full flex-grow">
         
-        <!-- Welcome Hero Banner -->
-        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-brand-700 via-brand-600 to-tech-700 p-5 md:p-7 text-white shadow-xl mb-6">
-            <div class="relative z-10 max-w-2xl">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/20 text-white backdrop-blur-md mb-2">
-                    <i class="fa-solid fa-star text-amber-300 mr-1.5 text-[10px]"></i> Portal Pengurusan ICT Sekolah
-                </span>
-                <h2 class="font-heading text-xl md:text-3xl font-extrabold tracking-tight">
-                    ICT HUB
-                </h2>
-                <p class="text-xs md:text-sm text-emerald-100 mt-1 leading-relaxed">
-                    Pusat Aplikasi & Perkhidmatan Digital Sekolah
-                </p>
+        <!-- Welcome / Teacher Profile Banner -->
+        <section id="welcomeProfileBanner" class="ict-welcome-banner relative overflow-hidden rounded-2xl mb-6 text-white">
+            <div id="welcomeProfileContent" class="relative z-10">
+                <div class="ict-welcome-brand"><i class="fa-solid fa-star"></i><span>Portal Pengurusan ICT Sekolah</span></div>
+                <div class="ict-welcome-identity">
+                    <div class="ict-welcome-avatar"><i class="fa-solid fa-user-tie"></i></div>
+                    <div class="ict-welcome-main">
+                        <p class="ict-welcome-greeting">Selamat Datang ke</p>
+                        <h2 class="ict-welcome-name">ICT HUB</h2>
+                        <p class="ict-welcome-subtitle">Pusat Aplikasi & Perkhidmatan Digital Sekolah</p>
+                    </div>
+                </div>
+                <div class="ict-welcome-footer">
+                    <i class="fa-solid fa-table-cells-large"></i>
+                    <div><strong>ICT HUB</strong><span>Pusat Aplikasi & Perkhidmatan Digital Sekolah</span></div>
+                </div>
             </div>
-            <!-- Decorative BG Circles -->
-            <div class="absolute -right-8 -bottom-10 w-44 h-44 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-            <div class="absolute right-20 -top-10 w-32 h-32 bg-tech-400/20 rounded-full blur-xl pointer-events-none"></div>
-        </div>
+            <div class="ict-welcome-decoration" aria-hidden="true"><i class="fa-solid fa-mosque"></i></div>
+        </section>
 
         <!-- Search & Filter Controls -->
         <div class="space-y-4 mb-6">
@@ -2941,7 +2943,48 @@
             await deleteDoc(doc(db, TOOLS, id));
         };
 
+        function renderWelcomeProfile() {
+            const banner = document.getElementById('welcomeProfileBanner');
+            const content = document.getElementById('welcomeProfileContent');
+            if (!banner || !content) return;
+            const teacher = window.currentTeacher || null;
+            const safe = value => typeof escapeHtml === 'function'
+                ? escapeHtml(String(value == null ? '' : value))
+                : String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const displayName = teacher ? (teacher.displayName || 'Guru') : '';
+            const email = teacher ? (teacher.email || '') : '';
+            const roleRaw = teacher ? String(teacher.role || 'teacher').toLowerCase() : '';
+            const role = roleRaw === 'admin' || roleRaw === 'administrator' ? 'Admin'
+                : roleRaw === 'pentadbir' || roleRaw === 'admin sekolah' ? 'Pentadbir'
+                : 'Guru';
+            const photoURL = teacher && teacher.photoURL ? safe(teacher.photoURL) : '';
+            const initialsText = displayName ? safe(typeof initials === 'function' ? initials(displayName) : displayName.slice(0,2).toUpperCase()) : '<i class="fa-solid fa-user-tie"></i>';
+            const avatar = photoURL
+                ? '<img class="ict-welcome-photo" src="' + photoURL + '" alt="Foto profil guru" referrerpolicy="no-referrer">'
+                : '<div class="ict-welcome-avatar-fallback">' + initialsText + '</div>';
+            const greeting = teacher ? 'Selamat Datang,' : 'Selamat Datang ke';
+            const name = teacher ? safe(displayName) : 'ICT HUB';
+            const details = teacher
+                ? '<div class="ict-profile-field"><span class="ict-profile-icon"><i class="fa-regular fa-user"></i></span><div><small>Nama</small><strong>' + safe(displayName) + '</strong></div></div>' +
+                  '<div class="ict-profile-field"><span class="ict-profile-icon"><i class="fa-regular fa-id-card"></i></span><div><small>ID DELIMa</small><strong class="ict-profile-id">' + safe(email || 'Tidak tersedia') + '</strong></div></div>' +
+                  '<div class="ict-profile-field"><span class="ict-profile-icon"><i class="fa-solid fa-users"></i></span><div><small>Peranan</small><strong><span class="ict-role-pill"><i class="fa-solid fa-shield-halved"></i> ' + role + '</span></strong></div></div>'
+                : '<div class="ict-welcome-login-note"><i class="fa-brands fa-google"></i><span>Log masuk dengan akaun DELIMa untuk memaparkan profil guru.</span><button type="button" onclick="return window.__openLoginDirect ? window.__openLoginDirect(event) : false;">Login Google</button></div>';
+            content.innerHTML =
+                '<div class="ict-welcome-brand"><i class="fa-solid fa-star"></i><span>Portal Pengurusan ICT Sekolah</span></div>' +
+                '<div class="ict-welcome-identity">' +
+                    '<div class="ict-welcome-avatar-wrap">' + avatar + (teacher ? '<span class="ict-welcome-online" title="Log masuk"></span>' : '') + '</div>' +
+                    '<div class="ict-welcome-main"><p class="ict-welcome-greeting">' + greeting + '</p><h2 class="ict-welcome-name">' + name + '</h2>' +
+                    (teacher ? '<div class="ict-profile-fields">' + details + '</div>' : '<p class="ict-welcome-subtitle">Pusat Aplikasi & Perkhidmatan Digital Sekolah</p>' + details) +
+                    '</div>' +
+                    (teacher ? '<div class="ict-profile-status"><i class="fa-solid fa-circle-check"></i><span>Profil Guru</span></div>' : '') +
+                '</div>' +
+                '<div class="ict-welcome-footer"><span class="ict-welcome-footer-icon"><i class="fa-solid fa-table-cells-large"></i></span><div><strong>ICT HUB</strong><span>Pusat Aplikasi & Perkhidmatan Digital Sekolah</span></div></div>';
+            banner.classList.toggle('ict-welcome-logged-in', !!teacher);
+            banner.classList.toggle('ict-welcome-logged-out', !teacher);
+        }
+
         function renderFirebaseTeacherHeader() {
+            if (typeof renderWelcomeProfile === 'function') renderWelcomeProfile();
             const container = document.getElementById('teacherAuthContainer');
             if (!container) return;
             const teacher = window.currentTeacher;
