@@ -1841,21 +1841,36 @@
             }
         });
 
+        function applyICTHubTheme(mode) {
+            const isDark = mode === 'dark';
+            document.documentElement.classList.toggle('dark', isDark);
+            if (document.body) document.body.classList.toggle('dark', isDark);
+            try { localStorage.setItem('skamis_theme', isDark ? 'dark' : 'light'); } catch (e) {}
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) {
+                themeBtn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+                themeBtn.title = isDark ? 'Tukar ke mod cerah' : 'Tukar ke mod gelap';
+            }
+            const profileBtn = document.getElementById('ictProfileThemeBtn');
+            if (profileBtn) {
+                profileBtn.innerHTML = '<i class="fa-solid ' + (isDark ? 'fa-sun' : 'fa-moon') + '"></i><span>' + (isDark ? 'Mod Cerah' : 'Mod Gelap') + '</span>';
+                profileBtn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+            }
+            window.dispatchEvent(new CustomEvent('ict-hub-theme-change', { detail: { theme: isDark ? 'dark' : 'light' } }));
+        }
+
         function setupTheme() {
             const themeBtn = document.getElementById('themeToggleBtn');
-            const savedTheme = localStorage.getItem('skamis_theme');
-            
-            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
+            let savedTheme = null;
+            try { savedTheme = localStorage.getItem('skamis_theme'); } catch (e) {}
+            const initialTheme = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+                ? 'dark' : 'light';
+            applyICTHubTheme(initialTheme);
 
             if (themeBtn) {
-                themeBtn.onclick = () => {
-                    document.documentElement.classList.toggle('dark');
-                    const isDark = document.documentElement.classList.contains('dark');
-                    localStorage.setItem('skamis_theme', isDark ? 'dark' : 'light');
+                themeBtn.onclick = (event) => {
+                    if (event) { event.preventDefault(); event.stopPropagation(); }
+                    applyICTHubTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
                 };
             }
         }
@@ -3031,15 +3046,10 @@
                 '</div>' +
                 '';
             const profileThemeBtn = document.getElementById('ictProfileThemeBtn');
-            if (profileThemeBtn) profileThemeBtn.onclick = () => {
-                const currentThemeButton = document.getElementById('themeToggleBtn');
-                if (currentThemeButton) currentThemeButton.click();
-                else {
-                    document.documentElement.classList.toggle('dark');
-                    localStorage.setItem('skamis_theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-                }
+            if (profileThemeBtn) profileThemeBtn.onclick = (event) => {
+                if (event) { event.preventDefault(); event.stopPropagation(); }
                 const isDarkNow = document.documentElement.classList.contains('dark');
-                profileThemeBtn.innerHTML = '<i class="fa-solid ' + (isDarkNow ? 'fa-sun' : 'fa-moon') + '"></i><span>' + (isDarkNow ? 'Mod Cerah' : 'Mod Gelap') + '</span>';
+                applyICTHubTheme(isDarkNow ? 'light' : 'dark');
             };
             banner.classList.toggle('ict-welcome-logged-in', !!teacher);
             banner.classList.toggle('ict-welcome-logged-out', !teacher);
