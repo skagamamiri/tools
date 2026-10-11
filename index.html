@@ -2943,6 +2943,42 @@
             await deleteDoc(doc(db, TOOLS, id));
         };
 
+        // Recalculate responsive layout after Firebase login/profile injection.
+        // On some mobile browsers, the first dynamic DOM update leaves the old
+        // viewport/grid measurements until a full refresh. Reflow on two frames
+        // without reloading the page or touching the authentication session.
+        function refreshHubResponsiveLayout() {
+            const applyLayout = () => {
+                const root = document.documentElement;
+                const grid = document.getElementById('toolsGrid');
+                const main = document.querySelector('main.max-w-6xl');
+                if (root) root.style.setProperty('--hub-viewport-width', window.innerWidth + 'px');
+                if (main) {
+                    main.style.width = '100%';
+                    main.style.maxWidth = window.matchMedia('(max-width: 640px)').matches ? 'none' : '1152px';
+                }
+                if (grid) {
+                    grid.style.minWidth = '0';
+                    grid.style.width = '100%';
+                    grid.style.boxSizing = 'border-box';
+                    grid.style.gridTemplateColumns = window.matchMedia('(max-width: 640px)').matches
+                        ? 'repeat(2, minmax(0, 1fr))'
+                        : (window.matchMedia('(max-width: 1023px)').matches
+                            ? 'repeat(2, minmax(0, 1fr))'
+                            : 'repeat(3, minmax(0, 1fr))');
+                }
+                // Reading layout metrics forces the browser to recalculate dimensions.
+                if (main) void main.getBoundingClientRect().width;
+            };
+            requestAnimationFrame(() => {
+                applyLayout();
+                requestAnimationFrame(applyLayout);
+            });
+        }
+        window.refreshHubResponsiveLayout = refreshHubResponsiveLayout;
+        window.addEventListener('resize', refreshHubResponsiveLayout, { passive: true });
+        window.addEventListener('orientationchange', () => setTimeout(refreshHubResponsiveLayout, 120), { passive: true });
+
         function renderWelcomeProfile() {
             const banner = document.getElementById('welcomeProfileBanner');
             const content = document.getElementById('welcomeProfileContent');
@@ -2990,6 +3026,7 @@
             };
             banner.classList.toggle('ict-welcome-logged-in', !!teacher);
             banner.classList.toggle('ict-welcome-logged-out', !teacher);
+            refreshHubResponsiveLayout();
         }
 
         function renderFirebaseTeacherHeader() {
@@ -3102,6 +3139,7 @@
             renderFirebaseTeacherHeader();
             updateAdminVisibility();
             await loadToolsFromFirebase();
+            refreshHubResponsiveLayout();
             closeTeacherLoginModal();
             showToast(`Selamat datang, ${window.currentTeacher.displayName}!`, 'success');
 
@@ -3499,6 +3537,7 @@
                     renderFirebaseTeacherHeader();
                     updateAdminVisibility();
                     await loadToolsFromFirebase();
+                    refreshHubResponsiveLayout();
                 } catch (e) {
                     console.error('Auth state error:', e);
                     // Jangan signOut hanya kerana Firestore/rangkaian gagal.
