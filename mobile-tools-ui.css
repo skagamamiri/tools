@@ -502,7 +502,6 @@ html body [class*="footer" i]{display:none!important}
 /* Header cleanup: move account/theme actions into the teacher profile banner */
 @media(max-width:2000px){
   #teacherAuthContainer{display:none!important}
-  #headerInstallAppBtn{display:none!important}
   #themeToggleBtn{display:none!important}
 }
 /* User requested no mobile bottom navigation */
