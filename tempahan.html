@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#071a16">
+<script src="ict-header.js"></script>
 <title>Tempahan Bilik Khas • Hub Tool ICT</title>
 <link rel="icon" href="data:,">
 <script type="module">
@@ -361,6 +362,7 @@ onAuthStateChanged(auth, async user => {
   currentUser = user;
   if (!user) {
     currentTeacher = null;
+    window.ICTHeader?.clearUser();
     showLogin();
     return;
   }
@@ -548,7 +550,7 @@ onAuthStateChanged(auth, async user => {
   .toast.success { background:#008a59; }
   .toast.error { background:#d83b53; }
   #loginScreen {
-    min-height:100vh;display:grid;place-items:center;padding:24px;
+    min-height:calc(100vh - 110px);display:grid;place-items:center;padding:24px;
     background:radial-gradient(circle at top,#0b4938,#071a16 60%);
   }
   .login-card {
@@ -604,6 +606,12 @@ onAuthStateChanged(auth, async user => {
   <strong>Tool tidak dapat dimuatkan.</strong>
   <span id="bootErrorText">Sila refresh halaman.</span>
 </div>
+
+<ict-header
+  icon="fa-solid fa-door-open"
+  title="Tempahan Bilik Khas"
+  subtitle="Tempah bilik dan lihat jadual penggunaan pada satu paparan.">
+</ict-header>
 
 <section id="loginScreen">
   <div class="login-card">

@@ -7,6 +7,7 @@
 <title>Daftar Aktiviti • Hub Tool ICT</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="ict-header.js"></script>
 
 <style>
   :root {
@@ -174,29 +175,11 @@
 </head>
 <body>
 
-<header class="top">
-  <div class="top-inner">
-    <div class="brand">
-      <button type="button" class="back-btn" onclick="history.length > 1 ? history.back() : location.href='./'" title="Kembali">
-        <i class="fa-solid fa-arrow-left"></i>
-      </button>
-      <div class="brand-icon"><i class="fa-solid fa-calendar-days"></i></div>
-      <div>
-        <div class="eyebrow">Hub Tool ICT • SK Agama (MIS) Miri</div>
-        <h1>Daftar Aktiviti / Program</h1>
-        <p class="sub">Daftar dan lihat aktiviti sekolah yang akan diadakan.</p>
-      </div>
-    </div>
-    <div class="userbox">
-      <div class="user-text hidden" id="userText">
-        <strong id="userName">-</strong>
-        <small id="userRole">GURU</small>
-      </div>
-      <button id="loginTopBtn" class="top-btn solid hidden"><i class="fa-brands fa-google"></i> Log Masuk</button>
-      <button id="logoutBtn" class="top-btn hidden">Keluar</button>
-    </div>
-  </div>
-</header>
+<ict-header
+  icon="fa-solid fa-calendar-days"
+  title="Daftar Aktiviti / Program"
+  subtitle="Daftar dan lihat aktiviti sekolah yang akan diadakan.">
+</ict-header>
 
 <main>
   <div class="grid">
@@ -666,14 +649,10 @@
   function setUI(loggedIn) {
     $("aktivitiForm").classList.toggle("hidden", !loggedIn);
     $("loginNote").classList.toggle("hidden", loggedIn);
-    $("userText").classList.toggle("hidden", !loggedIn);
-    $("logoutBtn").classList.toggle("hidden", !loggedIn);
-    $("loginTopBtn").classList.toggle("hidden", loggedIn);
+    if (!loggedIn) window.ICTHeader?.clearUser();
   }
 
   $("googleLoginBtn").addEventListener("click", login);
-  $("loginTopBtn").addEventListener("click", login);
-  $("logoutBtn").addEventListener("click", () => signOut(auth));
   $("aktivitiForm").addEventListener("submit", simpan);
   $("akCancelBtn").addEventListener("click", batalEdit);
   document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {

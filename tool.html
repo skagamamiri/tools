@@ -81,20 +81,21 @@
     $("loginBtn").classList.toggle("hidden", !login);
   }
 
-  // Butang kecil "← ICT HUB" yang disuntik ke dalam tool HTML.
-  const BACK_BTN = `
-<a href="./" id="ictHubBackBtn" title="Kembali ke ICT HUB"
-   style="position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:2147483647;
-          display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:999px;
-          background:rgba(7,26,22,.88);color:#fff;font:700 12px/1 system-ui,-apple-system,'Segoe UI',sans-serif;
-          text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.25);backdrop-filter:blur(6px)">← ICT HUB</a>`;
+  const attr = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 
   function jalankanToolHtml(tool) {
     let html = String(tool.htmlCode || "").trim();
     if (!html) return papar("Tool kosong", "Tool ini belum mempunyai kod HTML.");
     if (!/<html[\s>]/i.test(html)) html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>${html}</body></html>`;
-    if (!/<title>/i.test(html)) html = html.replace(/<head([^>]*)>/i, `<head$1><title>${String(tool.title || "Tool").replace(/</g, "&lt;")} • ICT HUB</title>`);
-    html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, BACK_BTN + "</body>") : html + BACK_BTN;
+    if (!/<title>/i.test(html)) html = html.replace(/<head(\s[^>]*)?>/i, `<head$1><title>${String(tool.title || "Tool").replace(/</g, "&lt;")} • ICT HUB</title>`);
+    // Header bersama ICT HUB (sama seperti semua tool lain).
+    const header = `<ict-header icon="${attr(tool.icon || "fa-solid fa-toolbox")}" title="${attr(tool.title || "Tool ICT")}" subtitle="${attr(tool.desc || "")}"></ict-header>`;
+    html = /<head(\s[^>]*)?>/i.test(html)
+      ? html.replace(/<head(\s[^>]*)?>/i, `<head$1><script src="ict-header.js"><\/script>`)
+      : `<script src="ict-header.js"><\/script>` + html;
+    html = /<body[^>]*>/i.test(html)
+      ? html.replace(/<body([^>]*)>/i, `<body$1>${header}`)
+      : header + html;
 
     // Gantikan seluruh halaman dengan kod tool (halaman penuh, tanpa iframe).
     document.open();
