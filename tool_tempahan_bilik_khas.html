@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
@@ -125,14 +125,40 @@ async function loadBookings(dateStr) {
   $("bookingList").innerHTML = "";
 
   try {
-    const q = query(
-      collection(db, "roomBookings"),
-      where("date", "==", dateStr)
-    );
+    // Ambil semua tempahan sekali sahaja.
+    // Paparan status akan menggunakan tarikh yang dipilih,
+    // manakala senarai tempahan menggunakan semua tempahan
+    // yang masih aktif/belum lepas.
+    const q = query(collection(db, "roomBookings"));
     const snap = await getDocs(q);
+
+    const now = new Date();
+    const today = todayMY();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
     allBookingsForDate = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
+      .filter(b => {
+        if (!b.date) return false;
+
+        // Jangan paparkan tempahan yang tarikh sudah lepas.
+        if (b.date < today) return false;
+
+        // Untuk hari ini, jangan paparkan tempahan yang masa tamat sudah lepas.
+        if (b.date === today) {
+          const end = timeToMinutes(b.endTime || "23:59");
+          return end > nowMinutes;
+        }
+
+        // Semua tempahan pada tarikh akan datang dipaparkan.
+        return true;
+      })
+      .sort((a, b) => {
+        const ka = `${a.date} ${a.startTime || "00:00"}`;
+        const kb = `${b.date} ${b.startTime || "00:00"}`;
+        return ka.localeCompare(kb);
+      });
+
     renderRoomStatus();
     renderBookingList();
   } catch (error) {
@@ -152,7 +178,7 @@ async function loadBookings(dateStr) {
 function renderRoomStatus() {
   const container = $("roomStatus");
   container.innerHTML = ROOMS.map(room => {
-    const bookings = allBookingsForDate.filter(b => b.room === room);
+    const bookings = allBookingsForDate.filter(b => b.date === currentDate && b.room === room);
     const booked = bookings.length > 0;
     const first = bookings[0];
     return `
@@ -175,8 +201,8 @@ function renderBookingList() {
     list.innerHTML = `
       <div class="empty">
         <div class="empty-icon">✓</div>
-        <strong>Tiada bilik ditempah</strong>
-        <span>Semua bilik khas masih tersedia pada tarikh ini.</span>
+        <strong>Tiada tempahan aktif</strong>
+        <span>Tiada tempahan akan datang yang masih aktif.</span>
       </div>`;
     return;
   }
@@ -184,11 +210,13 @@ function renderBookingList() {
   list.innerHTML = allBookingsForDate.map(b => `
     <article class="booking-item">
       <div class="booking-time">
-        <strong>${escapeHtml(b.startTime)}–${escapeHtml(b.endTime)}</strong>
+        <strong>${escapeHtml(formatDateMY(b.date))}</strong>
+        <span>${escapeHtml(b.startTime)}–${escapeHtml(b.endTime)}</span>
         <span>${escapeHtml(b.room)}</span>
       </div>
       <div class="booking-detail">
         <strong>${escapeHtml(b.purpose || "Kegunaan bilik")}</strong>
+        <span>${escapeHtml(b.groupName || "-")}</span>
         <span>Tempah oleh: ${escapeHtml(b.displayName || b.email || "-")}</span>
       </div>
       ${currentUser && (b.uid === currentUser.uid || currentTeacher?.role === "admin")
@@ -221,8 +249,9 @@ async function submitBooking(event) {
   const startTime = $("startTime").value;
   const endTime = $("endTime").value;
   const purpose = $("purpose").value.trim();
+  const groupName = $("groupName").value.trim();
 
-  if (!room || !date || !startTime || !endTime || !purpose) {
+  if (!room || !date || !startTime || !endTime || !purpose || !groupName) {
     showToast("Sila lengkapkan semua maklumat.", "error");
     return;
   }
@@ -266,6 +295,7 @@ async function submitBooking(event) {
       startTime,
       endTime,
       purpose,
+      groupName,
       uid: currentUser.uid,
       email: currentUser.email,
       displayName: currentTeacher.displayName || currentUser.displayName || currentUser.email,
@@ -277,6 +307,7 @@ async function submitBooking(event) {
     $("startTime").value = "08:00";
     $("endTime").value = "09:00";
     $("purpose").value = "";
+    $("groupName").value = "";
 
     showToast("Tempahan bilik berjaya disimpan.", "success");
     await loadBookings(date);
@@ -321,11 +352,6 @@ $("googleLoginBtn").addEventListener("click", async () => {
   }
 });
 
-$("logoutBtn").addEventListener("click", async () => {
-  const { signOut } = await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js");
-  await signOut(auth);
-});
-
 $("bookingForm").addEventListener("submit", submitBooking);
 $("bookingDate").addEventListener("change", e => loadBookings(e.target.value));
 $("statusDate").addEventListener("change", e => loadBookings(e.target.value));
@@ -340,12 +366,26 @@ onAuthStateChanged(auth, async user => {
 
   try {
     currentTeacher = await getTeacherProfile(user);
-    $("userName").textContent = currentTeacher.displayName || user.displayName || user.email;
-    $("userRole").textContent = currentTeacher.role === "admin"
-      ? "ADMIN"
-      : currentTeacher.role === "pentadbir"
-        ? "PENTADBIR"
-        : "GURU";
+
+    // Header dalaman tool telah dibuang kerana portal index.html
+    // sudah mempunyai header sendiri. Jadi jangan akses elemen
+    // userName/userRole yang memang tidak lagi wujud.
+    const userNameEl = $("userName");
+    const userRoleEl = $("userRole");
+
+    if (userNameEl) {
+      userNameEl.textContent =
+        currentTeacher.displayName || user.displayName || user.email;
+    }
+
+    if (userRoleEl) {
+      userRoleEl.textContent =
+        currentTeacher.role === "admin"
+          ? "ADMIN"
+          : currentTeacher.role === "pentadbir"
+            ? "PENTADBIR"
+            : "GURU";
+    }
 
     showApp();
     const d = todayMY();
@@ -430,7 +470,7 @@ onAuthStateChanged(auth, async user => {
   }
   .card-head { padding:20px 22px 10px; }
   .card-head h2 { margin:0;font-size:18px; }
-  .status-head {
+  .booking-group { display:block; color:#6b7a90; font-size:11px; margin-top:3px; }\n  .status-head {
     display:flex; align-items:center; justify-content:space-between; gap:18px;
   }
   .status-date-picker { flex:0 0 190px; }
@@ -574,28 +614,7 @@ onAuthStateChanged(auth, async user => {
 </section>
 
 <div id="app" class="shell hidden">
-  <header class="top">
-    <div class="top-inner">
-      <div class="brand">
-        <button type="button" class="back-btn" onclick="history.back()" title="Kembali">←</button>
-        <div class="brand-icon">▦</div>
-        <div>
-          <div class="eyebrow">Hub Tool ICT • SK Agama (MIS) Miri</div>
-          <h1>Tempahan Bilik Khas</h1>
-          <p class="sub">Tempah bilik dan lihat jadual penggunaan pada satu paparan.</p>
-        </div>
-      </div>
-      <div class="userbox">
-        <div class="user-text">
-          <strong id="userName">-</strong>
-          <small id="userRole">GURU</small>
-        </div>
-        <button id="logoutBtn" class="logout">Keluar</button>
-      </div>
-    </div>
-  </header>
-
-  <main>
+<main>
     <div class="grid">
       <section class="card">
         <div class="card-head">
@@ -634,6 +653,12 @@ onAuthStateChanged(auth, async user => {
           <label>
             Tujuan
             <input id="purpose" type="text" maxlength="120" placeholder="Contoh: Mesyuarat panitia / PdP / program" required>
+          </label>
+
+          <label>
+            Kelas / Panitia / Unit / Agensi / Sekolah
+            <input id="groupName" type="text" maxlength="120"
+              placeholder="Contoh: Tahun 6 / Panitia Matematik / Unit ICT" required>
           </label>
 
           <button id="submitBtn" class="primary" type="submit">Tempah Bilik</button>
