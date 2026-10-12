@@ -335,7 +335,8 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
 </div>
 
 <script>
-const CONFIG={WEB_APP_URL:"https://script.google.com/macros/s/AKfycbyfUpxmk6fHSHbI1yK9aABrapYbbLZn752ta-LilTUVeg6BlL4iiaLuayo4bfJkAEsOTA/exec"};
+const CONFIG={WEB_APP_URL:"https://blue-credit-158e.sekolah-8965.workers.dev/"};
+/* V2 — ACCOUNT-INDEPENDENT BACKEND: browser -> Cloudflare Worker -> Apps Script. */
 
 const STRUCTURE={
 "Kurikulum":["Pengurusan Kurikulum","Pentaksiran","Panitia","Pusat Sumber","Pembestarian","Tahun 1","Pemantauan/Pencerapan","Program Akademik","Pelaksanaan 2026"],
@@ -492,21 +493,13 @@ $("masa").addEventListener("input",updateTarikhMasa);
 
 
 /* =====================================================
- * V1.34 — AI JSONP STABLE FIX
- *
- * AI kembali menggunakan JSONP secara terus.
- * Tiada iframe fallback untuk AI kerana Apps Script
- * HtmlService boleh mempunyai nested sandbox iframe.
- * Timeout panjang supaya respons OpenAI/Gemini sempat siap.
+ * V1.23 — AI ASSISTANT
+ * AI request uses JSONP to the same Apps Script Web App.
+ * The Gemini API key NEVER appears in this HTML file.
  * ===================================================== */
 let aiRequestBusy = false;
 let aiScriptNode = null;
 let aiTimeout = null;
-let aiCallbackName = null;
-let aiAttempt = 0;
-const AI_MAX_ATTEMPTS = 2;
-const AI_TIMEOUT_MS = 180000;
-let aiRequestId="";
 
 function aiContext(){
   return {
@@ -525,30 +518,51 @@ function aiContext(){
 
 function aiSetBusy(busy, label){
   aiRequestBusy = busy;
-  document.querySelectorAll(".ai-btn").forEach(btn=>{ btn.disabled = busy; });
+  document.querySelectorAll(".ai-btn").forEach(btn=>{
+    btn.disabled = busy;
+  });
   if(label) setStatus(label, "info");
 }
 
 function aiCleanup(){
   if(aiTimeout){ clearTimeout(aiTimeout); aiTimeout=null; }
-  if(aiScriptNode){ try{ aiScriptNode.remove(); }catch(_){} aiScriptNode=null; }
-  if(aiCallbackName){ try{ delete window[aiCallbackName]; }catch(_){} aiCallbackName=null; }
-  aiRequestId="";
+  if(aiScriptNode){
+    try{ aiScriptNode.remove(); }catch(_){ }
+    aiScriptNode=null;
+  }
   aiRequestBusy=false;
   document.querySelectorAll(".ai-btn").forEach(btn=>btn.disabled=false);
 }
 
+function aiBuildUrl(field, callback){
+  const ctx=aiContext();
+  const params={mode:"ai",callback,field,_:Date.now()};
+  Object.entries(ctx).forEach(([k,v])=>params[k]=v);
+  const qs=Object.entries(params).map(([k,v])=>encodeURIComponent(k)+"="+encodeURIComponent(String(v??""))).join("&");
+  return CONFIG.WEB_APP_URL+(CONFIG.WEB_APP_URL.includes("?")?"&":"?")+qs;
+}
+
+let aiAttempt=0;
+const AI_MAX_ATTEMPTS=3;
+const AI_TIMEOUT_MS=90000;
+
 function aiStart(field){
   if(aiRequestBusy) return;
   if(!CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL.includes("PASTE_")){
-    setStatus("Sila masukkan URL Web App Apps Script pada CONFIG.WEB_APP_URL dahulu.","err"); return;
+    setStatus("Sila masukkan URL Web App Apps Script pada CONFIG.WEB_APP_URL dahulu.","err");
+    return;
   }
+
   const ctx=aiContext();
-  if(!ctx.tajuk){ setStatus("Sila isi Tajuk Program dahulu sebelum menggunakan AI.","err"); $("tajuk").focus(); return; }
+  if(!ctx.tajuk){
+    setStatus("Sila isi Tajuk Program dahulu sebelum menggunakan AI.","err");
+    $("tajuk").focus();
+    return;
+  }
+
   aiAttempt=0;
-  aiSetBusy(true,"✨ AI sedang menyediakan ayat untuk "+fieldLabel(field)+"... Cuba sambungan 1/2.\n⏳ Permintaan boleh mengambil sehingga 3 minit.");
-  try{ aiLoadJsonp(field); }
-  catch(err){ aiRetryOrFail(field,"Ralat memulakan sambungan AI: "+(err&&err.message?err.message:String(err))); }
+  aiSetBusy(true, "✨ AI sedang menyediakan ayat untuk "+fieldLabel(field)+"... Cuba sambungan 1/3.");
+  aiLoadJsonp(field);
 }
 
 function aiLoadJsonp(field){
@@ -556,48 +570,56 @@ function aiLoadJsonp(field){
   if(aiScriptNode){try{aiScriptNode.remove()}catch(_){}aiScriptNode=null;}
   if(aiTimeout){clearTimeout(aiTimeout);aiTimeout=null;}
 
-  aiRequestId="ai_"+Date.now()+"_"+Math.random().toString(36).slice(2);
-  const cbName="oprAiCallback";
-  aiCallbackName=cbName;
-
-  const context=aiContext();
-  const pairs=[
-    ["mode","ai"],["callback",cbName],["requestId",aiRequestId],["field",field]
-  ];
-  Object.entries(context).forEach(([k,v])=>pairs.push([k,String(v??"")]));
-  pairs.push(["_",String(Date.now())+"_"+Math.random().toString(36).slice(2)]);
-  const query=pairs.map(([k,v])=>encodeURIComponent(k)+"="+encodeURIComponent(v)).join("&");
-
   const script=document.createElement("script");
   script.async=false;
   script.type="text/javascript";
-  script.src=CONFIG.WEB_APP_URL+(CONFIG.WEB_APP_URL.includes("?")?"&":"?")+query;
+  script.referrerPolicy="no-referrer-when-downgrade";
+  script.src=aiBuildUrl(field,"oprAiCallback");
+
+  let callbackReceived=false;
+  script.onload=()=>{
+    // Jika JSONP callback sudah dipanggil, oprAiCallback akan cleanup sendiri.
+    // Jika tidak, tunggu seketika kerana sesetengah Android memanggil onload
+    // sebelum script response selesai diproses.
+    setTimeout(()=>{
+      if(callbackReceived || !aiRequestBusy || aiScriptNode!==script) return;
+      aiRetryOrFail(field,"Sambungan diterima tetapi respons AI tidak diproses.");
+    },1500);
+  };
   script.onerror=()=>{
     if(!aiRequestBusy || aiScriptNode!==script) return;
-    aiRetryOrFail(field,"Browser tidak berjaya memuatkan respons Web App AI.");
+    aiRetryOrFail(field,"Browser telefon tidak berjaya memuatkan Web App Apps Script.");
   };
-  aiScriptNode=script;
+
+  // Tandakan callback untuk script ini melalui shared marker.
+  window.__oprAiActiveScript=script;
   document.body.appendChild(script);
+  aiScriptNode=script;
 
   aiTimeout=setTimeout(()=>{
     if(!aiRequestBusy || aiScriptNode!==script) return;
-    aiRetryOrFail(field,"Web App tidak memberi respons AI dalam 3 minit.");
+    aiRetryOrFail(field,"Web App mengambil masa terlalu lama.");
   },AI_TIMEOUT_MS);
 }
 
 function aiRetryOrFail(field,reason){
-  if(aiTimeout){clearTimeout(aiTimeout);aiTimeout=null;}
   if(aiScriptNode){try{aiScriptNode.remove()}catch(_){}aiScriptNode=null;}
-  if(aiCallbackName){try{delete window[aiCallbackName]}catch(_){}aiCallbackName=null;}
+  if(aiTimeout){clearTimeout(aiTimeout);aiTimeout=null;}
 
   if(aiAttempt<AI_MAX_ATTEMPTS){
     const next=aiAttempt+1;
-    setStatus("⚠️ "+escapeHtml(reason)+"<br>Cuba sambungan "+next+"/"+AI_MAX_ATTEMPTS+"...","warn");
-    setTimeout(()=>{if(aiRequestBusy) aiLoadJsonp(field);},1200);
+    setStatus("⚠️ "+escapeHtml(reason)+" Cuba semula sambungan "+next+"/"+AI_MAX_ATTEMPTS+"...","warn");
+    setTimeout(()=>{ if(aiRequestBusy) aiLoadJsonp(field); },900);
     return;
   }
+
   aiCleanup();
-  setStatus("❌ AI tidak memberi respons selepas "+AI_MAX_ATTEMPTS+" cubaan.<br><small>Jika mesej ini muncul, buka ujian AI sekali lagi selepas memastikan Web App Apps Script sudah di-deploy sebagai versi terbaru.</small>","err");
+  setStatus(
+    "❌ AI tidak dapat dihubungi selepas "+AI_MAX_ATTEMPTS+" cubaan. <br>"+
+    "Jika PC berjaya tetapi telefon gagal, semak sambungan internet telefon dan akses Web App Apps Script. " +
+    "Cuba buka URL Web App /exec terus dalam Chrome telefon.",
+    "err"
+  );
 }
 
 function fieldLabel(field){
@@ -606,35 +628,55 @@ function fieldLabel(field){
 
 function oprAiCallback(data){
   if(!data || data.type!=="oprAi") return;
-  if(aiRequestId && data.requestId && data.requestId!==aiRequestId) return;
   if(aiTimeout){clearTimeout(aiTimeout);aiTimeout=null;}
-  if(aiScriptNode){try{aiScriptNode.remove()}catch(_){}aiScriptNode=null;}
-  if(aiCallbackName){try{delete window[aiCallbackName]}catch(_){}aiCallbackName=null;}
-  aiRequestId="";
-  aiRequestBusy=false;
-  document.querySelectorAll(".ai-btn").forEach(btn=>btn.disabled=false);
+  window.__oprAiActiveScript=null;
+  aiCleanup();
 
-  if(!data.success){ setStatus("🟡 AI belum dapat menjana ayat: "+escapeHtml(data.error||"Ralat tidak diketahui"),"err"); return; }
-  if(data.field && $(data.field)){ $(data.field).value=String(data.text||"").trim(); $(data.field).dispatchEvent(new Event("input",{bubbles:true})); }
+  if(!data.success){
+    setStatus("🟡 AI belum dapat menjana ayat: "+escapeHtml(data.error||"Ralat tidak diketahui"),"err");
+    return;
+  }
+
+  if(data.field && $(data.field)){
+    $(data.field).value=String(data.text||"").trim();
+    $(data.field).dispatchEvent(new Event("input",{bubbles:true}));
+  }
+
   if(data.generated){
-    ["objektif","aktiviti","impak"].forEach(field=>{ if(data.generated[field] && $(field)){ $(field).value=String(data.generated[field]).trim(); $(field).dispatchEvent(new Event("input",{bubbles:true})); }});
+    ["objektif","aktiviti","impak"].forEach(field=>{
+      if(data.generated[field] && $(field)){
+        $(field).value=String(data.generated[field]).trim();
+        $(field).dispatchEvent(new Event("input",{bubbles:true}));
+      }
+    });
     setStatus("✓ AI telah menjana Objektif, Aktiviti dan Impak. Sila semak sebelum JANA OPR.","ok");
   }else{
     setStatus("✓ AI telah menjana "+fieldLabel(data.field)+". Sila semak dan ubah jika perlu.","ok");
   }
 }
 
-document.querySelectorAll("[data-ai-field]").forEach(btn=>btn.addEventListener("click",()=>aiStart(btn.dataset.aiField)));
+document.querySelectorAll("[data-ai-field]").forEach(btn=>{
+  btn.addEventListener("click",()=>aiStart(btn.dataset.aiField));
+});
+
 $("aiAllBtn").addEventListener("click",()=>{
   if(aiRequestBusy) return;
-  if(!CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL.includes("PASTE_")){setStatus("Sila masukkan URL Web App Apps Script pada CONFIG.WEB_APP_URL dahulu.","err");return;}
+  if(!CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL.includes("PASTE_")){
+    setStatus("Sila masukkan URL Web App Apps Script pada CONFIG.WEB_APP_URL dahulu.","err");
+    return;
+  }
   const ctx=aiContext();
-  if(!ctx.tajuk){setStatus("Sila isi Tajuk Program dahulu sebelum menggunakan AI.","err");$("tajuk").focus();return;}
+  if(!ctx.tajuk){
+    setStatus("Sila isi Tajuk Program dahulu sebelum menggunakan AI.","err");
+    $("tajuk").focus();
+    return;
+  }
+
   aiAttempt=0;
-  aiSetBusy(true,"✨ AI sedang menjana Objektif, Aktiviti dan Impak... Cuba sambungan 1/2.\n⏳ Permintaan boleh mengambil sehingga 3 minit.");
-  try{ aiLoadJsonp("all"); }
-  catch(err){ aiRetryOrFail("all", "Ralat memulakan sambungan AI: "+(err&&err.message?err.message:String(err))); }
+  aiSetBusy(true,"✨ AI sedang menjana Objektif, Aktiviti dan Impak... Cuba sambungan 1/3.");
+  aiLoadJsonp("all");
 });
+
 
 /* =====================================================
  * V1.10 — FREEHAND SIGNATURE + CAMERA
@@ -886,54 +928,70 @@ window.addEventListener("message",onMessage);form.submit();pollSheetStatus(curre
 
 
 /* =====================================================
- * V1.31 — HYBRID TRANSPORT + REKOD OPR DARIPADA GOOGLE SHEET
+ * V1.29 — MOBILE AI CONNECTION FIX + REKOD OPR DARIPADA GOOGLE SHEET
  * ===================================================== */
-let historyOffset=0;
-const HISTORY_PAGE_SIZE=50;
-let historyScriptNode=null;
-let historyLoading=false;
-let historyRequestId="";
+let historyOffset = 0;
+const HISTORY_PAGE_SIZE = 50;
+let historyScriptNode = null;
+let historyLoading = false;
 
-function openHistory(){ $("historyModal").classList.add("show"); $("historyModal").setAttribute("aria-hidden","false"); populateHistoryUnits(); loadHistory(true); }
-function closeHistory(){ $("historyModal").classList.remove("show"); $("historyModal").setAttribute("aria-hidden","true"); if(historyScriptNode){try{historyScriptNode.remove()}catch(_){}historyScriptNode=null;} historyLoading=false; historyRequestId=""; }
-function populateHistoryUnits(){ const select=$("historyUnit"); if(!select||select.options.length>1)return; Object.keys(STRUCTURE).forEach(unit=>select.add(new Option(unit,unit))); }
-function historyQueryParams(requestId){
-  const pairs={
-    mode:"history", callback:"oprHistoryCallback", requestId,
-    offset:String(historyOffset), limit:String(HISTORY_PAGE_SIZE),
-    q:$('historySearch').value.trim(), year:$('historyYear').value.trim(),
-    unit:$('historyUnit').value, status:$('historyStatus').value
-  };
-  return Object.entries(pairs).map(([k,v])=>encodeURIComponent(k)+"="+encodeURIComponent(String(v??""))).join("&");
+function openHistory(){
+  $("historyModal").classList.add("show");
+  $("historyModal").setAttribute("aria-hidden","false");
+  populateHistoryUnits();
+  loadHistory(true);
+}
+
+function closeHistory(){
+  $("historyModal").classList.remove("show");
+  $("historyModal").setAttribute("aria-hidden","true");
+  if(historyScriptNode){try{historyScriptNode.remove()}catch(_){}historyScriptNode=null;}
+  historyLoading=false;
+}
+
+function populateHistoryUnits(){
+  const select=$("historyUnit");
+  if(!select || select.options.length>1) return;
+  Object.keys(STRUCTURE).forEach(unit=>select.add(new Option(unit,unit)));
+}
+
+function historyQuery(){
+  const q=new URLSearchParams();
+  q.set("mode","history");
+  q.set("callback","oprHistoryCallback");
+  q.set("offset",String(historyOffset));
+  q.set("limit",String(HISTORY_PAGE_SIZE));
+  q.set("q",$("historySearch").value.trim());
+  q.set("year",$("historyYear").value.trim());
+  q.set("unit",$("historyUnit").value);
+  q.set("status",$("historyStatus").value);
+  q.set("_",String(Date.now()));
+  return q;
 }
 
 function loadHistory(reset){
-  if(historyLoading)return;
-  if(!CONFIG.WEB_APP_URL||CONFIG.WEB_APP_URL.includes("PASTE_")){ $('historySummary').textContent="URL Web App Apps Script belum ditetapkan."; return; }
-  if(reset){ historyOffset=0; $('historyList').innerHTML='<div class="history-loading">⏳ Sedang membaca data daripada Google Sheet...</div>'; $('historyMore').style.display='none'; }
+  if(historyLoading) return;
+  if(!CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL.includes("PASTE_")){
+    $("historySummary").textContent="URL Web App Apps Script belum ditetapkan.";
+    return;
+  }
+
+  if(reset){
+    historyOffset=0;
+    $("historyList").innerHTML='<div class="history-loading">⏳ Sedang membaca data daripada Google Sheet...</div>';
+    $("historyMore").style.display="none";
+  }
+
   historyLoading=true;
   if(historyScriptNode){try{historyScriptNode.remove()}catch(_){}historyScriptNode=null;}
-  historyRequestId="hist_"+Date.now()+"_"+Math.random().toString(36).slice(2);
 
   const script=document.createElement("script");
-  script.async=false;
-  script.type="text/javascript";
-  script.src=CONFIG.WEB_APP_URL+(CONFIG.WEB_APP_URL.includes("?")?"&":"?")+historyQueryParams(historyRequestId)+"&_="+Date.now();
-  script.onerror=()=>{
-    if(!historyLoading||historyScriptNode!==script)return;
-    historyLoading=false; historyScriptNode=null; try{script.remove()}catch(_){}
-    $('historySummary').textContent="Browser tidak berjaya memuatkan Rekod OPR.";
-    if(historyOffset===0)$('historyList').innerHTML='<div class="history-empty">Tidak dapat membaca rekod OPR. Cuba Muat Semula.</div>';
-  };
+  script.async=true;
+  script.src=CONFIG.WEB_APP_URL+(CONFIG.WEB_APP_URL.includes("?")?"&":"?")+historyQuery().toString();
+  script.onload=()=>{try{script.remove()}catch(_){}if(historyScriptNode===script)historyScriptNode=null;historyLoading=false;};
+  script.onerror=()=>{try{script.remove()}catch(_){}if(historyScriptNode===script)historyScriptNode=null;historyLoading=false;$("historySummary").textContent="Gagal menghubungi Google Sheet. Sila cuba semula.";if(historyOffset===0)$("historyList").innerHTML='<div class="history-empty">Tidak dapat membaca rekod OPR.</div>';};
   historyScriptNode=script;
   document.body.appendChild(script);
-  setTimeout(()=>{
-    if(historyLoading&&historyScriptNode===script){
-      historyLoading=false; historyScriptNode=null; try{script.remove()}catch(_){}
-      $('historySummary').textContent="Google Sheet tidak memberi respons dalam masa 30 saat.";
-      if(historyOffset===0)$('historyList').innerHTML='<div class="history-empty">Tidak dapat membaca rekod OPR. Cuba Muat Semula.</div>';
-    }
-  },30000);
 }
 
 function historyText(v){return escapeHtml(v==null?"":String(v));}
@@ -984,28 +1042,20 @@ ${historyText(r.impak)}</pre></details>`:"";
 }
 
 function oprHistoryCallback(data){
-  if(!data || data.type!=="oprHistory") return;
-  if(historyRequestId && data.requestId && data.requestId!==historyRequestId) return;
   historyLoading=false;
-  if(historyScriptNode){try{historyScriptNode.remove()}catch(_){}historyScriptNode=null;}
-  historyRequestId="";
+  if(!data || data.type!=="oprHistory") return;
   if(!data.success){
     $("historySummary").textContent="Ralat: "+(data.error||"Tidak dapat membaca Google Sheet.");
     if(historyOffset===0)$("historyList").innerHTML='<div class="history-empty">Tidak dapat membaca rekod OPR.</div>';
     return;
   }
-  const append=historyOffset>0; renderHistoryRecords(data.records||[],append);
+
+  const append=historyOffset>0;
+  renderHistoryRecords(data.records||[],append);
   historyOffset=(Number(data.offset)||0)+(data.records||[]).length;
   $("historySummary").textContent=`Menunjukkan ${Math.min(historyOffset,Number(data.total)||0)} daripada ${Number(data.total)||0} rekod OPR.`;
   $("historyMore").style.display=data.hasMore?"flex":"none";
 }
-
-window.addEventListener("message",function(ev){
-  let data=ev&&ev.data; if(typeof data==="string"){try{data=JSON.parse(data)}catch(_){return;}}
-  if(!data||typeof data!=="object")return;
-  if(data.type==="oprAi") oprAiCallback(data);
-  else if(data.type==="oprHistory") oprHistoryCallback(data);
-});
 
 $("historyBtn").addEventListener("click",openHistory);
 $("historyClose").addEventListener("click",closeHistory);
