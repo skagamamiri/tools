@@ -60,43 +60,6 @@ body{padding-bottom:0!important}
     })());
     return;
   }
-
-  if(u.pathname.endsWith('/jadual-v4-data.js')){
-    event.respondWith(fetch(req));
-    return;
-  }
-
-  if(u.pathname.endsWith('/jadual.html')){
-    event.respondWith((async()=>{
-      const r=await fetch(req);
-      const ct=r.headers.get('content-type')||'';
-      if(!ct.includes('text/html'))return r;
-      let h=await r.text();
-      try{
-        const vr=await fetch(new URL('./jadual-v4-data.js?v=20261002-v4',u).toString(),{cache:'no-store'});
-        const vjs=await vr.text();
-        const m=vjs.match(/JADUAL_V4_DATA_B64\s*=\s*["']([^"']+)["']/);
-        if(m){
-          const normalizedB64=String(m[1]).replace(/\s/g,'').replace(/-/g,'+').replace(/_/g,'/').replace(/[^A-Za-z0-9+/=]/g,'');
-          const paddedB64=normalizedB64+'='.repeat((4-normalizedB64.length%4)%4);
-          const bin=atob(paddedB64);
-          const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));
-          const ds=new DecompressionStream('gzip');
-          const stream=new Blob([bytes]).stream().pipeThrough(ds);
-          const jsonText=await new Response(stream).text();
-          const data=JSON.parse(jsonText);
-          const inject=`\n/* JADUAL V4 injected before init() */\nif(!VERSION_DATA.some(v=>v.id==='v4')){VERSION_DATA.push({id:'v4',label:'Versi 4.0 — 27 September 2026',shortLabel:'V4 — 27/09/2026',data:${JSON.stringify(data)}});}\n`;
-          h=h.replace(/\ninit\(\);/,inject+'\ninit();');
-        }
-      }catch(e){
-        h=h.replace(/\ninit\(\);/,'\nconsole.warn("Jadual V4 injection failed",e);\ninit();');
-      }
-      const hd=new Headers(r.headers);hd.delete('content-length');
-      hd.set('Cache-Control','no-store, no-cache, must-revalidate, max-age=0');
-      return new Response(h,{status:r.status,statusText:r.statusText,headers:hd});
-    })());
-    return;
-  }
 });
 
 importScripts('https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js','https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js');
