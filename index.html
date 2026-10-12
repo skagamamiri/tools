@@ -3432,11 +3432,56 @@
                 `<span>${escapeHtml(text)}</span>`;
         }
 
+        function resetGoogleButton() {
+            const modalBtn = document.getElementById('googleLoginModalBtn');
+            if (!modalBtn) return;
+            modalBtn.disabled = false;
+            modalBtn.innerHTML =
+                '<i class="fa-brands fa-google text-red-500 text-base"></i>' +
+                '<span>Teruskan dengan Google</span>';
+        }
+
+        function showLoginHint(html) {
+            const error = document.getElementById('loginErrorAlert');
+            if (!error) return;
+            error.classList.remove('hidden');
+            error.innerHTML = html;
+        }
+
+        // MOBILE FIX: Di telefon, popup Google dibuka sebagai tab baharu. Kadang-kadang
+        // tab ICT HUB tidak menerima jawapan popup, jadi signInWithPopup() tidak pernah
+        // selesai dan butang tersangkut pada "Menyambung ke Google...".
+        // Penyelesaian: (1) onAuthStateChanged menutup modal bila sesi sah,
+        // (2) bila pengguna kembali ke tab ini dan login masih belum selesai,
+        // butang dipulihkan supaya boleh cuba semula.
+        let loginAttemptId = 0;
+        let loginPending = false;
+
+        function checkPendingLoginAfterReturn() {
+            if (!loginPending || document.visibilityState !== 'visible') return;
+            const attempt = loginAttemptId;
+            setTimeout(() => {
+                if (!loginPending || attempt !== loginAttemptId) return;
+                if (auth.currentUser) return; // onAuthStateChanged akan selesaikan login.
+                loginPending = false;
+                resetGoogleButton();
+                showLoginHint(
+                    '<i class="fa-solid fa-circle-info mr-1.5"></i><strong>Log masuk belum selesai.</strong>' +
+                    '<div class="mt-1 font-normal">Tekan "Teruskan dengan Google" sekali lagi dan pilih akaun DELIMa anda. ' +
+                    'Jika masih gagal, buka ICT HUB dalam pelayar Chrome (bukan dalam WhatsApp atau aplikasi lain).</div>'
+                );
+            }, 4000);
+        }
+        document.addEventListener('visibilitychange', checkPendingLoginAfterReturn);
+        window.addEventListener('focus', checkPendingLoginAfterReturn);
+
         window.loginWithGoogle = async function() {
             const error = document.getElementById('loginErrorAlert');
             if (error) error.classList.add('hidden');
 
             setGoogleButtonLoading('Menyambung ke Google...');
+            const attempt = ++loginAttemptId;
+            loginPending = true;
 
             try {
                 window.__hubExplicitLogout = false;
@@ -3446,14 +3491,33 @@
                 // Firebase sendiri menyarankan popup sebagai pilihan apabila
                 // redirect merentasi domain menimbulkan isu third-party storage.
                 const result = await signInWithPopup(auth, provider);
+                if (attempt !== loginAttemptId) return; // cubaan lama
 
                 if (!result || !result.user) {
                     throw new Error('Google tidak memulangkan akaun pengguna.');
                 }
 
                 await finishGoogleLogin(result.user);
+                loginPending = false;
 
             } catch (err) {
+                // Abaikan ralat daripada cubaan lama yang telah diganti.
+                if (attempt !== loginAttemptId) return;
+                loginPending = false;
+                // Sesi mungkin sudah sah walaupun popup melaporkan ralat.
+                if (window.currentTeacher) {
+                    closeTeacherLoginModal();
+                    resetGoogleButton();
+                    return;
+                }
+                if (err && err.code === 'auth/popup-blocked') {
+                    resetGoogleButton();
+                    showLoginHint(
+                        '<i class="fa-solid fa-circle-exclamation mr-1.5"></i><strong>Tetingkap Google disekat.</strong>' +
+                        '<div class="mt-1 font-normal">Benarkan pop-up untuk laman ini dalam tetapan pelayar, kemudian cuba lagi.</div>'
+                    );
+                    return;
+                }
                 showGoogleLoginError(err);
             }
         };
@@ -3748,6 +3812,9 @@
                     window.__hubExplicitLogout = false;
                     renderFirebaseTeacherHeader();
                     updateAdminVisibility();
+                    // MOBILE FIX: tutup modal log masuk jika sesi sah walaupun popup tidak memulangkan jawapan.
+                    closeTeacherLoginModal();
+                    resetGoogleButton();
                     await loadToolsFromFirebase();
                     refreshHubResponsiveLayout();
                 } catch (e) {
