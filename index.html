@@ -828,12 +828,17 @@
         <section id="aktivitiSection" class="mt-8">
             <div class="flex items-center justify-between mb-3 gap-3">
                 <h3 class="font-heading font-bold text-sm md:text-base text-slate-700 dark:text-slate-300 flex items-center">
-                    <i class="fa-solid fa-calendar-days mr-2 text-brand-600"></i>Kalendar Aktiviti
+                    <i class="fa-solid fa-calendar-days mr-2 text-brand-600"></i>Kalendar Aktiviti &amp; Tempahan
                     <span id="aktivitiCount" class="ml-2 px-2 py-0.5 rounded-full text-[11px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold" title="Aktiviti akan datang">0</span>
                 </h3>
-                <a href="aktiviti.html" class="px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md transition whitespace-nowrap">
-                    <i class="fa-solid fa-plus mr-1.5"></i>Daftar Aktiviti
-                </a>
+                <div class="flex gap-2">
+                    <a href="tempahan.html" class="hidden sm:inline-block px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-sm hover:border-blue-400 transition whitespace-nowrap">
+                        <i class="fa-solid fa-door-open mr-1.5 text-blue-500"></i>Tempah Bilik
+                    </a>
+                    <a href="aktiviti.html" class="px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md transition whitespace-nowrap">
+                        <i class="fa-solid fa-plus mr-1.5"></i>Daftar Aktiviti
+                    </a>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -855,7 +860,11 @@
                         <div>Ahd</div><div>Isn</div><div>Sel</div><div>Rab</div><div>Kha</div><div class="text-brand-600">Jum</div><div>Sab</div>
                     </div>
                     <div id="kalGrid" class="grid grid-cols-7 gap-1"></div>
-                    <div id="kalStatus" class="text-center text-[11px] text-slate-400 mt-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Memuatkan aktiviti...</div>
+                    <div class="flex items-center justify-center gap-4 mt-3 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500"></span>Aktiviti</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span>Tempahan Bilik</span>
+                    </div>
+                    <div id="kalStatus" class="text-center text-[11px] text-slate-400 mt-1"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Memuatkan aktiviti...</div>
                 </div>
 
                 <!-- Aktiviti hari dipilih -->
@@ -866,7 +875,8 @@
             </div>
         </section>
         <script type="module">
-            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+            import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+            import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
             import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
             const app = initializeApp({
@@ -890,6 +900,9 @@
 
             let semua = [];
             let byDay = {};            // "YYYY-MM-DD" -> [aktiviti]
+            let tempahan = [];         // roomBookings (hanya bila guru log masuk)
+            let tempahanByDay = {};    // "YYYY-MM-DD" -> [tempahan]
+            let tempahanStatus = "login"; // "login" | "loading" | "ok" | "error"
             let viewYear = new Date().getFullYear();
             let viewMonth = new Date().getMonth();
             let selected = today;
@@ -908,6 +921,16 @@
                     list.sort((a, b) => String(a.masaMula || "99").localeCompare(String(b.masaMula || "99"))));
             }
 
+            function indexTempahan() {
+                tempahanByDay = {};
+                tempahan
+                    // Tempahan yang dibuat melalui Daftar Aktiviti sudah dipaparkan sebagai aktiviti.
+                    .filter(b => b.date && !b.aktivitiId)
+                    .forEach(b => (tempahanByDay[b.date] ||= []).push(b));
+                Object.values(tempahanByDay).forEach(list =>
+                    list.sort((a, b) => String(a.startTime || "").localeCompare(String(b.startTime || ""))));
+            }
+
             function renderKalendar() {
                 $("kalTitle").textContent = `${BULAN[viewMonth]} ${viewYear}`;
                 const first = new Date(viewYear, viewMonth, 1);
@@ -916,7 +939,9 @@
                 for (let i = 0; i < first.getDay(); i++) html += `<div></div>`;
                 for (let day = 1; day <= daysInMonth; day++) {
                     const k = `${viewYear}-${pad(viewMonth+1)}-${pad(day)}`;
-                    const n = (byDay[k] || []).length;
+                    const nA = (byDay[k] || []).length;
+                    const nT = (tempahanByDay[k] || []).length;
+                    const n = nA + nT;
                     const isToday = k === today;
                     const isSel = k === selected;
                     const isPast = k < today;
@@ -928,11 +953,15 @@
                             : n
                                 ? "bg-emerald-50 dark:bg-emerald-500/10 text-slate-800 dark:text-slate-100 hover:bg-emerald-100 dark:hover:bg-emerald-500/20"
                                 : `${isPast ? "text-slate-300 dark:text-slate-600" : "text-slate-600 dark:text-slate-300"} hover:bg-slate-100 dark:hover:bg-slate-700/60`;
+                    const dotA = Array.from({length: Math.min(nA, 2)}).map(() =>
+                        `<span class="w-1.5 h-1.5 rounded-full ${isSel ? "bg-white" : "bg-rose-500"}"></span>`).join("");
+                    const dotT = Array.from({length: Math.min(nT, 2)}).map(() =>
+                        `<span class="w-1.5 h-1.5 rounded-full ${isSel ? "bg-blue-200" : "bg-blue-500"}"></span>`).join("");
                     const dots = n
-                        ? `<span class="flex gap-0.5 mt-0.5">${Array.from({length: Math.min(n, 3)}).map(() =>
-                            `<span class="w-1.5 h-1.5 rounded-full ${isSel ? "bg-white" : "bg-rose-500"}"></span>`).join("")}</span>`
+                        ? `<span class="flex gap-0.5 mt-0.5">${dotA}${dotT}</span>`
                         : `<span class="h-1.5 mt-0.5"></span>`;
-                    html += `<button type="button" data-day="${k}" class="${base} ${tone}" aria-label="${day} ${BULAN[viewMonth]}${n ? `, ${n} aktiviti` : ""}">${day}${dots}</button>`;
+                    const label = [nA ? `${nA} aktiviti` : "", nT ? `${nT} tempahan bilik` : ""].filter(Boolean).join(", ");
+                    html += `<button type="button" data-day="${k}" class="${base} ${tone}" aria-label="${day} ${BULAN[viewMonth]}${label ? `, ${label}` : ""}">${day}${dots}</button>`;
                 }
                 $("kalGrid").innerHTML = html;
                 $("kalGrid").querySelectorAll("button[data-day]").forEach(b =>
@@ -945,35 +974,71 @@
                 $("kalDayTitle").innerHTML = `${HARI[d.getDay()]}, ${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}
                     ${selected === today ? `<span class="ml-1 px-2 py-0.5 rounded-full text-[10px] bg-rose-500 text-white align-middle">Hari ini</span>` : ""}`;
 
+                const tList = tempahanByDay[selected] || [];
+                const kosong = `<div class="py-4 text-center bg-white dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 px-4">`;
+                const tajukSeksyen = (ikon, warna, teks, n) =>
+                    `<div class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide ${warna} mt-1"><i class="${ikon}"></i>${teks}<span class="ml-1 px-1.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 normal-case">${n}</span></div>`;
+
+                // ---- Aktiviti ----
+                let html = tajukSeksyen("fa-solid fa-calendar-check", "text-rose-500", "Aktiviti", list.length);
                 if (!list.length) {
-                    // Cadangkan aktiviti seterusnya supaya ruang ini tidak kosong.
                     const next = semua.filter(a => a.tarikh > selected).sort((a, b) => a.tarikh.localeCompare(b.tarikh))[0];
-                    $("kalDayList").innerHTML = `<div class="py-6 text-center bg-white dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 px-4">
-                        <i class="fa-solid fa-calendar-xmark text-lg text-slate-400"></i>
-                        <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 mt-1">Tiada aktiviti pada tarikh ini</p>
-                        ${next ? `<button type="button" id="kalGoNext" class="mt-2 text-[11px] font-semibold text-brand-600 hover:underline">Aktiviti seterusnya: ${esc(next.tajuk)} (${toDate(next.tarikh).getDate()} ${BULAN[toDate(next.tarikh).getMonth()]}) →</button>` : ""}
+                    html += `${kosong}
+                        <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">Tiada aktiviti pada tarikh ini</p>
+                        ${next ? `<button type="button" id="kalGoNext" class="mt-1 text-[11px] font-semibold text-brand-600 hover:underline">Seterusnya: ${esc(next.tajuk)} (${toDate(next.tarikh).getDate()} ${BULAN[toDate(next.tarikh).getMonth()]}) →</button>` : ""}
                     </div>`;
-                    if (next) $("kalGoNext").addEventListener("click", () => pilihTarikh(next.tarikh));
-                    return;
+                } else {
+                    html += list.map(a => {
+                        const masa = a.masaMula ? `${esc(a.masaMula)}${a.masaTamat ? " – " + esc(a.masaTamat) : ""}` : "Sepanjang hari";
+                        const julat = a.tarikhTamat && a.tarikhTamat !== a.tarikh
+                            ? `<p><i class="fa-regular fa-calendar w-4"></i>${toDate(a.tarikh).getDate()} ${BULAN[toDate(a.tarikh).getMonth()]} – ${toDate(a.tarikhTamat).getDate()} ${BULAN[toDate(a.tarikhTamat).getMonth()]}</p>` : "";
+                        return `<a href="aktiviti.html" class="glass-card block p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 border-l-4 !border-l-rose-500 bg-white dark:bg-slate-800/60 hover:border-brand-500/50 transition">
+                            <div class="flex flex-wrap gap-1.5 mb-1">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">${esc(a.kategori || "Lain-lain")}</span>
+                                ${a.bilik ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"><i class="fa-solid fa-lock mr-1"></i>${esc(a.bilik)}</span>` : ""}
+                            </div>
+                            <h4 class="font-heading font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug break-words">${esc(a.tajuk)}</h4>
+                            <div class="mt-1 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                <p><i class="fa-regular fa-clock w-4"></i>${masa}</p>
+                                ${julat}
+                                <p class="break-words"><i class="fa-solid fa-location-dot w-4"></i>${esc(a.tempat)}</p>
+                                ${a.penganjur ? `<p class="break-words"><i class="fa-solid fa-users w-4"></i>${esc(a.penganjur)}</p>` : ""}
+                            </div>
+                        </a>`;
+                    }).join("");
                 }
 
-                $("kalDayList").innerHTML = list.map(a => {
-                    const masa = a.masaMula ? `${esc(a.masaMula)}${a.masaTamat ? " – " + esc(a.masaTamat) : ""}` : "Sepanjang hari";
-                    const julat = a.tarikhTamat && a.tarikhTamat !== a.tarikh
-                        ? `<p><i class="fa-regular fa-calendar w-4"></i>${toDate(a.tarikh).getDate()} ${BULAN[toDate(a.tarikh).getMonth()]} – ${toDate(a.tarikhTamat).getDate()} ${BULAN[toDate(a.tarikhTamat).getMonth()]}</p>` : "";
-                    return `<a href="aktiviti.html" class="glass-card block p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-800/60 hover:border-brand-500/50 transition">
+                // ---- Tempahan Bilik ----
+                html += tajukSeksyen("fa-solid fa-door-open", "text-blue-500", "Tempahan Bilik", tempahanStatus === "ok" ? tList.length : "–");
+                if (tempahanStatus === "login") {
+                    html += `${kosong}<p class="text-xs text-slate-500 dark:text-slate-400"><i class="fa-solid fa-lock mr-1"></i>Log masuk sebagai guru untuk melihat tempahan bilik.</p></div>`;
+                } else if (tempahanStatus === "loading") {
+                    html += `${kosong}<p class="text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Memuatkan tempahan...</p></div>`;
+                } else if (tempahanStatus === "error") {
+                    html += `${kosong}<p class="text-xs text-slate-400">Tempahan tidak dapat dimuatkan buat masa ini.</p></div>`;
+                } else if (!tList.length) {
+                    html += `${kosong}<p class="text-xs font-semibold text-slate-600 dark:text-slate-300">Tiada tempahan bilik pada tarikh ini</p>
+                        <a href="tempahan.html" class="inline-block mt-1 text-[11px] font-semibold text-blue-600 hover:underline">Tempah bilik →</a></div>`;
+                } else {
+                    html += tList.map(b => `<a href="tempahan.html" class="glass-card block p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 border-l-4 !border-l-blue-500 bg-white dark:bg-slate-800/60 hover:border-blue-400/60 transition">
                         <div class="flex flex-wrap gap-1.5 mb-1">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">${esc(a.kategori || "Lain-lain")}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"><i class="fa-solid fa-door-open mr-1"></i>${esc(b.room)}</span>
                         </div>
-                        <h4 class="font-heading font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug break-words">${esc(a.tajuk)}</h4>
+                        <h4 class="font-heading font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug break-words">${esc(b.purpose || "Kegunaan bilik")}</h4>
                         <div class="mt-1 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                            <p><i class="fa-regular fa-clock w-4"></i>${masa}</p>
-                            ${julat}
-                            <p class="break-words"><i class="fa-solid fa-location-dot w-4"></i>${esc(a.tempat)}</p>
-                            ${a.penganjur ? `<p class="break-words"><i class="fa-solid fa-users w-4"></i>${esc(a.penganjur)}</p>` : ""}
+                            <p><i class="fa-regular fa-clock w-4"></i>${esc(b.startTime || "-")} – ${esc(b.endTime || "-")}</p>
+                            ${b.groupName ? `<p class="break-words"><i class="fa-solid fa-users w-4"></i>${esc(b.groupName)}</p>` : ""}
+                            <p class="break-words"><i class="fa-solid fa-user w-4"></i>${esc(b.displayName || b.email || "-")}</p>
                         </div>
-                    </a>`;
-                }).join("");
+                    </a>`).join("");
+                }
+
+                $("kalDayList").innerHTML = html;
+                const go = document.getElementById("kalGoNext");
+                if (go) {
+                    const next = semua.filter(a => a.tarikh > selected).sort((a, b) => a.tarikh.localeCompare(b.tarikh))[0];
+                    go.addEventListener("click", () => pilihTarikh(next.tarikh));
+                }
             }
 
             function pilihTarikh(k) {
@@ -998,7 +1063,7 @@
                     semua = snap.docs.map(d => d.data()).filter(a => a.tarikh && a.tajuk);
                     indexByDay();
                     $("aktivitiCount").textContent = semua.filter(a => (a.tarikhTamat || a.tarikh) >= today).length;
-                    $("kalStatus").textContent = "Tekan tarikh untuk melihat aktiviti.";
+                    $("kalStatus").textContent = "Tekan tarikh untuk melihat aktiviti dan tempahan.";
                 } catch (err) {
                     console.error("Gagal memuatkan aktiviti:", err);
                     $("kalStatus").textContent = "Aktiviti tidak dapat dimuatkan buat masa ini.";
@@ -1007,12 +1072,58 @@
                 renderHari();
             }
 
+            // ---------- Tempahan bilik: guna sesi log masuk utama ICT HUB ----------
+            async function muatTempahan(defaultApp) {
+                tempahanStatus = "loading";
+                renderHari();
+                try {
+                    const snap = await getDocs(collection(getFirestore(defaultApp), "roomBookings"));
+                    tempahan = snap.docs.map(d => d.data());
+                    tempahanStatus = "ok";
+                } catch (err) {
+                    console.error("Gagal memuatkan tempahan:", err);
+                    tempahan = [];
+                    tempahanStatus = err.code === "permission-denied" ? "login" : "error";
+                }
+                indexTempahan();
+                renderKalendar();
+                renderHari();
+            }
+
+            let authDipasang = false;
+            function pasangAuthTempahan(cubaan = 0) {
+                if (authDipasang) return;
+                // Firebase utama (lalai) dimulakan oleh skrip ICT HUB di bahagian bawah halaman.
+                const defaultApp = getApps().find(a => a.name === "[DEFAULT]");
+                if (!defaultApp) {
+                    if (cubaan < 40) setTimeout(() => pasangAuthTempahan(cubaan + 1), 250);
+                    return;
+                }
+                authDipasang = true;
+                onAuthStateChanged(getAuth(defaultApp), user => {
+                    if (user) {
+                        // Beri masa kepada ICT HUB mengesahkan guru sebelum membaca.
+                        setTimeout(() => muatTempahan(defaultApp), 600);
+                    } else {
+                        tempahan = [];
+                        tempahanStatus = "login";
+                        indexTempahan();
+                        renderKalendar();
+                        renderHari();
+                    }
+                });
+                window.addEventListener("pageshow", e => {
+                    if (e.persisted && getAuth(defaultApp).currentUser) muatTempahan(defaultApp);
+                });
+            }
+
             $("kalPrev").addEventListener("click", () => tukarBulan(-1));
             $("kalNext").addEventListener("click", () => tukarBulan(1));
             $("kalToday").addEventListener("click", () => pilihTarikh(today));
 
             renderKalendar();
             muatAktiviti();
+            pasangAuthTempahan();
             // Muat semula bila kembali ke halaman (contoh: selepas daftar aktiviti).
             window.addEventListener("pageshow", e => { if (e.persisted) muatAktiviti(); });
         </script>
