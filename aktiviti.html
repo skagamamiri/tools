@@ -113,6 +113,8 @@
   .p-later { background:#e3eaef;color:#526174; }
   .p-done { background:#e3eaef;color:#8a97a5; }
   .p-cat { background:#eaf8f2;color:#00855a; }
+  .p-room { background:#e8f1ff;color:#1d5fd1; }
+  .hint { display:block;margin-top:5px;font-size:10.5px;font-weight:600;color:#8a97a5; }
   .item h3 { margin:0;font-size:14px;line-height:1.35;word-break:break-word; }
   .meta { margin-top:6px;display:grid;gap:3px;color:var(--muted);font-size:11.5px; }
   .meta i { width:16px;color:#9aa8b5; }
@@ -232,6 +234,12 @@
             <input id="akMasaTamat" type="time">
           </label>
         </div>
+        <label>Tempah Bilik Khas
+          <select id="akBilik">
+            <option value="">— Tidak perlu bilik khas —</option>
+          </select>
+          <span class="hint" id="akBilikHint">Pilih bilik jika aktiviti menggunakan bilik khas. Bilik akan dikunci dalam Tempahan Bilik Khas.</span>
+        </label>
         <label>Tempat *
           <input id="akTempat" type="text" maxlength="80" required placeholder="Contoh: Dewan Ibnu Khaldun">
         </label>
@@ -284,7 +292,7 @@
     getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
   import {
-    getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, serverTimestamp
+    getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, serverTimestamp, query, where
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -301,6 +309,16 @@
   const db = getFirestore(app);
 
   const COLLECTION = "aktiviti";
+  const BOOKINGS = "roomBookings";
+  // Mesti sama dengan senarai ROOMS dalam tempahan.html
+  const ROOMS = [
+    "Dewan Ibnu Khaldun",
+    "Makmal Komputer",
+    "Bengkel RBT",
+    "Bilik Muzik",
+    "Bilik Mesyuarat"
+  ];
+  const MAX_HARI_TEMPAHAN = 14;
   const BULAN = ["JAN","FEB","MAC","APR","MEI","JUN","JUL","OGO","SEP","OKT","NOV","DIS"];
   const BULAN_PENUH = ["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"];
   const HARI = ["Ahad","Isnin","Selasa","Rabu","Khamis","Jumaat","Sabtu"];
@@ -399,7 +417,7 @@
       <article class="item ${akhir(a) < t ? "past" : ""} ${a.id === editingId ? "editing" : ""}">
         <div class="datebox"><div class="m">${BULAN[d.getMonth()]}</div><div class="d">${d.getDate()}</div></div>
         <div class="item-body">
-          <div class="pills">${relPill(a)}<span class="pill p-cat">${esc(a.kategori || "Lain-lain")}</span></div>
+          <div class="pills">${relPill(a)}<span class="pill p-cat">${esc(a.kategori || "Lain-lain")}</span>${a.bilik ? `<span class="pill p-room"><i class="fa-solid fa-lock"></i> ${esc(a.bilik)}</span>` : ""}</div>
           <h3>${esc(a.tajuk)}</h3>
           <div class="meta">
             <span><i class="fa-regular fa-calendar"></i>${tarikh}</span>
@@ -439,6 +457,7 @@
     $("akMasaMula").value = a.masaMula || "";
     $("akMasaTamat").value = a.masaTamat || "";
     $("akTempat").value = a.tempat || "";
+    $("akBilik").value = a.bilik || "";
     $("akKategori").value = a.kategori || "Lain-lain";
     $("akPenganjur").value = a.penganjur || "";
     $("akCatatan").value = a.catatan || "";
@@ -464,6 +483,60 @@
     render();
   }
 
+  // ---------- Integrasi Tempahan Bilik Khas ----------
+  function toMin(t) { const [h, m] = String(t).split(":").map(Number); return h * 60 + m; }
+  function senaraiTarikh(mula, tamat) {
+    const out = [];
+    const d = parseDate(mula), end = parseDate(tamat || mula);
+    while (d <= end && out.length < MAX_HARI_TEMPAHAN + 1) {
+      out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`);
+      d.setDate(d.getDate() + 1);
+    }
+    return out;
+  }
+
+  // Pulangkan tempahan lain yang bertindih (abaikan tempahan milik aktiviti ini sendiri).
+  async function semakPertindihan(bilik, tarikhList, mula, tamat, aktivitiId) {
+    const bertindih = [];
+    for (const t of tarikhList) {
+      const snap = await getDocs(query(collection(db, BOOKINGS), where("date", "==", t)));
+      snap.docs.map(d => d.data()).forEach(b => {
+        if (b.room !== bilik) return;
+        if (aktivitiId && b.aktivitiId === aktivitiId) return;
+        if (toMin(mula) < toMin(b.endTime) && toMin(tamat) > toMin(b.startTime)) bertindih.push({ ...b, date: t });
+      });
+    }
+    return bertindih;
+  }
+
+  async function padamTempahanAktiviti(aktivitiId) {
+    const snap = await getDocs(query(collection(db, BOOKINGS), where("aktivitiId", "==", aktivitiId)));
+    let gagal = 0;
+    for (const d of snap.docs) {
+      try { await deleteDoc(d.ref); } catch (err) { console.warn("Gagal padam tempahan", d.id, err); gagal++; }
+    }
+    return gagal;
+  }
+
+  async function ciptaTempahanAktiviti(aktivitiId, data, tarikhList) {
+    for (const t of tarikhList) {
+      await addDoc(collection(db, BOOKINGS), {
+        room: data.bilik,
+        date: t,
+        startTime: data.masaMula,
+        endTime: data.masaTamat,
+        purpose: data.tajuk,
+        groupName: data.penganjur || "Aktiviti Sekolah",
+        aktivitiId,
+        sumber: "aktiviti",
+        uid: currentUser.uid,
+        email: currentUser.email,
+        displayName: currentTeacher.displayName || currentUser.displayName || currentUser.email,
+        createdAt: serverTimestamp()
+      });
+    }
+  }
+
   async function simpan(e) {
     e.preventDefault();
     if (!currentUser || !currentTeacher) { showToast("Sila log masuk dahulu.", "error"); return; }
@@ -481,6 +554,14 @@
     if (masaMula && masaTamat && masaTamat <= masaMula && (!tarikhTamat || tarikhTamat === tarikh))
       return showToast("Masa tamat mesti selepas masa mula.", "error");
 
+    const bilik = $("akBilik").value;
+    const tarikhList = bilik ? senaraiTarikh(tarikh, tarikhTamat) : [];
+    if (bilik) {
+      if (!masaMula || !masaTamat) return showToast("Masa mula dan masa tamat wajib diisi untuk menempah bilik.", "error");
+      if (masaTamat <= masaMula) return showToast("Untuk tempahan bilik, masa tamat mesti selepas masa mula pada hari yang sama.", "error");
+      if (tarikhList.length > MAX_HARI_TEMPAHAN) return showToast(`Tempahan bilik melalui aktiviti terhad kepada ${MAX_HARI_TEMPAHAN} hari.`, "error");
+    }
+
     const btn = $("akSubmitBtn");
     btn.disabled = true;
     btn.textContent = "Menyimpan...";
@@ -491,24 +572,57 @@
         masaMula, masaTamat, tempat,
         kategori: $("akKategori").value,
         penganjur: $("akPenganjur").value.trim(),
-        catatan: $("akCatatan").value.trim()
+        catatan: $("akCatatan").value.trim(),
+        bilik
       };
       const sedangEdit = !!editingId;
+      const asal = sedangEdit ? semua.find(x => x.id === editingId) : null;
+
+      // 1. Semak pertindihan bilik SEBELUM menyimpan apa-apa.
+      if (bilik) {
+        btn.textContent = "Menyemak bilik...";
+        const bertindih = await semakPertindihan(bilik, tarikhList, masaMula, masaTamat, editingId);
+        if (bertindih.length) {
+          const b = bertindih[0];
+          return showToast(`${bilik} sudah ditempah pada ${b.date.split("-").reverse().join("/")} (${b.startTime}–${b.endTime}) untuk "${b.purpose || "-"}".`, "error");
+        }
+        btn.textContent = "Menyimpan...";
+      }
+
+      let aktivitiId = editingId;
       if (sedangEdit) {
         await updateDoc(doc(db, COLLECTION, editingId), {
           ...data,
           dikemaskiniOleh: currentTeacher.displayName || currentUser.displayName || currentUser.email,
           updatedAt: serverTimestamp()
         });
-      } else await addDoc(collection(db, COLLECTION), {
-        ...data,
-        uid: currentUser.uid,
-        email: String(currentUser.email || "").toLowerCase(),
-        namaGuru: currentTeacher.displayName || currentUser.displayName || currentUser.email,
-        createdAt: serverTimestamp()
-      });
+      } else {
+        const ref = await addDoc(collection(db, COLLECTION), {
+          ...data,
+          uid: currentUser.uid,
+          email: String(currentUser.email || "").toLowerCase(),
+          namaGuru: currentTeacher.displayName || currentUser.displayName || currentUser.email,
+          createdAt: serverTimestamp()
+        });
+        aktivitiId = ref.id;
+      }
+
+      // 2. Selaraskan tempahan bilik: buang tempahan lama aktiviti ini, cipta yang baharu.
+      let amaran = "";
+      try {
+        if (sedangEdit && asal?.bilik) {
+          const gagal = await padamTempahanAktiviti(aktivitiId);
+          if (gagal) amaran = " Sebahagian tempahan lama tidak dapat dibuang; sila semak Tempahan Bilik Khas.";
+        }
+        if (bilik) await ciptaTempahanAktiviti(aktivitiId, data, tarikhList);
+      } catch (err) {
+        console.error("Tempahan bilik gagal:", err);
+        amaran = " Aktiviti disimpan tetapi tempahan bilik GAGAL. Sila tempah secara manual.";
+      }
+
       batalEdit();
-      showToast(sedangEdit ? "Aktiviti berjaya dikemaskini." : "Aktiviti berjaya didaftarkan.", "success");
+      const mesej = sedangEdit ? "Aktiviti berjaya dikemaskini." : "Aktiviti berjaya didaftarkan.";
+      showToast(mesej + (bilik && !amaran ? ` ${bilik} telah ditempah.` : "") + amaran, amaran ? "error" : "success");
       view = "akan";
       document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.dataset.view === "akan"));
       await loadAktiviti();
@@ -524,8 +638,10 @@
   }
 
   async function padam(id) {
-    if (!confirm("Padam aktiviti ini?")) return;
+    const a = semua.find(x => x.id === id);
+    if (!confirm(a?.bilik ? `Padam aktiviti ini? Tempahan ${a.bilik} untuk aktiviti ini juga akan dibatalkan.` : "Padam aktiviti ini?")) return;
     try {
+      if (a?.bilik) await padamTempahanAktiviti(id);
       await deleteDoc(doc(db, COLLECTION, id));
       if (id === editingId) batalEdit();
       showToast("Aktiviti telah dipadam.", "success");
@@ -566,6 +682,12 @@
     render();
   }));
   $("akTarikh").value = todayStr();
+  $("akBilik").insertAdjacentHTML("beforeend", ROOMS.map(r => `<option>${esc(r)}</option>`).join(""));
+  $("akBilik").addEventListener("change", () => {
+    const v = $("akBilik").value;
+    const tempat = $("akTempat");
+    if (v && (!tempat.value.trim() || ROOMS.includes(tempat.value.trim()))) tempat.value = v;
+  });
 
   onAuthStateChanged(auth, async user => {
     currentUser = user;

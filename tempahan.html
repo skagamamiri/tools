@@ -218,6 +218,7 @@ function renderBookingList() {
         <strong>${escapeHtml(b.purpose || "Kegunaan bilik")}</strong>
         <span>${escapeHtml(b.groupName || "-")}</span>
         <span>Tempah oleh: ${escapeHtml(b.displayName || b.email || "-")}</span>
+        ${b.sumber === "aktiviti" ? `<span style="color:#1d5fd1;font-weight:700">🔒 Melalui Daftar Aktiviti</span>` : ""}
       </div>
       ${currentUser && (b.uid === currentUser.uid || currentTeacher?.role === "admin")
         ? `<button class="delete-btn" data-id="${escapeHtml(b.id)}" title="Batalkan tempahan">Batalkan</button>`
