@@ -164,6 +164,9 @@ border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:
 .diag-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0;font-size:12px}
 .diag-grid div{background:#fff;border-radius:9px;padding:7px 8px}.diag-grid b{float:right}.diag-url{font-size:10px;color:#475569;word-break:break-all;margin:7px 0}.diag-note{font-size:10px;color:#475569;margin-top:7px;line-height:1.4}
 @media(max-width:620px){.diag-grid{grid-template-columns:1fr}.fcm-diagnostic .btn2{width:100%;margin-top:5px}}
+/* Disembunyikan daripada guru: butang notifikasi manual, ujian notifikasi dan panel diagnostik FCM. Fungsi masih ada untuk kegunaan admin melalui konsol. */
+#notifyBtn,#testNotificationButton,#fcmDiagnostic{display:none!important}
+@media(max-width:620px){#enablePushButton{flex:1}}
 </style>
 </head>
 <body>
