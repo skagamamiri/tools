@@ -2367,9 +2367,41 @@
             if (tool.type === 'ERPH') {
                 openErphModal();
             } else if (tool.type === 'URL' || tool.type === 'HTML') {
-                openFullscreenTool(tool);
+                openToolPage(tool);
             }
         }
+
+        // Setiap tool dibuka sebagai halaman penuh dengan URL sendiri (tanpa iframe):
+        //  - Tool HTML (kod dalam Panel Pentadbir)  -> tool.html?id=<id>
+        //  - Tool URL dalam laman ini (cth aktiviti.html) -> terus ke URL tersebut
+        //  - DELIMa -> terus ke portal (seperti sebelum ini)
+        //  - URL luar (Canva, Wordwall, dll.) -> tab baharu
+        function toolPageUrl(tool) {
+            if (!tool) return '';
+            if (tool.type === 'HTML') return 'tool.html?id=' + encodeURIComponent(tool.id);
+            return tool.url || '';
+        }
+
+        function openToolPage(tool) {
+            const url = toolPageUrl(tool);
+            if (!url) {
+                showToast('Tool ini belum mempunyai pautan.', 'info');
+                return;
+            }
+
+            let sameOrigin = true;
+            try {
+                sameOrigin = new URL(url, window.location.href).origin === window.location.origin;
+            } catch (e) {}
+
+            if (sameOrigin || isSessionPortalUrl(url)) {
+                // Bersihkan state halaman dan navigasi top-level (Back kembali ke ICT HUB).
+                navigateToSessionPortal(url);
+            } else {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+        }
+        window.openToolPage = openToolPage;
 
         function openFullscreenTool(tool) {
             activeHtmlTool = tool;

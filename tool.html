@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#071a16">
+<title>Memuatkan tool • Hub Tool ICT</title>
+<link rel="icon" href="data:,">
+<!--
+  Pemapar tool HTML ICT HUB.
+  Tool jenis HTML (kod ditampal dalam Panel Pentadbir) dibuka di sini sebagai
+  halaman penuh dengan URL sendiri:  tool.html?id=<id tool>
+  Kod tool diambil dari Firestore koleksi "tools". Tiada iframe.
+-->
+<style>
+  :root { --green:#009b62; --ink:#172033; --muted:#718096; --line:#dce5eb; }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; min-height:100vh; display:grid; place-items:center; padding:24px;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:radial-gradient(circle at top,#0b4938,#071a16 60%); color:var(--ink);
+  }
+  .card {
+    width:min(430px,100%); background:#fff; border-radius:24px; padding:30px; text-align:center;
+    box-shadow:0 25px 70px #0005;
+  }
+  .icon {
+    width:64px;height:64px;border-radius:18px;background:#e8f8f1;color:var(--green);
+    display:grid;place-items:center;font-size:28px;margin:0 auto 14px;
+  }
+  h1 { margin:0 0 6px;font-size:20px; }
+  p { margin:0;color:var(--muted);font-size:13px;line-height:1.6; }
+  .btn {
+    display:block;width:100%;margin-top:16px;padding:13px 15px;border-radius:13px;font:inherit;
+    font-weight:800;cursor:pointer;text-decoration:none;
+  }
+  .btn.primary { border:0;background:linear-gradient(135deg,#009b62,#00b477);color:#fff; }
+  .btn.ghost { border:1px solid var(--line);background:#fff;color:#273447; }
+  .hidden { display:none !important; }
+  .spin { width:28px;height:28px;border:3px solid #dce5eb;border-top-color:var(--green);border-radius:50%;
+          margin:4px auto 14px;animation:s .8s linear infinite; }
+  @keyframes s { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div id="spinner" class="spin"></div>
+    <div id="icon" class="icon hidden">🔒</div>
+    <h1 id="title">Memuatkan tool...</h1>
+    <p id="msg">Sila tunggu sebentar.</p>
+    <button id="loginBtn" class="btn primary hidden">G &nbsp; Teruskan dengan Google</button>
+    <a href="./" class="btn ghost">← Kembali ke ICT HUB</a>
+  </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup
+  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  const app = initializeApp({
+    apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE",
+    authDomain: "skamis-hubtool.firebaseapp.com",
+    projectId: "skamis-hubtool",
+    storageBucket: "skamis-hubtool.firebasestorage.app",
+    messagingSenderId: "236769370780",
+    appId: "1:236769370780:web:9dfa07d772a721ecfe0359"
+  }, "ictToolViewer"); // nama berasingan supaya tool yang guna Firebase sendiri tidak bertembung
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const $ = id => document.getElementById(id);
+  const toolId = new URLSearchParams(location.search).get("id") || "";
+
+  function papar(title, msg, { lock = false, login = false } = {}) {
+    $("spinner").classList.add("hidden");
+    $("icon").classList.toggle("hidden", !lock && !login);
+    $("icon").textContent = login ? "🔒" : "⚠️";
+    $("title").textContent = title;
+    $("msg").textContent = msg;
+    $("loginBtn").classList.toggle("hidden", !login);
+  }
+
+  // Butang kecil "← ICT HUB" yang disuntik ke dalam tool HTML.
+  const BACK_BTN = `
+<a href="./" id="ictHubBackBtn" title="Kembali ke ICT HUB"
+   style="position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:2147483647;
+          display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:999px;
+          background:rgba(7,26,22,.88);color:#fff;font:700 12px/1 system-ui,-apple-system,'Segoe UI',sans-serif;
+          text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.25);backdrop-filter:blur(6px)">← ICT HUB</a>`;
+
+  function jalankanToolHtml(tool) {
+    let html = String(tool.htmlCode || "").trim();
+    if (!html) return papar("Tool kosong", "Tool ini belum mempunyai kod HTML.");
+    if (!/<html[\s>]/i.test(html)) html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>${html}</body></html>`;
+    if (!/<title>/i.test(html)) html = html.replace(/<head([^>]*)>/i, `<head$1><title>${String(tool.title || "Tool").replace(/</g, "&lt;")} • ICT HUB</title>`);
+    html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, BACK_BTN + "</body>") : html + BACK_BTN;
+
+    // Gantikan seluruh halaman dengan kod tool (halaman penuh, tanpa iframe).
+    document.open();
+    document.write(html);
+    document.close();
+  }
+
+  async function bukaTool() {
+    if (!toolId) return papar("Tool tidak dinyatakan", "Pautan ini tiada id tool. Sila buka tool dari ICT HUB.");
+    try {
+      const snap = await getDoc(doc(db, "tools", toolId));
+      if (!snap.exists()) return papar("Tool tidak ditemui", "Tool ini mungkin telah dipadam atau ditukar nama oleh Admin.");
+      const tool = { id: snap.id, ...snap.data() };
+      document.title = `${tool.title || "Tool"} • ICT HUB`;
+
+      if (tool.type === "HTML") return jalankanToolHtml(tool);
+      if (tool.type === "URL" && tool.url) return location.replace(tool.url);
+      if (tool.type === "ERPH") return location.replace("./");
+      papar("Jenis tool tidak disokong", "Sila buka tool ini dari ICT HUB.");
+    } catch (err) {
+      console.error(err);
+      papar("Tool tidak dapat dimuatkan", err.message || "Sila cuba lagi.");
+    }
+  }
+
+  $("loginBtn").addEventListener("click", async () => {
+    try {
+      const p = new GoogleAuthProvider();
+      p.setCustomParameters({ prompt: "select_account" });
+      await signInWithPopup(auth, p);
+    } catch (err) {
+      console.error(err);
+      papar("Log masuk gagal", err.message || "Sila cuba lagi.", { login: true });
+    }
+  });
+
+  let sudahBuka = false;
+  onAuthStateChanged(auth, async user => {
+    if (sudahBuka) return;
+    if (!user) {
+      return papar("Log masuk diperlukan", "Tool ICT HUB hanya untuk guru yang berdaftar. Sila log masuk dengan akaun Google guru.", { login: true });
+    }
+    try {
+      const email = String(user.email || "").toLowerCase().trim();
+      const t = await getDoc(doc(db, "teachers", email));
+      if (!t.exists() || t.data().active === false) {
+        return papar("Akses ditolak", "Akaun ini tidak disenaraikan sebagai guru aktif dalam ICT HUB.", { lock: true });
+      }
+    } catch (err) {
+      console.error(err);
+      return papar("Tidak dapat menyemak akses", err.message || "Sila cuba lagi.", { login: true });
+    }
+    sudahBuka = true;
+    bukaTool();
+  });
+</script>
+</body>
+</html>
