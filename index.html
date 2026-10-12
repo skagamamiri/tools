@@ -824,6 +824,108 @@
             </button>
         </div>
 
+        <!-- ========== AKTIVITI AKAN DATANG (data dari koleksi Firestore "aktiviti", didaftar melalui aktiviti.html) ========== -->
+        <section id="aktivitiSection" class="mt-8">
+            <div class="flex items-center justify-between mb-3 gap-3">
+                <h3 class="font-heading font-bold text-sm md:text-base text-slate-700 dark:text-slate-300 flex items-center">
+                    <i class="fa-solid fa-calendar-days mr-2 text-brand-600"></i>Aktiviti Akan Datang
+                    <span id="aktivitiCount" class="ml-2 px-2 py-0.5 rounded-full text-[11px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">0</span>
+                </h3>
+                <a href="aktiviti.html" class="px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md transition whitespace-nowrap">
+                    <i class="fa-solid fa-plus mr-1.5"></i>Daftar Aktiviti
+                </a>
+            </div>
+            <div id="aktivitiList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="col-span-full py-6 text-center text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Memuatkan aktiviti...</div>
+            </div>
+            <div id="aktivitiMore" class="hidden text-center mt-3">
+                <a href="aktiviti.html" class="inline-block px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-brand-500/50 transition">Lihat semua aktiviti</a>
+            </div>
+        </section>
+        <script type="module">
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+            import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+            const app = initializeApp({
+                apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE",
+                authDomain: "skamis-hubtool.firebaseapp.com",
+                projectId: "skamis-hubtool",
+                storageBucket: "skamis-hubtool.firebasestorage.app",
+                messagingSenderId: "236769370780",
+                appId: "1:236769370780:web:9dfa07d772a721ecfe0359"
+            }, "aktivitiWidget"); // nama berasingan supaya tidak bertembung dengan Firebase utama
+            const db = getFirestore(app);
+            const LIMIT = 6;
+            const BULAN = ["JAN","FEB","MAC","APR","MEI","JUN","JUL","OGO","SEP","OKT","NOV","DIS"];
+            const BULAN_PENUH = ["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"];
+            const HARI = ["Ahad","Isnin","Selasa","Rabu","Khamis","Jumaat","Sabtu"];
+            const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+            const pad = n => String(n).padStart(2, "0");
+            const now = new Date();
+            const today = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+            const toDate = s => { const [y,m,d] = String(s).split("-").map(Number); return new Date(y, m-1, d); };
+            const fmt = s => { const d = toDate(s); return `${HARI[d.getDay()]}, ${d.getDate()} ${BULAN_PENUH[d.getMonth()]}`; };
+
+            function pill(a) {
+                if (a.tarikh <= today) return ["Hari ini", "bg-rose-500 text-white"];
+                const diff = Math.round((toDate(a.tarikh) - toDate(today)) / 86400000);
+                if (diff === 1) return ["Esok", "bg-amber-500 text-white"];
+                return [`${diff} hari lagi`, diff <= 7 ? "bg-brand-600 text-white" : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"];
+            }
+
+            async function muatAktiviti() {
+                const list = document.getElementById("aktivitiList");
+                try {
+                    const snap = await getDocs(query(collection(db, "aktiviti"), where("tarikhAkhir", ">=", today)));
+                    const items = snap.docs.map(d => d.data()).filter(a => a.tarikh && a.tajuk)
+                        .sort((a, b) => a.tarikh.localeCompare(b.tarikh) || String(a.masaMula || "99").localeCompare(String(b.masaMula || "99")));
+                    document.getElementById("aktivitiCount").textContent = items.length;
+                    document.getElementById("aktivitiMore").classList.toggle("hidden", items.length <= LIMIT);
+
+                    if (!items.length) {
+                        list.innerHTML = `<div class="col-span-full py-8 text-center bg-white dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 px-4">
+                            <i class="fa-solid fa-calendar-xmark text-xl text-slate-400"></i>
+                            <p class="font-heading font-bold text-slate-700 dark:text-slate-300 text-sm mt-2">Tiada aktiviti akan datang</p>
+                        </div>`;
+                        return;
+                    }
+
+                    list.innerHTML = items.slice(0, LIMIT).map(a => {
+                        const d = toDate(a.tarikh);
+                        const [label, cls] = pill(a);
+                        const tarikh = a.tarikhTamat && a.tarikhTamat !== a.tarikh ? `${fmt(a.tarikh)} – ${fmt(a.tarikhTamat)}` : fmt(a.tarikh);
+                        const masa = a.masaMula ? `${esc(a.masaMula)}${a.masaTamat ? " – " + esc(a.masaTamat) : ""}` : "";
+                        return `<a href="aktiviti.html" class="glass-card p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 hover:border-brand-500/50 transition flex gap-3">
+                            <div class="flex-shrink-0 w-14 text-center rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 self-start">
+                                <div class="bg-brand-600 text-white text-[10px] font-bold py-0.5">${BULAN[d.getMonth()]}</div>
+                                <div class="text-xl font-black text-slate-800 dark:text-slate-100 py-1">${d.getDate()}</div>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap gap-1.5 mb-1">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${cls}">${label}</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">${esc(a.kategori || "Lain-lain")}</span>
+                                </div>
+                                <h4 class="font-heading font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug break-words">${esc(a.tajuk)}</h4>
+                                <div class="mt-1 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                    <p><i class="fa-regular fa-calendar w-4"></i>${tarikh}</p>
+                                    ${masa ? `<p><i class="fa-regular fa-clock w-4"></i>${masa}</p>` : ""}
+                                    <p class="break-words"><i class="fa-solid fa-location-dot w-4"></i>${esc(a.tempat)}</p>
+                                </div>
+                            </div>
+                        </a>`;
+                    }).join("");
+                } catch (err) {
+                    console.error("Gagal memuatkan aktiviti:", err);
+                    list.innerHTML = `<div class="col-span-full py-6 text-center text-xs text-slate-400">Aktiviti tidak dapat dimuatkan buat masa ini.</div>`;
+                }
+            }
+
+            muatAktiviti();
+            // Muat semula bila kembali ke halaman (contoh: selepas daftar aktiviti).
+            window.addEventListener("pageshow", e => { if (e.persisted) muatAktiviti(); });
+        </script>
+        <!-- ========== TAMAT AKTIVITI AKAN DATANG ========== -->
+
     <!-- Footer FRONTEND -->
     <footer id="frontendFooter"
             class="w-full mt-8 border-t border-slate-200 dark:border-slate-800/60 py-6 text-center text-xs text-slate-400 relative z-10 bg-slate-50 dark:bg-slate-900">
