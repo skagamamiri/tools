@@ -122,6 +122,18 @@
   }
   .foot { margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px; }
   .by { font-size:10.5px;color:#9aa8b5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .actions { display:flex;gap:6px;flex:0 0 auto; }
+  .edit-btn {
+    border:0;background:#eaf8f2;color:#00855a;border-radius:9px;padding:6px 9px;font-size:10px;font-weight:900;
+  }
+  .item.editing { border-color:#24b681;box-shadow:0 0 0 3px #24b6811c; }
+  .cancel-btn {
+    border:1px solid var(--line);background:#fff;color:#526174;padding:12px 16px;border-radius:13px;font-weight:800;
+  }
+  .edit-banner {
+    margin:0 22px;padding:10px 12px;border-radius:12px;background:#fff8e6;border:1px solid #fde3a7;
+    color:#8a5a00;font-size:12px;font-weight:700;
+  }
   .del-btn {
     border:0;background:#fff0f2;color:#d62e4d;border-radius:9px;padding:6px 9px;font-size:10px;font-weight:900;
   }
@@ -189,7 +201,7 @@
     <!-- Borang -->
     <section class="card">
       <div class="card-head">
-        <h2>Daftar Aktiviti Baharu</h2>
+        <h2 id="formTitle">Daftar Aktiviti Baharu</h2>
         <p>Aktiviti yang didaftar akan dipaparkan kepada semua guru.</p>
       </div>
 
@@ -199,6 +211,7 @@
         <button id="googleLoginBtn" class="google-btn"><i class="fa-brands fa-google"></i>&nbsp; Teruskan dengan Google</button>
       </div>
 
+      <div id="editBanner" class="edit-banner hidden"><i class="fa-solid fa-pen"></i>&nbsp; Anda sedang mengemaskini: <span id="editName"></span></div>
       <form id="aktivitiForm" class="form hidden">
         <label>Nama Aktiviti *
           <input id="akTajuk" type="text" maxlength="120" required placeholder="Contoh: Hari Sukan Tahunan">
@@ -242,6 +255,7 @@
           <textarea id="akCatatan" maxlength="400" placeholder="Maklumat tambahan (pakaian, peserta, dll.)"></textarea>
         </label>
         <button id="akSubmitBtn" class="primary" type="submit"><i class="fa-solid fa-floppy-disk"></i>&nbsp; Simpan Aktiviti</button>
+        <button id="akCancelBtn" class="cancel-btn hidden" type="button">Batal Kemaskini</button>
       </form>
     </section>
 
@@ -270,7 +284,7 @@
     getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
   import {
-    getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, serverTimestamp
+    getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -296,6 +310,8 @@
   let currentTeacher = null;
   let semua = [];
   let view = "akan";
+  let editingId = null;
+  let editingOriginalDate = "";
 
   function esc(v) {
     return String(v ?? "").replace(/[&<>"']/g, c => ({
@@ -380,7 +396,7 @@
         ? `${fmtDate(a.tarikh)} – ${fmtDate(a.tarikhTamat)}` : fmtDate(a.tarikh);
       const masa = a.masaMula ? `${esc(a.masaMula)}${a.masaTamat ? " – " + esc(a.masaTamat) : ""}` : "";
       return `
-      <article class="item ${akhir(a) < t ? "past" : ""}">
+      <article class="item ${akhir(a) < t ? "past" : ""} ${a.id === editingId ? "editing" : ""}">
         <div class="datebox"><div class="m">${BULAN[d.getMonth()]}</div><div class="d">${d.getDate()}</div></div>
         <div class="item-body">
           <div class="pills">${relPill(a)}<span class="pill p-cat">${esc(a.kategori || "Lain-lain")}</span></div>
@@ -394,7 +410,10 @@
           ${a.catatan ? `<div class="note">${esc(a.catatan)}</div>` : ""}
           <div class="foot">
             <span class="by">Didaftar oleh ${esc(a.namaGuru || a.email || "-")}</span>
-            ${canDelete(a) ? `<button class="del-btn" data-id="${esc(a.id)}"><i class="fa-solid fa-trash-can"></i> Padam</button>` : ""}
+            ${canDelete(a) ? `<div class="actions">
+              <button class="edit-btn" data-id="${esc(a.id)}"><i class="fa-solid fa-pen"></i> Edit</button>
+              <button class="del-btn" data-id="${esc(a.id)}"><i class="fa-solid fa-trash-can"></i> Padam</button>
+            </div>` : ""}
           </div>
         </div>
       </article>`;
@@ -402,6 +421,47 @@
 
     $("akList").querySelectorAll(".del-btn").forEach(b =>
       b.addEventListener("click", () => padam(b.dataset.id)));
+    $("akList").querySelectorAll(".edit-btn").forEach(b =>
+      b.addEventListener("click", () => mulaEdit(b.dataset.id)));
+  }
+
+  const SUBMIT_BARU = '<i class="fa-solid fa-floppy-disk"></i>&nbsp; Simpan Aktiviti';
+  const SUBMIT_EDIT = '<i class="fa-solid fa-check"></i>&nbsp; Kemaskini Aktiviti';
+
+  function mulaEdit(id) {
+    const a = semua.find(x => x.id === id);
+    if (!a || !canDelete(a)) return;
+    editingId = id;
+    editingOriginalDate = a.tarikh;
+    $("akTajuk").value = a.tajuk || "";
+    $("akTarikh").value = a.tarikh || "";
+    $("akTarikhTamat").value = a.tarikhTamat || "";
+    $("akMasaMula").value = a.masaMula || "";
+    $("akMasaTamat").value = a.masaTamat || "";
+    $("akTempat").value = a.tempat || "";
+    $("akKategori").value = a.kategori || "Lain-lain";
+    $("akPenganjur").value = a.penganjur || "";
+    $("akCatatan").value = a.catatan || "";
+    $("formTitle").textContent = "Kemaskini Aktiviti";
+    $("editName").textContent = a.tajuk || "";
+    $("editBanner").classList.remove("hidden");
+    $("akCancelBtn").classList.remove("hidden");
+    $("akSubmitBtn").innerHTML = SUBMIT_EDIT;
+    render();
+    $("formTitle").scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => $("akTajuk").focus({ preventScroll: true }), 400);
+  }
+
+  function batalEdit() {
+    editingId = null;
+    editingOriginalDate = "";
+    $("aktivitiForm").reset();
+    $("akTarikh").value = todayStr();
+    $("formTitle").textContent = "Daftar Aktiviti Baharu";
+    $("editBanner").classList.add("hidden");
+    $("akCancelBtn").classList.add("hidden");
+    $("akSubmitBtn").innerHTML = SUBMIT_BARU;
+    render();
   }
 
   async function simpan(e) {
@@ -416,7 +476,7 @@
     const tempat = $("akTempat").value.trim();
 
     if (!tajuk || !tarikh || !tempat) return showToast("Sila isi nama aktiviti, tarikh dan tempat.", "error");
-    if (tarikh < todayStr()) return showToast("Tarikh aktiviti tidak boleh tarikh yang telah berlalu.", "error");
+    if (tarikh < todayStr() && !(editingId && tarikh === editingOriginalDate)) return showToast("Tarikh aktiviti tidak boleh tarikh yang telah berlalu.", "error");
     if (tarikhTamat && tarikhTamat < tarikh) return showToast("Tarikh tamat mesti selepas tarikh mula.", "error");
     if (masaMula && masaTamat && masaTamat <= masaMula && (!tarikhTamat || tarikhTamat === tarikh))
       return showToast("Masa tamat mesti selepas masa mula.", "error");
@@ -425,21 +485,30 @@
     btn.disabled = true;
     btn.textContent = "Menyimpan...";
     try {
-      await addDoc(collection(db, COLLECTION), {
+      const data = {
         tajuk, tarikh, tarikhTamat,
         tarikhAkhir: tarikhTamat || tarikh,
         masaMula, masaTamat, tempat,
         kategori: $("akKategori").value,
         penganjur: $("akPenganjur").value.trim(),
-        catatan: $("akCatatan").value.trim(),
+        catatan: $("akCatatan").value.trim()
+      };
+      const sedangEdit = !!editingId;
+      if (sedangEdit) {
+        await updateDoc(doc(db, COLLECTION, editingId), {
+          ...data,
+          dikemaskiniOleh: currentTeacher.displayName || currentUser.displayName || currentUser.email,
+          updatedAt: serverTimestamp()
+        });
+      } else await addDoc(collection(db, COLLECTION), {
+        ...data,
         uid: currentUser.uid,
         email: String(currentUser.email || "").toLowerCase(),
         namaGuru: currentTeacher.displayName || currentUser.displayName || currentUser.email,
         createdAt: serverTimestamp()
       });
-      $("aktivitiForm").reset();
-      $("akTarikh").value = todayStr();
-      showToast("Aktiviti berjaya didaftarkan.", "success");
+      batalEdit();
+      showToast(sedangEdit ? "Aktiviti berjaya dikemaskini." : "Aktiviti berjaya didaftarkan.", "success");
       view = "akan";
       document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.dataset.view === "akan"));
       await loadAktiviti();
@@ -450,7 +519,7 @@
         : (err.message || "Gagal menyimpan aktiviti."), "error");
     } finally {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i>&nbsp; Simpan Aktiviti';
+      btn.innerHTML = editingId ? SUBMIT_EDIT : SUBMIT_BARU;
     }
   }
 
@@ -458,6 +527,7 @@
     if (!confirm("Padam aktiviti ini?")) return;
     try {
       await deleteDoc(doc(db, COLLECTION, id));
+      if (id === editingId) batalEdit();
       showToast("Aktiviti telah dipadam.", "success");
       await loadAktiviti();
     } catch (err) {
@@ -489,6 +559,7 @@
   $("loginTopBtn").addEventListener("click", login);
   $("logoutBtn").addEventListener("click", () => signOut(auth));
   $("aktivitiForm").addEventListener("submit", simpan);
+  $("akCancelBtn").addEventListener("click", batalEdit);
   document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
     view = b.dataset.view;
     document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === b));
