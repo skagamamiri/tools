@@ -1,385 +1,524 @@
-<!-- ============================================================
-     DAFTAR AKTIVITI SEKOLAH — ICT HUB
-     Tampal SELURUH blok ini dalam index.html, betul-betul selepas
-     penutup <div id="emptyState"> ... </div> dan SEBELUM
-     <!-- Footer FRONTEND -->.
-     Data disimpan dalam Firestore koleksi "aktiviti".
-     ============================================================ -->
-<section id="aktivitiSection" class="mt-8">
-    <div class="flex items-center justify-between mb-3 gap-3">
-        <h3 class="font-heading font-bold text-sm md:text-base text-slate-700 dark:text-slate-300 flex items-center">
-            <i class="fa-solid fa-calendar-days mr-2 text-brand-600"></i>
-            <span>Aktiviti Akan Datang</span>
-            <span id="aktivitiCount" class="ml-2 px-2 py-0.5 rounded-full text-[11px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">0</span>
-        </h3>
-        <button type="button" id="aktivitiAddBtn"
-            class="px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md transition whitespace-nowrap">
-            <i class="fa-solid fa-plus mr-1.5"></i>Daftar Aktiviti
-        </button>
-    </div>
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#071a16">
+<title>Daftar Aktiviti • Hub Tool ICT</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <div id="aktivitiList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div class="col-span-full py-8 text-center text-xs text-slate-400">
-            <i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Memuatkan aktiviti...
+<style>
+  :root {
+    --green:#009b62; --green-dark:#06724d; --navy:#071a16; --ink:#172033;
+    --muted:#718096; --line:#dce5eb; --bg:#f5f8fa; --red:#e84b5f;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  button,input,select,textarea { font:inherit; }
+  button { cursor:pointer; }
+  .hidden { display:none !important; }
+
+  /* ---------- Header ---------- */
+  .top {
+    background:linear-gradient(135deg,#052b20,#009b62 65%,#087da2); color:#fff;
+    padding:22px max(20px,calc((100vw - 1180px)/2));
+  }
+  .top-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .brand { display:flex; align-items:center; gap:10px; min-width:0; }
+  .back-btn {
+    width:40px;height:40px;border-radius:12px;border:1px solid #ffffff35;background:#ffffff14;
+    color:#fff;font-size:18px;display:grid;place-items:center;flex:0 0 auto;
+  }
+  .brand-icon {
+    width:52px;height:52px;border-radius:16px;background:#fff;color:var(--green);
+    display:grid;place-items:center;font-size:22px;box-shadow:0 8px 24px #0002;flex:0 0 auto;
+  }
+  .eyebrow { font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.78; }
+  h1 { margin:4px 0;font-size:clamp(22px,4vw,30px); }
+  .sub { margin:0;color:#d8f6ea;font-size:13px; }
+  .userbox { display:flex;align-items:center;gap:10px; }
+  .userbox small { display:block;opacity:.8;font-size:10px;font-weight:800; }
+  .top-btn {
+    border:1px solid #ffffff3d;background:#ffffff16;color:#fff;padding:10px 13px;
+    border-radius:12px;font-weight:800;font-size:12px;white-space:nowrap;
+  }
+  .top-btn.solid { background:#fff;color:var(--green-dark);border-color:#fff; }
+
+  /* ---------- Layout ---------- */
+  main { width:min(1180px,calc(100% - 32px));margin:24px auto 50px; }
+  .grid { display:grid;grid-template-columns:1fr 1.45fr;gap:20px;align-items:start; }
+  .card {
+    background:#fff;border:1px solid var(--line);border-radius:22px;
+    box-shadow:0 10px 30px #18314d0d;overflow:hidden;
+  }
+  .card-head { padding:20px 22px 6px; }
+  .card-head h2 { margin:0;font-size:18px; }
+  .card-head p { margin:5px 0 0;color:var(--muted);font-size:12px; }
+
+  /* ---------- Form ---------- */
+  .form { padding:16px 22px 22px;display:grid;gap:13px; }
+  label { font-size:11px;font-weight:800;color:#526174; }
+  input,select,textarea {
+    width:100%;margin-top:6px;border:1px solid var(--line);background:#fbfdfe;
+    border-radius:13px;padding:12px 13px;outline:none;color:var(--ink);
+  }
+  textarea { resize:vertical;min-height:80px; }
+  input:focus,select:focus,textarea:focus { border-color:#24b681;box-shadow:0 0 0 3px #24b6811c; }
+  .two { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+  .primary {
+    border:0;background:linear-gradient(135deg,#009b62,#00b477);color:#fff;padding:13px 16px;
+    border-radius:13px;font-weight:900;box-shadow:0 7px 18px #009b6230;
+  }
+  .primary:disabled { opacity:.55;cursor:not-allowed; }
+  .login-note {
+    margin:16px 22px 22px;padding:22px;border:1px dashed #cbd8e2;border-radius:16px;
+    text-align:center;color:var(--muted);font-size:12px;line-height:1.6;
+  }
+  .login-note strong { display:block;color:var(--ink);font-size:14px;margin-bottom:4px; }
+  .google-btn {
+    margin-top:12px;width:100%;padding:12px 15px;border:1px solid var(--line);border-radius:13px;
+    background:#fff;font-weight:900;color:#273447;
+  }
+
+  /* ---------- Senarai ---------- */
+  .list-head { display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px; }
+  .list-head h2 { margin:0;font-size:17px; }
+  .count { margin-left:6px;padding:2px 8px;border-radius:999px;background:#e3eaef;color:#526174;font-size:11px; }
+  .tabs { display:flex;gap:6px; }
+  .tab {
+    border:1px solid var(--line);background:#fff;color:#526174;padding:7px 11px;border-radius:10px;
+    font-size:11px;font-weight:800;
+  }
+  .tab.active { background:var(--green);border-color:var(--green);color:#fff; }
+  .list { display:grid;gap:10px; }
+  .item {
+    display:flex;gap:13px;padding:14px;border:1px solid var(--line);border-radius:16px;background:#fff;
+  }
+  .item.past { opacity:.6; }
+  .datebox {
+    flex:0 0 56px;text-align:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;align-self:flex-start;
+  }
+  .datebox .m { background:var(--green);color:#fff;font-size:10px;font-weight:900;padding:3px 0; }
+  .datebox .d { font-size:22px;font-weight:900;padding:4px 0; }
+  .item-body { min-width:0;flex:1; }
+  .pills { display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px; }
+  .pill { padding:3px 8px;border-radius:999px;font-size:10px;font-weight:900; }
+  .p-today { background:var(--red);color:#fff; }
+  .p-soon { background:#f59e0b;color:#fff; }
+  .p-week { background:var(--green);color:#fff; }
+  .p-later { background:#e3eaef;color:#526174; }
+  .p-done { background:#e3eaef;color:#8a97a5; }
+  .p-cat { background:#eaf8f2;color:#00855a; }
+  .item h3 { margin:0;font-size:14px;line-height:1.35;word-break:break-word; }
+  .meta { margin-top:6px;display:grid;gap:3px;color:var(--muted);font-size:11.5px; }
+  .meta i { width:16px;color:#9aa8b5; }
+  .note {
+    margin-top:8px;padding:7px 9px;border-radius:10px;background:#f5f8fa;font-size:11.5px;
+    color:#40506a;word-break:break-word;white-space:pre-line;
+  }
+  .foot { margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px; }
+  .by { font-size:10.5px;color:#9aa8b5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .del-btn {
+    border:0;background:#fff0f2;color:#d62e4d;border-radius:9px;padding:6px 9px;font-size:10px;font-weight:900;
+  }
+  .empty {
+    min-height:150px;border:1px dashed #cbd8e2;border-radius:18px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;color:var(--muted);gap:5px;padding:24px;font-size:12px;
+  }
+  .empty strong { color:var(--ink);font-size:14px; }
+  .empty.error { color:#d73a52;background:#fff8f9;border-color:#ffd2d9; }
+
+  .toast {
+    position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+    z-index:100;padding:12px 16px;border-radius:13px;background:#172033;color:#fff;
+    box-shadow:0 12px 35px #0003;font-size:12px;font-weight:800;transition:.22s ease;
+    max-width:min(92vw,500px);text-align:center;
+  }
+  .toast.show { opacity:1;transform:translate(-50%,0); }
+  .toast.success { background:#008a59; }
+  .toast.error { background:#d83b53; }
+  .footer { text-align:center;color:#91a0ae;font-size:11px;padding:25px; }
+
+  @media(max-width:850px) {
+    .top { padding:18px 16px; }
+    .top-inner { align-items:flex-start; }
+    .userbox .user-text { display:none; }
+    main { width:calc(100% - 24px);margin-top:15px; }
+    .grid { grid-template-columns:1fr; }
+    .list-col { order:-1; }
+  }
+  @media(max-width:520px) {
+    .brand-icon { display:none; }
+    h1 { font-size:21px; }
+    .sub { font-size:11px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <button type="button" class="back-btn" onclick="history.length > 1 ? history.back() : location.href='./'" title="Kembali">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <div class="brand-icon"><i class="fa-solid fa-calendar-days"></i></div>
+      <div>
+        <div class="eyebrow">Hub Tool ICT • SK Agama (MIS) Miri</div>
+        <h1>Daftar Aktiviti / Program</h1>
+        <p class="sub">Daftar dan lihat aktiviti sekolah yang akan diadakan.</p>
+      </div>
+    </div>
+    <div class="userbox">
+      <div class="user-text hidden" id="userText">
+        <strong id="userName">-</strong>
+        <small id="userRole">GURU</small>
+      </div>
+      <button id="loginTopBtn" class="top-btn solid hidden"><i class="fa-brands fa-google"></i> Log Masuk</button>
+      <button id="logoutBtn" class="top-btn hidden">Keluar</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="grid">
+    <!-- Borang -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Daftar Aktiviti Baharu</h2>
+        <p>Aktiviti yang didaftar akan dipaparkan kepada semua guru.</p>
+      </div>
+
+      <div id="loginNote" class="login-note">
+        <strong>Log masuk diperlukan</strong>
+        Hanya guru yang berdaftar dalam Hub Tool ICT boleh mendaftar aktiviti.
+        <button id="googleLoginBtn" class="google-btn"><i class="fa-brands fa-google"></i>&nbsp; Teruskan dengan Google</button>
+      </div>
+
+      <form id="aktivitiForm" class="form hidden">
+        <label>Nama Aktiviti *
+          <input id="akTajuk" type="text" maxlength="120" required placeholder="Contoh: Hari Sukan Tahunan">
+        </label>
+        <div class="two">
+          <label>Tarikh Mula *
+            <input id="akTarikh" type="date" required>
+          </label>
+          <label>Tarikh Tamat
+            <input id="akTarikhTamat" type="date">
+          </label>
         </div>
-    </div>
-
-    <div class="text-center mt-3">
-        <button type="button" id="aktivitiMoreBtn"
-            class="hidden px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-brand-500/50 transition">
-            Lihat semua aktiviti
-        </button>
-    </div>
-</section>
-
-<!-- Modal Daftar Aktiviti -->
-<div id="aktivitiModal" class="hidden fixed inset-0 z-[90] bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="w-full sm:max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[92vh] overflow-y-auto">
-        <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <div>
-                <h4 class="font-heading font-bold text-base text-slate-800 dark:text-slate-100">Daftar Aktiviti</h4>
-                <p class="text-[11px] text-slate-400 mt-0.5">Aktiviti akan dipaparkan di muka hadapan ICT HUB.</p>
-            </div>
-            <button type="button" id="aktivitiCloseBtn" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200" aria-label="Tutup">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+        <div class="two">
+          <label>Masa Mula
+            <input id="akMasaMula" type="time">
+          </label>
+          <label>Masa Tamat
+            <input id="akMasaTamat" type="time">
+          </label>
         </div>
+        <label>Tempat *
+          <input id="akTempat" type="text" maxlength="80" required placeholder="Contoh: Dewan Ibnu Khaldun">
+        </label>
+        <div class="two">
+          <label>Kategori
+            <select id="akKategori">
+              <option>Kurikulum</option>
+              <option>Kokurikulum</option>
+              <option>Hal Ehwal Murid</option>
+              <option>Pentadbiran</option>
+              <option>Mesyuarat</option>
+              <option>Keagamaan</option>
+              <option>Lain-lain</option>
+            </select>
+          </label>
+          <label>Penganjur / Unit
+            <input id="akPenganjur" type="text" maxlength="60" placeholder="Contoh: Unit Kokurikulum">
+          </label>
+        </div>
+        <label>Catatan
+          <textarea id="akCatatan" maxlength="400" placeholder="Maklumat tambahan (pakaian, peserta, dll.)"></textarea>
+        </label>
+        <button id="akSubmitBtn" class="primary" type="submit"><i class="fa-solid fa-floppy-disk"></i>&nbsp; Simpan Aktiviti</button>
+      </form>
+    </section>
 
-        <form id="aktivitiForm" class="p-5 grid gap-3 text-xs">
-            <label class="font-semibold text-slate-600 dark:text-slate-300">Nama Aktiviti *
-                <input id="akTajuk" type="text" maxlength="120" required placeholder="Contoh: Hari Sukan Tahunan"
-                    class="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/40">
-            </label>
+    <!-- Senarai -->
+    <section class="list-col">
+      <div class="list-head">
+        <h2>Senarai Aktiviti <span id="akCount" class="count">0</span></h2>
+        <div class="tabs">
+          <button class="tab active" data-view="akan">Akan Datang</button>
+          <button class="tab" data-view="lepas">Telah Berlalu</button>
+        </div>
+      </div>
+      <div id="akList" class="list">
+        <div class="empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuatkan aktiviti...</div>
+      </div>
+    </section>
+  </div>
+</main>
 
-            <div class="grid grid-cols-2 gap-3">
-                <label class="font-semibold text-slate-600 dark:text-slate-300">Tarikh Mula *
-                    <input id="akTarikh" type="date" required
-                        class="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/40">
-                </label>
-                <label class="font-semibold text-slate-600 dark:text-slate-300">Tarikh Tamat
-                    <input id="akTarikhTamat" type="date"
-                        class="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/40">
-                </label>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <label class="font-semibold text-slate-600 dark:text-slate-300">Masa Mula
-                    <input id="akMasaMula" type="time"
-                        class="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/40">
-                </label>
-                <label class="font-semibold text-slate-600 dark:text-slate-300">Masa Tamat
-                    <input id="akMasaTamat" type="time"
-                        class="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/40">
-                </label>
-            </div>
-
-            <label class="font-semibold text-slate-600 dark:text-slate-300">Tempat *
-                <input id="akTempat" type="text" maxlength="80" required placeholder="Contoh: Dewan Ibnu Khaldun"
-                    class="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/40">
-            </label>
-
-            <div class="grid grid-cols-2 gap-3">
-                <label class="font-semibold text-slate-600 dark:text-slate-300">Kategori
-                    <select id="akKategori"
-                        class="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/40">
-                        <option>Kurikulum</option>
-                        <option>Kokurikulum</option>
-                        <option>Hal Ehwal Murid</option>
-                        <option>Pentadbiran</option>
-                        <option>Mesyuarat</option>
-                        <option>Keagamaan</option>
-                        <option>Lain-lain</option>
-                    </select>
-                </label>
-                <label class="font-semibold text-slate-600 dark:text-slate-300">Penganjur / Unit
-                    <input id="akPenganjur" type="text" maxlength="60" placeholder="Contoh: Unit Kokurikulum"
-                        class="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/40">
-                </label>
-            </div>
-
-            <label class="font-semibold text-slate-600 dark:text-slate-300">Catatan
-                <textarea id="akCatatan" rows="3" maxlength="400" placeholder="Maklumat tambahan (pakaian, peserta, dll.)"
-                    class="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/40"></textarea>
-            </label>
-
-            <button id="akSubmitBtn" type="submit"
-                class="mt-1 w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold shadow-md transition disabled:opacity-50">
-                <i class="fa-solid fa-floppy-disk mr-1.5"></i>Simpan Aktiviti
-            </button>
-        </form>
-    </div>
-</div>
+<div class="footer">Hub Tool ICT • SK Agama (MIS) Miri</div>
+<div id="toast" class="toast"></div>
 
 <script type="module">
-    // Versi SDK MESTI sama dengan index.html (10.13.2) supaya berkongsi
-    // Firebase app & sesi log masuk yang sama.
-    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
-    import {
-        getFirestore, collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut
+  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+  import {
+    getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE",
-        authDomain: "skamis-hubtool.firebaseapp.com",
-        projectId: "skamis-hubtool",
-        storageBucket: "skamis-hubtool.firebasestorage.app",
-        messagingSenderId: "236769370780",
-        appId: "1:236769370780:web:9dfa07d772a721ecfe0359"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE",
+    authDomain: "skamis-hubtool.firebaseapp.com",
+    projectId: "skamis-hubtool",
+    storageBucket: "skamis-hubtool.firebasestorage.app",
+    messagingSenderId: "236769370780",
+    appId: "1:236769370780:web:9dfa07d772a721ecfe0359"
+  };
 
-    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-    const COLLECTION = "aktiviti";
-    const SHOW_LIMIT = 6;
-    const $ = (id) => document.getElementById(id);
+  const COLLECTION = "aktiviti";
+  const BULAN = ["JAN","FEB","MAC","APR","MEI","JUN","JUL","OGO","SEP","OKT","NOV","DIS"];
+  const BULAN_PENUH = ["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"];
+  const HARI = ["Ahad","Isnin","Selasa","Rabu","Khamis","Jumaat","Sabtu"];
+  const $ = (id) => document.getElementById(id);
 
-    let senarai = [];
-    let showAll = false;
+  let currentUser = null;
+  let currentTeacher = null;
+  let semua = [];
+  let view = "akan";
 
-    const KATEGORI_WARNA = {
-        "Kurikulum":       "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
-        "Kokurikulum":     "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-        "Hal Ehwal Murid": "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-        "Pentadbiran":     "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
-        "Mesyuarat":       "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300",
-        "Keagamaan":       "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
-        "Lain-lain":       "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
-    };
-    const BULAN = ["JAN","FEB","MAC","APR","MEI","JUN","JUL","OGO","SEP","OKT","NOV","DIS"];
-    const HARI = ["Ahad","Isnin","Selasa","Rabu","Khamis","Jumaat","Sabtu"];
+  function esc(v) {
+    return String(v ?? "").replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[c]));
+  }
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+  function parseDate(s) {
+    const [y,m,d] = String(s).split("-").map(Number);
+    return new Date(y, m-1, d);
+  }
+  function fmtDate(s) {
+    const d = parseDate(s);
+    return `${HARI[d.getDay()]}, ${d.getDate()} ${BULAN_PENUH[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  function akhir(a) { return a.tarikhTamat || a.tarikh; }
 
-    function esc(v) {
-        return String(v ?? "").replace(/[&<>"']/g, c => ({
-            "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-        }[c]));
+  function showToast(msg, type = "info") {
+    const el = $("toast");
+    el.textContent = msg;
+    el.className = `toast show ${type}`;
+    clearTimeout(window.__t);
+    window.__t = setTimeout(() => el.className = "toast", 3200);
+  }
+
+  function relPill(a) {
+    const t = todayStr();
+    if (akhir(a) < t) return `<span class="pill p-done">Selesai</span>`;
+    if (a.tarikh <= t) return `<span class="pill p-today">Hari ini</span>`;
+    const diff = Math.round((parseDate(a.tarikh) - parseDate(t)) / 86400000);
+    if (diff === 1) return `<span class="pill p-soon">Esok</span>`;
+    return `<span class="pill ${diff <= 7 ? "p-week" : "p-later"}">${diff} hari lagi</span>`;
+  }
+
+  function canDelete(a) {
+    if (!currentUser || !currentTeacher) return false;
+    return currentTeacher.role === "admin" || a.uid === currentUser.uid;
+  }
+
+  async function loadAktiviti() {
+    try {
+      const snap = await getDocs(collection(db, COLLECTION));
+      semua = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(a => a.tarikh && a.tajuk);
+      render();
+    } catch (err) {
+      console.error(err);
+      $("akList").innerHTML = `
+        <div class="empty error">
+          <strong>Aktiviti tidak dapat dimuatkan.</strong>
+          <span>${esc(err.code === "permission-denied"
+            ? "Firestore Rules untuk koleksi 'aktiviti' belum ditetapkan."
+            : (err.message || err.code))}</span>
+        </div>`;
+    }
+  }
+
+  function render() {
+    const t = todayStr();
+    let items = view === "akan"
+      ? semua.filter(a => akhir(a) >= t).sort((a,b) =>
+          a.tarikh.localeCompare(b.tarikh) || String(a.masaMula||"99").localeCompare(String(b.masaMula||"99")))
+      : semua.filter(a => akhir(a) < t).sort((a,b) => b.tarikh.localeCompare(a.tarikh)).slice(0, 30);
+
+    $("akCount").textContent = items.length;
+
+    if (!items.length) {
+      $("akList").innerHTML = `
+        <div class="empty">
+          <i class="fa-solid fa-calendar-xmark" style="font-size:22px;color:#9aa8b5"></i>
+          <strong>${view === "akan" ? "Tiada aktiviti akan datang" : "Tiada aktiviti lepas"}</strong>
+          <span>${view === "akan" ? "Aktiviti yang didaftar akan dipaparkan di sini." : ""}</span>
+        </div>`;
+      return;
     }
 
-    function todayStr() {
-        const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    $("akList").innerHTML = items.map(a => {
+      const d = parseDate(a.tarikh);
+      const tarikh = a.tarikhTamat && a.tarikhTamat !== a.tarikh
+        ? `${fmtDate(a.tarikh)} – ${fmtDate(a.tarikhTamat)}` : fmtDate(a.tarikh);
+      const masa = a.masaMula ? `${esc(a.masaMula)}${a.masaTamat ? " – " + esc(a.masaTamat) : ""}` : "";
+      return `
+      <article class="item ${akhir(a) < t ? "past" : ""}">
+        <div class="datebox"><div class="m">${BULAN[d.getMonth()]}</div><div class="d">${d.getDate()}</div></div>
+        <div class="item-body">
+          <div class="pills">${relPill(a)}<span class="pill p-cat">${esc(a.kategori || "Lain-lain")}</span></div>
+          <h3>${esc(a.tajuk)}</h3>
+          <div class="meta">
+            <span><i class="fa-regular fa-calendar"></i>${tarikh}</span>
+            ${masa ? `<span><i class="fa-regular fa-clock"></i>${masa}</span>` : ""}
+            <span><i class="fa-solid fa-location-dot"></i>${esc(a.tempat)}</span>
+            ${a.penganjur ? `<span><i class="fa-solid fa-users"></i>${esc(a.penganjur)}</span>` : ""}
+          </div>
+          ${a.catatan ? `<div class="note">${esc(a.catatan)}</div>` : ""}
+          <div class="foot">
+            <span class="by">Didaftar oleh ${esc(a.namaGuru || a.email || "-")}</span>
+            ${canDelete(a) ? `<button class="del-btn" data-id="${esc(a.id)}"><i class="fa-solid fa-trash-can"></i> Padam</button>` : ""}
+          </div>
+        </div>
+      </article>`;
+    }).join("");
+
+    $("akList").querySelectorAll(".del-btn").forEach(b =>
+      b.addEventListener("click", () => padam(b.dataset.id)));
+  }
+
+  async function simpan(e) {
+    e.preventDefault();
+    if (!currentUser || !currentTeacher) { showToast("Sila log masuk dahulu.", "error"); return; }
+
+    const tajuk = $("akTajuk").value.trim();
+    const tarikh = $("akTarikh").value;
+    const tarikhTamat = $("akTarikhTamat").value || "";
+    const masaMula = $("akMasaMula").value || "";
+    const masaTamat = $("akMasaTamat").value || "";
+    const tempat = $("akTempat").value.trim();
+
+    if (!tajuk || !tarikh || !tempat) return showToast("Sila isi nama aktiviti, tarikh dan tempat.", "error");
+    if (tarikh < todayStr()) return showToast("Tarikh aktiviti tidak boleh tarikh yang telah berlalu.", "error");
+    if (tarikhTamat && tarikhTamat < tarikh) return showToast("Tarikh tamat mesti selepas tarikh mula.", "error");
+    if (masaMula && masaTamat && masaTamat <= masaMula && (!tarikhTamat || tarikhTamat === tarikh))
+      return showToast("Masa tamat mesti selepas masa mula.", "error");
+
+    const btn = $("akSubmitBtn");
+    btn.disabled = true;
+    btn.textContent = "Menyimpan...";
+    try {
+      await addDoc(collection(db, COLLECTION), {
+        tajuk, tarikh, tarikhTamat,
+        tarikhAkhir: tarikhTamat || tarikh,
+        masaMula, masaTamat, tempat,
+        kategori: $("akKategori").value,
+        penganjur: $("akPenganjur").value.trim(),
+        catatan: $("akCatatan").value.trim(),
+        uid: currentUser.uid,
+        email: String(currentUser.email || "").toLowerCase(),
+        namaGuru: currentTeacher.displayName || currentUser.displayName || currentUser.email,
+        createdAt: serverTimestamp()
+      });
+      $("aktivitiForm").reset();
+      $("akTarikh").value = todayStr();
+      showToast("Aktiviti berjaya didaftarkan.", "success");
+      view = "akan";
+      document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.dataset.view === "akan"));
+      await loadAktiviti();
+    } catch (err) {
+      console.error(err);
+      showToast(err.code === "permission-denied"
+        ? "Tiada kebenaran menyimpan. Semak Firestore Rules."
+        : (err.message || "Gagal menyimpan aktiviti."), "error");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i>&nbsp; Simpan Aktiviti';
     }
+  }
 
-    function parseDate(s) {
-        const [y, m, d] = String(s).split("-").map(Number);
-        return new Date(y, m - 1, d);
+  async function padam(id) {
+    if (!confirm("Padam aktiviti ini?")) return;
+    try {
+      await deleteDoc(doc(db, COLLECTION, id));
+      showToast("Aktiviti telah dipadam.", "success");
+      await loadAktiviti();
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || "Gagal memadam aktiviti.", "error");
     }
+  }
 
-    function fmtDate(s) {
-        const d = parseDate(s);
-        return `${HARI[d.getDay()]}, ${d.getDate()} ${BULAN[d.getMonth()].charAt(0)}${BULAN[d.getMonth()].slice(1).toLowerCase()} ${d.getFullYear()}`;
+  async function login() {
+    try {
+      const p = new GoogleAuthProvider();
+      p.setCustomParameters({ prompt: "select_account" });
+      await signInWithPopup(auth, p);
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || "Gagal log masuk Google.", "error");
     }
+  }
 
-    function relLabel(a) {
-        const today = parseDate(todayStr());
-        const mula = parseDate(a.tarikh);
-        const tamat = parseDate(a.tarikhTamat || a.tarikh);
-        const diff = Math.round((mula - today) / 86400000);
-        if (mula <= today && tamat >= today) return { text: "Hari ini", cls: "bg-rose-500 text-white" };
-        if (diff === 1) return { text: "Esok", cls: "bg-amber-500 text-white" };
-        if (diff <= 7) return { text: `${diff} hari lagi`, cls: "bg-brand-600 text-white" };
-        return { text: `${diff} hari lagi`, cls: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300" };
+  function setUI(loggedIn) {
+    $("aktivitiForm").classList.toggle("hidden", !loggedIn);
+    $("loginNote").classList.toggle("hidden", loggedIn);
+    $("userText").classList.toggle("hidden", !loggedIn);
+    $("logoutBtn").classList.toggle("hidden", !loggedIn);
+    $("loginTopBtn").classList.toggle("hidden", loggedIn);
+  }
+
+  $("googleLoginBtn").addEventListener("click", login);
+  $("loginTopBtn").addEventListener("click", login);
+  $("logoutBtn").addEventListener("click", () => signOut(auth));
+  $("aktivitiForm").addEventListener("submit", simpan);
+  document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
+    view = b.dataset.view;
+    document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === b));
+    render();
+  }));
+  $("akTarikh").value = todayStr();
+
+  onAuthStateChanged(auth, async user => {
+    currentUser = user;
+    currentTeacher = null;
+    if (!user) { setUI(false); render(); return; }
+    try {
+      const email = String(user.email || "").toLowerCase().trim();
+      const snap = await getDoc(doc(db, "teachers", email));
+      if (!snap.exists() || snap.data().active === false) {
+        throw new Error("Akaun anda tidak disenaraikan sebagai guru aktif.");
+      }
+      currentTeacher = snap.data();
+      $("userName").textContent = currentTeacher.displayName || user.displayName || user.email;
+      $("userRole").textContent = currentTeacher.role === "admin" ? "ADMIN" : "GURU";
+      setUI(true);
+      render();
+    } catch (err) {
+      console.error(err);
+      setUI(false);
+      showToast(err.message, "error");
     }
+  });
 
-    function canDelete(a) {
-        const t = window.currentTeacher;
-        if (!t) return false;
-        const email = String(t.email || "").toLowerCase();
-        return t.role === "admin" || (a.email && a.email.toLowerCase() === email);
-    }
-
-    function toast(msg, type = "success") {
-        const el = document.getElementById("toast");
-        if (el) el.style.zIndex = "100"; // supaya mesej kelihatan di atas modal
-        if (typeof window.showToast === "function") window.showToast(msg, type);
-        else alert(msg);
-    }
-
-    async function loadAktiviti() {
-        try {
-            // Ambil aktiviti yang tarikh tamatnya belum berlalu.
-            const q = query(collection(db, COLLECTION), where("tarikhAkhir", ">=", todayStr()));
-            const snap = await getDocs(q);
-            senarai = snap.docs
-                .map(d => ({ id: d.id, ...d.data() }))
-                .sort((a, b) =>
-                    String(a.tarikh).localeCompare(String(b.tarikh)) ||
-                    String(a.masaMula || "99:99").localeCompare(String(b.masaMula || "99:99")));
-            render();
-        } catch (err) {
-            console.error("Gagal memuatkan aktiviti:", err);
-            $("aktivitiList").innerHTML = `
-                <div class="col-span-full py-8 text-center text-xs text-rose-500 bg-rose-50 dark:bg-rose-500/10 rounded-2xl border border-dashed border-rose-200 dark:border-rose-500/30">
-                    <i class="fa-solid fa-circle-exclamation mr-1.5"></i>Aktiviti tidak dapat dimuatkan. ${esc(err.code || err.message || "")}
-                </div>`;
-        }
-    }
-
-    function render() {
-        const list = $("aktivitiList");
-        $("aktivitiCount").textContent = senarai.length;
-
-        if (!senarai.length) {
-            list.innerHTML = `
-                <div class="col-span-full py-10 text-center bg-white dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 px-4">
-                    <div class="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 mb-2">
-                        <i class="fa-solid fa-calendar-xmark text-lg"></i>
-                    </div>
-                    <p class="font-heading font-bold text-slate-700 dark:text-slate-300 text-sm">Tiada aktiviti akan datang</p>
-                    <p class="text-[11px] text-slate-400 mt-1">Tekan "Daftar Aktiviti" untuk menambah aktiviti baharu.</p>
-                </div>`;
-            $("aktivitiMoreBtn").classList.add("hidden");
-            return;
-        }
-
-        const items = showAll ? senarai : senarai.slice(0, SHOW_LIMIT);
-        list.innerHTML = items.map(a => {
-            const d = parseDate(a.tarikh);
-            const rel = relLabel(a);
-            const warna = KATEGORI_WARNA[a.kategori] || KATEGORI_WARNA["Lain-lain"];
-            const julatTarikh = a.tarikhTamat && a.tarikhTamat !== a.tarikh
-                ? `${fmtDate(a.tarikh)} – ${fmtDate(a.tarikhTamat)}`
-                : fmtDate(a.tarikh);
-            const masa = a.masaMula
-                ? `${esc(a.masaMula)}${a.masaTamat ? " – " + esc(a.masaTamat) : ""}`
-                : "";
-            return `
-            <article class="glass-card p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-800/60 flex gap-3">
-                <div class="flex-shrink-0 w-14 text-center rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 self-start">
-                    <div class="bg-brand-600 text-white text-[10px] font-bold py-0.5">${BULAN[d.getMonth()]}</div>
-                    <div class="text-xl font-black text-slate-800 dark:text-slate-100 py-1">${d.getDate()}</div>
-                </div>
-                <div class="min-w-0 flex-1">
-                    <div class="flex flex-wrap items-center gap-1.5 mb-1">
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${rel.cls}">${rel.text}</span>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${warna}">${esc(a.kategori || "Lain-lain")}</span>
-                    </div>
-                    <h4 class="font-heading font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug break-words">${esc(a.tajuk)}</h4>
-                    <div class="mt-1.5 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                        <p><i class="fa-regular fa-calendar w-4"></i>${julatTarikh}</p>
-                        ${masa ? `<p><i class="fa-regular fa-clock w-4"></i>${masa}</p>` : ""}
-                        <p class="break-words"><i class="fa-solid fa-location-dot w-4"></i>${esc(a.tempat)}</p>
-                        ${a.penganjur ? `<p class="break-words"><i class="fa-solid fa-users w-4"></i>${esc(a.penganjur)}</p>` : ""}
-                    </div>
-                    ${a.catatan ? `<p class="mt-2 text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/60 rounded-lg px-2 py-1.5 break-words">${esc(a.catatan)}</p>` : ""}
-                    <div class="mt-2 flex items-center justify-between gap-2">
-                        <span class="text-[10px] text-slate-400 truncate">Didaftar oleh ${esc(a.namaGuru || a.email || "-")}</span>
-                        ${canDelete(a) ? `<button type="button" data-del="${esc(a.id)}" class="ak-del text-[10px] font-bold px-2 py-1 rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300 hover:bg-rose-100"><i class="fa-solid fa-trash-can mr-1"></i>Padam</button>` : ""}
-                    </div>
-                </div>
-            </article>`;
-        }).join("");
-
-        list.querySelectorAll(".ak-del").forEach(btn =>
-            btn.addEventListener("click", () => padamAktiviti(btn.dataset.del)));
-
-        const more = $("aktivitiMoreBtn");
-        if (senarai.length > SHOW_LIMIT) {
-            more.classList.remove("hidden");
-            more.textContent = showAll ? "Tunjuk kurang" : `Lihat semua aktiviti (${senarai.length})`;
-        } else {
-            more.classList.add("hidden");
-        }
-    }
-
-    function bukaModal() {
-        if (!window.currentTeacher || !auth.currentUser) {
-            toast("Sila log masuk sebagai guru untuk mendaftar aktiviti.", "info");
-            const loginBtn = document.getElementById("teacherLoginHeaderBtn");
-            if (loginBtn) loginBtn.click();
-            return;
-        }
-        $("aktivitiForm").reset();
-        $("akTarikh").value = todayStr();
-        $("akTarikh").min = todayStr();
-        $("akTarikhTamat").min = todayStr();
-        $("aktivitiModal").classList.remove("hidden");
-        document.body.style.overflow = "hidden";
-        setTimeout(() => $("akTajuk").focus(), 50);
-    }
-
-    function tutupModal() {
-        $("aktivitiModal").classList.add("hidden");
-        document.body.style.overflow = "";
-    }
-
-    async function simpanAktiviti(e) {
-        e.preventDefault();
-        const user = auth.currentUser;
-        const t = window.currentTeacher;
-        if (!user || !t) { toast("Sesi log masuk tamat. Sila log masuk semula.", "info"); return; }
-
-        const tajuk = $("akTajuk").value.trim();
-        const tarikh = $("akTarikh").value;
-        const tarikhTamat = $("akTarikhTamat").value || "";
-        const masaMula = $("akMasaMula").value || "";
-        const masaTamat = $("akMasaTamat").value || "";
-        const tempat = $("akTempat").value.trim();
-
-        if (!tajuk || !tarikh || !tempat) { toast("Sila isi nama aktiviti, tarikh dan tempat.", "info"); return; }
-        if (tarikh < todayStr()) { toast("Tarikh aktiviti tidak boleh tarikh yang telah berlalu.", "info"); return; }
-        if (tarikhTamat && tarikhTamat < tarikh) { toast("Tarikh tamat mesti selepas tarikh mula.", "info"); return; }
-        if (masaMula && masaTamat && masaTamat <= masaMula && (!tarikhTamat || tarikhTamat === tarikh)) {
-            toast("Masa tamat mesti selepas masa mula.", "info"); return;
-        }
-
-        const btn = $("akSubmitBtn");
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Menyimpan...';
-
-        try {
-            await addDoc(collection(db, COLLECTION), {
-                tajuk,
-                tarikh,
-                tarikhTamat,
-                tarikhAkhir: tarikhTamat || tarikh,   // untuk tapis aktiviti yang telah tamat
-                masaMula,
-                masaTamat,
-                tempat,
-                kategori: $("akKategori").value,
-                penganjur: $("akPenganjur").value.trim(),
-                catatan: $("akCatatan").value.trim(),
-                uid: user.uid,
-                email: String(user.email || "").toLowerCase(),
-                namaGuru: t.displayName || user.displayName || user.email,
-                createdAt: serverTimestamp()
-            });
-            tutupModal();
-            toast("Aktiviti berjaya didaftarkan.", "success");
-            await loadAktiviti();
-        } catch (err) {
-            console.error(err);
-            toast("Gagal menyimpan aktiviti: " + (err.code || err.message), "info");
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1.5"></i>Simpan Aktiviti';
-        }
-    }
-
-    async function padamAktiviti(id) {
-        if (!confirm("Padam aktiviti ini?")) return;
-        try {
-            await deleteDoc(doc(db, COLLECTION, id));
-            toast("Aktiviti telah dipadam.", "success");
-            await loadAktiviti();
-        } catch (err) {
-            console.error(err);
-            toast("Gagal memadam aktiviti: " + (err.code || err.message), "info");
-        }
-    }
-
-    $("aktivitiAddBtn").addEventListener("click", bukaModal);
-    $("aktivitiCloseBtn").addEventListener("click", tutupModal);
-    $("aktivitiModal").addEventListener("click", e => { if (e.target.id === "aktivitiModal") tutupModal(); });
-    document.addEventListener("keydown", e => { if (e.key === "Escape") tutupModal(); });
-    $("aktivitiForm").addEventListener("submit", simpanAktiviti);
-    $("aktivitiMoreBtn").addEventListener("click", () => { showAll = !showAll; render(); });
-
-    // Lukis semula bila status log masuk berubah (untuk butang Padam).
-    onAuthStateChanged(auth, () => setTimeout(render, 1200));
-
-    loadAktiviti();
+  loadAktiviti();
 </script>
-<!-- ================= TAMAT DAFTAR AKTIVITI ================= -->
+</body>
+</html>
