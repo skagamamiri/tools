@@ -716,3 +716,136 @@ html.dark header.sticky.top-0.z-30 h1+p{
     max-width:none!important;
   }
 }
+
+
+/* =========================================================
+   ICT HUB — Tool Cards V12 (Oct 2026)
+   Per-category accent colours, bolder icon tiles, 2-line
+   titles, category chip pinned to the bottom, no dead space.
+   Card markup gets .tool-card + data-cat from renderTools().
+   ========================================================= */
+#toolsGrid>.tool-card{--acc:#059669;--acc2:#0d9488;--acc-soft:rgba(5,150,105,.10);--acc-ink:#047857}
+#toolsGrid>.tool-card[data-cat="PENTADBIRAN"]{--acc:#2563eb;--acc2:#0891b2;--acc-soft:rgba(37,99,235,.10);--acc-ink:#1d4ed8}
+#toolsGrid>.tool-card[data-cat="GRAFIK"]{--acc:#9333ea;--acc2:#db2777;--acc-soft:rgba(147,51,234,.10);--acc-ink:#7e22ce}
+#toolsGrid>.tool-card[data-cat="HTML"]{--acc:#d97706;--acc2:#ea580c;--acc-soft:rgba(217,119,6,.11);--acc-ink:#b45309}
+#toolsGrid>.tool-card[data-cat="ERPH"]{--acc:#0d9488;--acc2:#16a34a;--acc-soft:rgba(13,148,136,.10);--acc-ink:#0f766e}
+html.dark #toolsGrid>.tool-card{--acc-ink:#6ee7b7}
+html.dark #toolsGrid>.tool-card[data-cat="PENTADBIRAN"]{--acc-ink:#93c5fd}
+html.dark #toolsGrid>.tool-card[data-cat="GRAFIK"]{--acc-ink:#d8b4fe}
+html.dark #toolsGrid>.tool-card[data-cat="HTML"]{--acc-ink:#fcd34d}
+html.dark #toolsGrid>.tool-card[data-cat="ERPH"]{--acc-ink:#5eead4}
+
+/* Decorative extras are mobile-only */
+#toolsGrid>.tool-card .tool-card-watermark,
+#toolsGrid>.tool-card .tool-card-go{display:none;pointer-events:none}
+
+@keyframes ictCardIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+
+@media (max-width:640px){
+  html body #toolsGrid{gap:10px!important;align-items:stretch!important}
+
+  html body #toolsGrid>div.tool-card{
+    height:auto!important;
+    min-height:150px!important;
+    padding:12px 11px 11px!important;
+    border-radius:20px!important;
+    background:
+      radial-gradient(120% 80% at 100% 0%,var(--acc-soft),transparent 60%),
+      linear-gradient(180deg,#ffffff 0%,#fbfdfc 100%)!important;
+    border:1px solid rgba(15,23,42,.06)!important;
+    box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 24px -12px rgba(15,23,42,.18)!important;
+    animation:ictCardIn .38s cubic-bezier(.2,.8,.2,1) both;
+    animation-delay:calc(var(--card-i,0) * 45ms);
+  }
+  html.dark body #toolsGrid>div.tool-card,
+  html body.dark #toolsGrid>div.tool-card{
+    background:
+      radial-gradient(120% 80% at 100% 0%,var(--acc-soft),transparent 60%),
+      linear-gradient(180deg,#152232 0%,#101b28 100%)!important;
+    border-color:rgba(148,163,184,.12)!important;
+    box-shadow:0 10px 24px -12px rgba(0,0,0,.55)!important;
+  }
+  /* Accent bar along the top instead of the thin left stripe */
+  html body #toolsGrid>div.tool-card::before{
+    left:14px!important;right:14px!important;top:0!important;bottom:auto!important;
+    width:auto!important;height:3px!important;border-radius:0 0 4px 4px!important;
+    background:linear-gradient(90deg,var(--acc),var(--acc2))!important;
+    opacity:.85!important;
+  }
+  html body #toolsGrid>div.tool-card:active{
+    transform:scale(.965)!important;
+    box-shadow:0 4px 12px -6px rgba(15,23,42,.25)!important;
+  }
+
+  /* Content column fills the card; chip sits at the bottom */
+  html body #toolsGrid>div.tool-card>div:first-child{
+    display:flex!important;flex-direction:column!important;flex:1 1 auto!important;height:100%!important;
+  }
+  html body #toolsGrid>div.tool-card>div:first-child>div:first-child{
+    margin-bottom:9px!important;min-height:0!important;
+  }
+  html body #toolsGrid>div.tool-card>div:first-child>div:nth-child(2){
+    order:3!important;margin:auto 0 0!important;padding-top:8px!important;min-width:0!important;
+  }
+
+  /* Solid, colourful icon tile */
+  html body #toolsGrid>div.tool-card .w-11.h-11{
+    width:40px!important;height:40px!important;min-width:40px!important;border-radius:13px!important;
+    font-size:16px!important;color:#fff!important;
+    background:linear-gradient(140deg,var(--acc) 0%,var(--acc2) 100%)!important;
+    box-shadow:0 6px 14px -4px var(--acc),inset 0 1px 0 rgba(255,255,255,.28)!important;
+  }
+  html.dark body #toolsGrid>div.tool-card .w-11.h-11,
+  html body.dark #toolsGrid>div.tool-card .w-11.h-11{
+    color:#fff!important;
+    background:linear-gradient(140deg,var(--acc) 0%,var(--acc2) 100%)!important;
+  }
+
+  /* Title: up to 2 lines instead of "Jadual Waktu Gu…" */
+  html body #toolsGrid>div.tool-card h4{
+    font-size:12.5px!important;line-height:1.22!important;margin:0 0 4px!important;
+    white-space:normal!important;text-overflow:clip!important;
+    display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;
+    overflow:hidden!important;overflow-wrap:normal!important;word-break:normal!important;
+    letter-spacing:-.25px!important;
+  }
+  html body #toolsGrid>div.tool-card p{
+    font-size:9.5px!important;line-height:1.38!important;color:#64748b!important;
+    overflow-wrap:normal!important;
+  }
+  html.dark body #toolsGrid>div.tool-card p,
+  html body.dark #toolsGrid>div.tool-card p{color:#94a3b8!important}
+
+  /* Category chip in the card's own accent colour */
+  html body #toolsGrid>div.tool-card span[class*="rounded-md"]{
+    display:inline-block!important;font-size:7.5px!important;padding:4px 7px!important;
+    background:var(--acc-soft)!important;color:var(--acc-ink)!important;
+    border:1px solid transparent!important;letter-spacing:.1px!important;
+  }
+
+  /* Faded watermark of the tool icon + small arrow affordance */
+  html body #toolsGrid>div.tool-card .tool-card-watermark{
+    display:block;position:absolute;right:-10px;bottom:-12px;z-index:1;
+    font-size:64px;line-height:1;color:var(--acc);opacity:.06;transform:rotate(-12deg);
+  }
+  html body #toolsGrid>div.tool-card .tool-card-go{
+    display:flex;align-items:center;justify-content:center;
+    position:absolute;top:11px;right:10px;z-index:3;
+    width:22px;height:22px;border-radius:999px;font-size:9px;
+    color:var(--acc-ink);background:var(--acc-soft);
+  }
+}
+
+@media (max-width:380px){
+  html body #toolsGrid{gap:7px!important}
+  html body #toolsGrid>div.tool-card{min-height:140px!important;padding:10px 9px 9px!important;border-radius:17px!important}
+  html body #toolsGrid>div.tool-card .w-11.h-11{width:34px!important;height:34px!important;min-width:34px!important;border-radius:11px!important;font-size:14px!important}
+  html body #toolsGrid>div.tool-card h4{font-size:11px!important}
+  html body #toolsGrid>div.tool-card p{font-size:8.5px!important}
+  html body #toolsGrid>div.tool-card .tool-card-go{width:19px;height:19px;font-size:8px;top:9px;right:8px}
+  html body #toolsGrid>div.tool-card span[class*="rounded-md"]{font-size:7px!important;padding:3px 6px!important}
+}
+
+@media (prefers-reduced-motion:reduce){
+  #toolsGrid>.tool-card{animation:none!important}
+}

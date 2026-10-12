@@ -22,7 +22,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./mobile-tools-ui.css?v=responsive-fix-20261011">
+    <link rel="stylesheet" href="./mobile-tools-ui.css?v=cards-v12-20261012">
     <!-- Google Fonts Inter & Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2260,7 +2260,9 @@
             filtered.forEach(tool => {
                 const isFav = favorites.includes(tool.id);
                 const card = document.createElement('div');
-                card.className = 'glass-card p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 hover:border-brand-500/50 dark:hover:border-brand-500/50 transition-all duration-200 flex flex-col justify-between group relative ios-shadow';
+                card.className = 'tool-card glass-card p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 hover:border-brand-500/50 dark:hover:border-brand-500/50 transition-all duration-200 flex flex-col justify-between group relative ios-shadow';
+                card.dataset.cat = tool.type === 'ERPH' ? 'ERPH' : (['PDP', 'GRAFIK', 'HTML'].includes(tool.category) ? tool.category : 'PENTADBIRAN');
+                card.style.setProperty('--card-i', String(grid.children.length));
 
                 let catBadgeColor = 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
                 let catLabel = 'KPM & Pengurusan';
@@ -2307,6 +2309,8 @@
                             <i class="fa-solid ${tool.type === 'ERPH' ? 'fa-paper-plane text-[10px]' : (tool.type === 'HTML' ? 'fa-play text-[10px]' : 'fa-arrow-right text-[10px]')}"></i>
                         </button>
                     </div>
+                    <span class="tool-card-watermark" aria-hidden="true"><i class="${tool.icon || 'fa-solid fa-wrench'}"></i></span>
+                    <span class="tool-card-go" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span>
                 `;
                 grid.appendChild(card);
             });
