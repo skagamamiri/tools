@@ -28,6 +28,8 @@ messaging.onBackgroundMessage(payload=>{
   broadcast("backgroundMessage",{title,body,tag,hasData:!!payload?.data,hasNotification:!!payload?.notification});
   return self.registration.showNotification(title,{
     body,tag,renotify:true,
+    silent:false,              // jangan senyapkan; bunyi ikut tetapan telefon
+    vibrate:[300,150,300,150,600],
     icon:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Ctext y='.9em' font-size='100'%3E%F0%9F%93%85%3C/text%3E%3C/svg%3E"
   });
 });

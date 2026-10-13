@@ -402,7 +402,10 @@ async function showJadualNotification(title, options={}){
   try{
     const reg = await getJadualSWRegistration();
     if(reg && typeof reg.showNotification === 'function'){
-      await reg.showNotification(title, options);
+      // Pastikan notifikasi berbunyi/bergetar (bunyi sebenar ikut tetapan notifikasi telefon).
+      const opts = Object.assign({ silent:false, vibrate:[300,150,300,150,600] }, options);
+      if (opts.tag && opts.renotify === undefined) opts.renotify = true;
+      await reg.showNotification(title, opts);
       return true;
     }
   }catch(e){
