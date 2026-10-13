@@ -439,7 +439,7 @@ function schedulePageNotifications(){
     if(diff!==0)return;
     const key=`${activeVersionId}|${n.day}|${e.start}|START`;
     if(notifiedKeys.has(key))return;
-    showJadualNotification("🔔 Kelas Bermula Sekarang",{body:`${e.class||"—"} • ${e.subject} • ${e.start}–${e.end}`,tag:`jadual-${activeVersionId}-${n.day}-${e.start}-START`,renotify:true,icon:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='24' fill='%230079a0'/%3E%3Ctext x='64' y='82' font-size='70' text-anchor='middle'%3E%F0%9F%94%94%3C/text%3E%3C/svg%3E"}).then(ok=>{if(ok)notifiedKeys.add(key)}).catch(()=>{});
+    showJadualNotification(`🔔 Kelas Bermula · ${e.start}`,{body:`🏫 ${e.class||"—"}     📘 ${e.subject}\n${e.start}–${e.end} · Sila ke kelas sekarang.`,tag:`jadual-${activeVersionId}-${n.day}-${e.start}-START`,renotify:true,icon:"./logo-sk-agama-miri.png",badge:"./notif-badge.png",timestamp:Date.now(),actions:[{action:"open",title:"📅 Buka Jadual"},{action:"close",title:"Tutup"}],data:{url:"./jadual.html"}}).then(ok=>{if(ok)notifiedKeys.add(key)}).catch(()=>{});
   });
 }
 window.applyICTHubIdentity = applyICTHubIdentity;
