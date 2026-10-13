@@ -1136,7 +1136,7 @@
             <p>© 2026 SK Agama (MIS) Miri, Sarawak • Disediakan oleh Cg Sabri (Guru ICT)</p>
             <p class="text-[10px] text-slate-400 mt-1">
                 Dihoskan di
-                <code class="text-brand-600 dark:text-brand-400 font-mono">skagamamiri.github.io/tools</code>
+                <code id="hubHostLabel" class="text-brand-600 dark:text-brand-400 font-mono">skagamamiri.github.io/tools</code><script>try{var h=document.getElementById("hubHostLabel");if(h)h.textContent=location.host+location.pathname.replace(/index\.html$/,"").replace(/\/$/,"");}catch(e){}</script>
             </p>
         </div>
     </footer>
@@ -2212,10 +2212,22 @@
         //  - Tool URL dalam laman ini (cth aktiviti.html) -> terus ke URL tersebut
         //  - DELIMa -> terus ke portal (seperti sebelum ini)
         //  - URL luar (Canva, Wordwall, dll.) -> tab baharu
+        // Pautan tool yang disimpan sebagai https://skagamamiri.github.io/tools/... dibuka
+        // pada laman yang sedang digunakan (contoh alamat Cloudflare Pages).
+        const GITHUB_PAGES_BASE = 'https://skagamamiri.github.io/tools/';
+        function localiseToolUrl(url) {
+            if (!url) return '';
+            if (url.toLowerCase().startsWith(GITHUB_PAGES_BASE) && !location.href.toLowerCase().startsWith(GITHUB_PAGES_BASE)) {
+                return new URL(url.slice(GITHUB_PAGES_BASE.length), new URL('./', location.href)).href;
+            }
+            return url;
+        }
+        window.localiseToolUrl = localiseToolUrl;
+
         function toolPageUrl(tool) {
             if (!tool) return '';
             if (tool.type === 'HTML') return 'tool.html?id=' + encodeURIComponent(tool.id);
-            return tool.url || '';
+            return localiseToolUrl(tool.url || '');
         }
 
         function openToolPage(tool) {
@@ -3379,13 +3391,13 @@
 
             switch (code) {
                 case 'auth/unauthorized-domain':
-                    msg = 'Domain laman ini belum dibenarkan dalam Firebase Authentication. Tambah skagamamiri.github.io di Authentication → Settings → Authorized domains.';
+                    msg = 'Domain laman ini belum dibenarkan dalam Firebase Authentication. Tambah ' + location.hostname + ' di Authentication → Settings → Authorized domains.';
                     break;
                 case 'auth/operation-not-allowed':
                     msg = 'Google Sign-In belum diaktifkan. Firebase Console → Authentication → Sign-in method → Google → Enable.';
                     break;
                 case 'auth/popup-blocked':
-                    msg = 'Popup Google disekat browser. Benarkan popup untuk skagamamiri.github.io dan cuba lagi.';
+                    msg = 'Popup Google disekat browser. Benarkan popup untuk ' + location.hostname + ' dan cuba lagi.';
                     break;
                 case 'auth/popup-closed-by-user':
                     msg = 'Tetingkap Google ditutup sebelum login selesai.';

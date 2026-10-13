@@ -4,6 +4,11 @@ Hub Tool ICT for SK Agama (MIS) Miri, hosted on GitHub Pages at
 https://skagamamiri.github.io/tools/. Backend is Firebase (project `skamis-hubtool`):
 Google sign-in, with Firestore `teachers` collection as the whitelist.
 
+The same repo is also served from Cloudflare Pages (an alternate address for users whose
+ISP cannot resolve github.io). Keep code host-agnostic: use relative URLs, never hard-code
+`/tools/` or `skagamamiri.github.io` (`sw.js` derives its base path from its scope; tool URLs
+stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.html and in tool.html).
+
 ## Conventions for tool pages
 
 - Every tool is its own full page with its own URL (no iframes). `index.html` opens

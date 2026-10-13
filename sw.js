@@ -7,8 +7,11 @@ self.addEventListener('fetch',event=>{
   const req=event.request;
   if(req.method!=='GET')return;
   const u=new URL(req.url);
+  if(u.origin!==self.location.origin)return;
+  // Laluan asas ikut skop SW: '/tools/' (GitHub Pages) atau '/' (Cloudflare Pages).
+  const BASE=new URL(self.registration.scope).pathname;
 
-  const isHubHome=(u.pathname==='/tools' || u.pathname==='/tools/' || u.pathname.endsWith('/tools/index.html'));
+  const isHubHome=(u.pathname===BASE || u.pathname===BASE.replace(/\/$/,'') || u.pathname===BASE+'index.html');
   if(req.mode==='navigate' && isHubHome){
     event.respondWith((async()=>{
       const r=await fetch(req);
@@ -25,7 +28,7 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  if(req.mode==='navigate' && u.pathname.startsWith('/tools/') && !u.pathname.endsWith('/tools/index.html')){
+  if(req.mode==='navigate' && u.pathname.startsWith(BASE) && !isHubHome){
     event.respondWith((async()=>{
       const r=await fetch(req);
       const ct=r.headers.get('content-type')||'';

@@ -112,7 +112,14 @@
       document.title = `${tool.title || "Tool"} • ICT HUB`;
 
       if (tool.type === "HTML") return jalankanToolHtml(tool);
-      if (tool.type === "URL" && tool.url) return location.replace(tool.url);
+      if (tool.type === "URL" && tool.url) {
+        const GH = "https://skagamamiri.github.io/tools/";
+        let url = tool.url;
+        if (url.toLowerCase().startsWith(GH) && !location.href.toLowerCase().startsWith(GH)) {
+          url = new URL(url.slice(GH.length), new URL("./", location.href)).href;
+        }
+        return location.replace(url);
+      }
       if (tool.type === "ERPH") return location.replace("./");
       papar("Jenis tool tidak disokong", "Sila buka tool ini dari ICT HUB.");
     } catch (err) {
