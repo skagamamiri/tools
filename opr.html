@@ -222,6 +222,10 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
 #historyModal .history-list{overflow:visible}
 .history-actions .history-edit{display:inline-flex;align-items:center;gap:4px;border:1px solid #f2c94c;background:#fff8e1;color:#7a5600;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:800;cursor:pointer;margin:0}
 .history-actions .history-edit:hover{background:#ffefb0}
+.history-actions .history-delete{display:inline-flex;align-items:center;gap:4px;border:1px solid #f5c2c7;background:#fff1f2;color:#b42318;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:800;cursor:pointer;margin:0}
+.history-actions .history-delete:hover{background:#ffe4e6}
+.history-actions .history-delete:disabled{opacity:.6;cursor:wait}
+.history-card.removing{opacity:.45;pointer-events:none}
 .edit-banner{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 16px;padding:12px 14px;border-radius:12px;background:#fff8e1;border:1px solid #f2c94c;color:#5c4300;font-size:13px}
 .edit-banner[hidden]{display:none}
 .edit-banner b{display:block;font-size:14px;margin-bottom:3px}
@@ -295,7 +299,6 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
 <div class="grid">
 <div class="full editor-wrap">
 <label for="objektif">Objektif Program</label>
-<div class="ai-toolbar"><button type="button" class="ai-btn" data-ai-field="objektif">✨ Jana Objektif dengan AI</button><span class="ai-note">AI akan guna maklumat program di atas. Semak dan ubah jika perlu.</span></div>
 <div class="editor-toolbar" role="toolbar" aria-label="Format Objektif Program">
   <button type="button" class="format-btn" data-editor="objektif" data-format="bullet" title="Tambah bullet pada baris terpilih">• Bullet</button>
   <button type="button" class="format-btn" data-editor="objektif" data-format="number" title="Tambah numbering pada baris terpilih">1. Numbering</button>
@@ -305,7 +308,6 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
 </div>
 <div class="full editor-wrap">
 <label for="aktiviti">Aktiviti Program</label>
-<div class="ai-toolbar"><button type="button" class="ai-btn" data-ai-field="aktiviti">✨ Jana Aktiviti dengan AI</button></div>
 <div class="editor-toolbar" role="toolbar" aria-label="Format Aktiviti Program">
   <button type="button" class="format-btn" data-editor="aktiviti" data-format="bullet" title="Tambah bullet pada baris terpilih">• Bullet</button>
   <button type="button" class="format-btn" data-editor="aktiviti" data-format="number" title="Tambah numbering pada baris terpilih">1. Numbering</button>
@@ -315,7 +317,6 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
 </div>
 <div class="full editor-wrap">
 <label for="impak">Impak Program</label>
-<div class="ai-toolbar"><button type="button" class="ai-btn" data-ai-field="impak">✨ Jana Impak dengan AI</button></div>
 <div class="editor-toolbar" role="toolbar" aria-label="Format Impak Program">
   <button type="button" class="format-btn" data-editor="impak" data-format="bullet" title="Tambah bullet pada baris terpilih">• Bullet</button>
   <button type="button" class="format-btn" data-editor="impak" data-format="number" title="Tambah numbering pada baris terpilih">1. Numbering</button>
@@ -939,6 +940,7 @@ function onMessage(ev){
     try{ data = JSON.parse(data); }catch(_){ return; }
   }
   if(!data || typeof data !== "object" || typeof data.success !== "boolean") return;
+  if(done || data.deleted) return;   // V2: abaikan balasan Hapus / balasan selepas selesai
 
   done=true;
   cleanup();
@@ -1077,6 +1079,55 @@ function finishEdit(){
   historyLoadedOnce=false;   // muat semula senarai rekod bila tab Rekod dibuka
 }
 
+/* V2 — Hapus rekod OPR (POST melalui iframe, sama seperti Jana OPR) */
+function deleteRecord(r,btn){
+  if(!r || !r.id) return;
+  if(!CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL.includes("PASTE_")) return;
+  const ok=confirm(`Hapus OPR ini?\n\n"${r.tajuk||"Tanpa tajuk"}"\n\nRekod akan dibuang dari senarai. Google Slides dan PDF akan dipindahkan ke Trash Google Drive (boleh dipulihkan dalam 30 hari).`);
+  if(!ok) return;
+
+  const card=btn.closest(".history-card");
+  if(card) card.classList.add("removing");
+  btn.disabled=true; btn.textContent="⏳ Menghapus...";
+  if(editingRecord && editingRecord.id===r.id) finishEdit();
+
+  const iframe=document.createElement("iframe");
+  iframe.name="opr_delete_"+Date.now(); iframe.style.display="none"; document.body.appendChild(iframe);
+  const form=document.createElement("form");
+  form.method="POST"; form.action=CONFIG.WEB_APP_URL; form.target=iframe.name; form.style.display="none";
+  [["deleteId",r.id],["clientTimestamp",new Date().toISOString()]].forEach(([k,v])=>{
+    const i=document.createElement("input"); i.type="hidden"; i.name=k; i.value=v; form.appendChild(i);
+  });
+  document.body.appendChild(form);
+
+  let settled=false;
+  function finish(success,message){
+    if(settled) return; settled=true;
+    window.removeEventListener("message",onDeleteMessage);
+    try{form.remove()}catch(_){} try{iframe.remove()}catch(_){}
+    if(success){
+      if(card) card.remove();
+      delete oprRecords[r.id];
+      $("historySummary").textContent="✓ Rekod dihapus: "+(r.tajuk||"Tanpa tajuk");
+      setTimeout(()=>loadHistory(true),1200);
+    }else{
+      if(card) card.classList.remove("removing");
+      btn.disabled=false; btn.textContent="🗑️ Hapus";
+      alert("Gagal menghapus rekod: "+(message||"Ralat tidak diketahui"));
+    }
+  }
+  function onDeleteMessage(ev){
+    let data=ev&&ev.data;
+    if(typeof data==="string"){try{data=JSON.parse(data)}catch(_){return}}
+    if(!data || !data.deleted || data.id!==r.id) return;
+    finish(!!data.success,data.message);
+  }
+  window.addEventListener("message",onDeleteMessage);
+  form.submit();
+  // Sandaran jika balasan iframe tidak sampai (sesetengah telefon): muat semula senarai.
+  setTimeout(()=>{ if(!settled){ settled=true; window.removeEventListener("message",onDeleteMessage); try{form.remove()}catch(_){} try{iframe.remove()}catch(_){} loadHistory(true); } },15000);
+}
+
 function cancelEdit(){
   finishEdit();
   $("resetBtn").click();
@@ -1168,7 +1219,7 @@ ${historyText(r.impak)}</pre></details>`:"";
         <div><b>Subunit:</b> ${historyText(r.subunit||"-")}</div>
         <div><b>Kategori:</b> ${historyText(r.kategori||"-")}</div>
       </div>
-      ${(links.length||r.id)?`<div class="history-actions">${links.join("")}${r.id?`<button type="button" class="history-edit" data-edit-id="${historyText(r.id)}">✏️ Edit</button>`:""}</div>`:""}
+      ${(links.length||r.id)?`<div class="history-actions">${links.join("")}${r.id?`<button type="button" class="history-edit" data-edit-id="${historyText(r.id)}">✏️ Edit</button><button type="button" class="history-delete" data-delete-id="${historyText(r.id)}">🗑️ Hapus</button>`:""}</div>`:""}
       ${detail}
     </article>`;
   }).join("");
@@ -1201,10 +1252,10 @@ $("historyLoadMore").addEventListener("click",()=>loadHistory(false));
 });
 $("historySearch").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();loadHistory(true)}});
 $("historyList").addEventListener("click",e=>{
-  const b=e.target.closest&&e.target.closest(".history-edit");
-  if(!b) return;
-  const r=oprRecords[b.dataset.editId];
-  if(r) startEdit(r);
+  const edit=e.target.closest&&e.target.closest(".history-edit");
+  if(edit){ const r=oprRecords[edit.dataset.editId]; if(r) startEdit(r); return; }
+  const del=e.target.closest&&e.target.closest(".history-delete");
+  if(del){ const r=oprRecords[del.dataset.deleteId]; if(r) deleteRecord(r,del); }
 });
 $("tabBtnJana").addEventListener("click",()=>showTab("jana"));
 $("tabBtnRekod").addEventListener("click",()=>showTab("rekod"));
