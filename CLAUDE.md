@@ -32,10 +32,13 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   `<date>_<email-key>_<slotStart HHMM>`; create-only for the teacher; admin + pentadbir read all (report). Rules block is live in the Console.
   Required rules are in `firestore-rules-kehadiran.txt`.
 - Room list is duplicated in `tempahan.html`, `aktiviti.html` and `kehadiran-data.js` (`ROOMS`); keep in sync.
+  `kehadiran-data.js` also has `EXTRA_LOCATIONS` (Padang, Makmal Sains, Surau Istiqomah) — scan-only, not bookable.
 
 ## Kehadiran Kelas (QR)
 
-- QR text format: `ICTHUB:KELAS:<code e.g. 4A>` or `ICTHUB:BILIK:<room name>`. Print them from `qr-kelas.html`.
+- QR text format: `ICTHUB:KELAS:<code e.g. 4A>` or `ICTHUB:BILIK:<room/location name>` (any of `SCAN_ROOMS`).
+  A room/location scan is recorded against the teacher's current timetable slot (`kelasJadual`), so that
+  class's cell in Paparan Kelas turns blue too. Print them from `qr-kelas.html`.
 - `qr-scanner.js` adds the mobile-only "Imbas QR" button to the index profile card and sends valid codes to
   `kehadiran.html?kod=...`.
 - The timetable is NOT duplicated: `kehadiran-data.js` fetches `jadual.html` and reads `VERSION_DATA` /
