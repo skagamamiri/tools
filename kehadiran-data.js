@@ -20,6 +20,16 @@
     'Bilik Mesyuarat'
   ];
 
+  // Lokasi tambahan untuk imbasan kehadiran sahaja (tidak boleh ditempah di tempahan.html).
+  var EXTRA_LOCATIONS = [
+    'Padang',
+    'Makmal Sains',
+    'Surau Istiqomah'
+  ];
+
+  // Semua lokasi yang mempunyai kod QR (ICTHUB:BILIK:<nama>).
+  var SCAN_ROOMS = ROOMS.concat(EXTRA_LOCATIONS);
+
   var PREFIX = 'ICTHUB';
   var EARLY_MIN = 15;   // boleh imbas sehingga 15 minit sebelum slot bermula
   var DAY_NAMES = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU'];
@@ -33,7 +43,7 @@
     var value = m[2];
     if (type === 'KELAS') value = value.toUpperCase().replace(/\s+/g, '');
     if (type === 'BILIK') {
-      var room = ROOMS.find(function (r) { return r.toLowerCase() === value.toLowerCase(); });
+      var room = SCAN_ROOMS.find(function (r) { return r.toLowerCase() === value.toLowerCase(); });
       if (!room) return null;
       value = room;
     } else if (!/^[1-6][A-Z]$/.test(value)) {
@@ -73,20 +83,47 @@
     return ttPromise;
   }
 
+  // Huruf kecil, buang aksen dan tanda baca ("Mohd." -> "mohd"), satukan ruang.
   function normalizeName(s) {
-    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
-  // Padanan nama guru (sama seperti jadual.html: tepat dahulu, kemudian semua perkataan penting).
+  // Perkataan yang tidak membezakan nama (penghubung nama & label akaun seperti "KPM-Guru").
+  var NAME_STOP = { bin: 1, binti: 1, bt: 1, bte: 1, anak: 1, ak: 1, a: 1, l: 1, p: 1, kpm: 1, guru: 1, cikgu: 1, cg: 1, ustaz: 1, ustazah: 1 };
+  function nameWords(s) {
+    return normalizeName(s).split(' ').filter(function (w) { return w && !NAME_STOP[w]; });
+  }
+
+  /*
+   * Padanan nama akaun ICT HUB dengan nama dalam jadual.
+   * 1) Tepat selepas dinormalkan.
+   * 2) Semua perkataan penting nama jadual ada dalam nama akaun (atau sebaliknya), sekurang-kurangnya 2 perkataan.
+   *    Jika beberapa guru sepadan, pilih yang paling banyak perkataan sepadan.
+   * Contoh: "MOHD SABRI BIN MURA KPM-Guru" = "Mohd. Sabri bin Mura".
+   */
   function findTeacher(data, name) {
     var target = normalizeName(name);
     if (!target) return null;
     var list = data.teachers;
-    var t = list.find(function (x) { return normalizeName(x.name) === target; });
-    if (t) return t;
-    var parts = target.split(' ').filter(function (x) { return x.length > 2 && x !== 'bin' && x !== 'binti'; });
-    if (parts.length < 2) return null;
-    return list.find(function (x) { var n = normalizeName(x.name); return parts.every(function (p) { return n.indexOf(p) >= 0; }); }) || null;
+    var exact = list.find(function (x) { return normalizeName(x.name) === target; });
+    if (exact) return exact;
+    var mine = nameWords(name);
+    var mineSet = {};
+    mine.forEach(function (w) { mineSet[w] = 1; });
+    var best = null, bestScore = 0;
+    list.forEach(function (x) {
+      var theirs = nameWords(x.name);
+      if (theirs.length < 2 || mine.length < 2) return;
+      var theirSet = {};
+      theirs.forEach(function (w) { theirSet[w] = 1; });
+      var allTheirsInMine = theirs.every(function (w) { return mineSet[w]; });
+      var allMineInTheirs = mine.every(function (w) { return theirSet[w]; });
+      if (!allTheirsInMine && !allMineInTheirs) return;
+      var score = Math.min(theirs.length, mine.length);
+      if (score > bestScore) { best = x; bestScore = score; }
+    });
+    return best;
   }
 
   // Gabungkan slot berturutan (kelas & subjek sama) menjadi satu blok.
@@ -169,7 +206,7 @@
   }
 
   global.KehadiranData = {
-    ROOMS: ROOMS, EARLY_MIN: EARLY_MIN,
+    ROOMS: ROOMS, EXTRA_LOCATIONS: EXTRA_LOCATIONS, SCAN_ROOMS: SCAN_ROOMS, EARLY_MIN: EARLY_MIN,
     makeCode: makeCode, parseCode: parseCode, codeLabel: codeLabel,
     mins: mins, hhmm: hhmm, dateKey: dateKey, nowInfo: nowInfo,
     loadTimetable: loadTimetable, findTeacher: findTeacher, normalizeName: normalizeName,

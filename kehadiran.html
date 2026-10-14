@@ -7,7 +7,7 @@
 <title>Kehadiran Kelas • Hub Tool ICT</title>
 <link rel="icon" href="data:,">
 <script src="ict-header.js"></script>
-<script src="kehadiran-data.js?v=20261014c"></script>
+<script src="kehadiran-data.js?v=20261014d"></script>
 <script src="qr-scanner.js?v=20261014b" defer></script>
 <style>
   :root{
@@ -86,6 +86,7 @@
   .cell{border-radius:8px;padding:6px 6px;min-height:68px;display:flex;flex-direction:column;justify-content:center;gap:2px;line-height:1.25;overflow:hidden}
   .cell b{font-size:12.5px;letter-spacing:.01em}
   .cell span{font-size:10px;overflow-wrap:anywhere}
+  .cell .loc{font-style:normal;font-size:9.5px;font-weight:700;background:rgba(255,255,255,.2);border-radius:5px;padding:1px 5px;align-self:flex-start;margin-top:2px}
   .cell.blue{background:#2563eb;color:#fff}
   .cell.red{background:#dc2626;color:#fff}
   .cell.grey{background:#f1f5f9;color:#334155;border:1px solid #e2e8f0}
@@ -501,7 +502,7 @@
     const now = K.nowInfo();
 
     const overlaps = (r, s, e) => r.slotMula && r.slotTamat && K.mins(r.slotMula) < e && K.mins(r.slotTamat) > s;
-    const scanned = (date, s, e) => recs.some(r => r.date === date && (
+    const scanned = (date, s, e) => recs.find(r => r.date === date && (
       (r.kelasJadual === code && overlaps(r, s, e)) ||
       (r.jenis === "KELAS" && r.kod === code && r.status === "LUAR_JADUAL" &&
         K.mins(r.masaImbas) >= s - K.EARLY_MIN && K.mins(r.masaImbas) < e)
@@ -526,12 +527,13 @@
         const s = K.mins(b.start), e = K.mins(b.end);
         if (s > cursor) html += `<div class="cell rehat" style="grid-row:${row};grid-column:${col(cursor)} / ${col(s)}">REHAT</div>`;
         let cls;
+        const rec = b.teacher ? scanned(date, s, e) : null;
         if (!b.teacher) cls = "none";
-        else if (scanned(date, s, e)) cls = "blue";
+        else if (rec) cls = "blue";
         else if (date < now.date || (date === now.date && now.mins >= s)) cls = "red";
         else cls = "grey";
         html += `<div class="cell ${cls}" style="grid-row:${row};grid-column:${col(s)} / ${col(e)}" title="${esc(b.start)}–${esc(b.end)}">
-          <b>${esc(b.subject)}</b><span>${esc(b.teacher || "")}</span></div>`;
+          <b>${esc(b.subject)}</b><span>${esc(b.teacher || "")}</span>${rec && rec.jenis === "BILIK" ? `<em class="loc"><i class="fa-solid fa-location-dot"></i> ${esc(rec.kod)}</em>` : ""}</div>`;
         cursor = Math.max(cursor, e);
       });
     });
