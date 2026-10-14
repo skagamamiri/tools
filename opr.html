@@ -233,6 +233,7 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
 #cadanganWrap[hidden]{display:none!important}
 .tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,190px));gap:12px;margin-top:6px}
 .tpl-card{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0;margin:0;background:#fff;border:2px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;text-align:left;box-shadow:0 2px 8px rgba(15,40,80,.06);transition:border-color .15s,box-shadow .15s,transform .15s;color:var(--text);font:inherit}
+.tpl-card[hidden]{display:none!important}
 .tpl-card:hover{border-color:#9db9e0;transform:translateY(-1px)}
 .tpl-card[aria-checked="true"]{border-color:var(--blue);box-shadow:0 0 0 3px rgba(7,86,183,.15)}
 .tpl-thumb{display:block;aspect-ratio:260/368;background:#eef2f7;overflow:hidden}
@@ -286,6 +287,15 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
       <span class="tpl-thumb"><img src="assets/opr-templat-hijau.jpg?v=20261014b" alt="Pratonton templat Hijau Alam" loading="lazy"></span>
       <span class="tpl-info">
         <span class="tpl-name">🟢 Hijau Alam</span>
+        <span class="tpl-desc">Saiz A4 · termasuk Cadangan Penambahbaikan</span>
+      </span>
+      <span class="tpl-check" aria-hidden="true">✓</span>
+    </button>
+    <!-- Islamik: buang atribut hidden selepas ID templat dimasukkan dalam Code.gs -->
+    <button type="button" class="tpl-card" role="radio" aria-checked="false" data-templat="islamik" hidden>
+      <span class="tpl-thumb"><img src="assets/opr-templat-islamik.jpg?v=20261014b" alt="Pratonton templat Islamik" loading="lazy"></span>
+      <span class="tpl-info">
+        <span class="tpl-name">🌙 Islamik</span>
         <span class="tpl-desc">Saiz A4 · termasuk Cadangan Penambahbaikan</span>
       </span>
       <span class="tpl-check" aria-hidden="true">✓</span>
@@ -721,7 +731,7 @@ function oprAiCallback(data){
         $(field).dispatchEvent(new Event("input",{bubbles:true}));
       }
     });
-    setStatus($("templat").value==="hijau"?"✓ AI telah menjana Objektif, Aktiviti, Impak dan Cadangan. Sila semak sebelum JANA OPR.":"✓ AI telah menjana Objektif, Aktiviti dan Impak. Sila semak sebelum JANA OPR.","ok");
+    setStatus(tplInfo($("templat").value).cadangan?"✓ AI telah menjana Objektif, Aktiviti, Impak dan Cadangan. Sila semak sebelum JANA OPR.":"✓ AI telah menjana Objektif, Aktiviti dan Impak. Sila semak sebelum JANA OPR.","ok");
   }else{
     setStatus("✓ AI telah menjana "+fieldLabel(data.field)+". Sila semak dan ubah jika perlu.","ok");
   }
@@ -958,12 +968,11 @@ const newId = (crypto && crypto.randomUUID)
 currentSubmissionId = isEdit ? editingRecord.id : newId;
 currentEditToken = isEdit ? newId : "";
 try{
-const hijau=$("templat").value==="hijau";
-const imgArgs=hijau?[1600,.8,null]:[1000,.72,4/3];
+const imgArgs=tplInfo($("templat").value).uncropped?[1600,.8,null]:[1000,.72,4/3];
 const [img1,img2]=await Promise.all([f1?readImage(f1,...imgArgs):Promise.resolve(""),f2?readImage(f2,...imgArgs):Promise.resolve("")]);
 const fd=new FormData();
 ["tajuk","tarikh","masa","tarikh_masa","tempat","anjuran","sasaran","disediakan_oleh","objektif","aktiviti","impak","tahun","unit"].forEach(k=>fd.append(k,$(k).value.trim()));
-fd.append("templat",$("templat").value);fd.append("cadangan",$("templat").value==="hijau"?$("cadangan").value.trim():"");fd.append("subunit",getSubunit());fd.append("kategori",$("category")?$("category").value:"");fd.append("gambar1",img1);fd.append("gambar2",img2);fd.append("tandatangan",signatureHasInk?signatureCanvas.toDataURL("image/png"):"");fd.append("email","");fd.append("clientTimestamp",new Date().toISOString());fd.append("clientSubmissionId",isEdit?currentEditToken:currentSubmissionId);if(isEdit)fd.append("editId",editingRecord.id);
+fd.append("templat",$("templat").value);fd.append("cadangan",tplInfo($("templat").value).cadangan?$("cadangan").value.trim():"");fd.append("subunit",getSubunit());fd.append("kategori",$("category")?$("category").value:"");fd.append("gambar1",img1);fd.append("gambar2",img2);fd.append("tandatangan",signatureHasInk?signatureCanvas.toDataURL("image/png"):"");fd.append("email","");fd.append("clientTimestamp",new Date().toISOString());fd.append("clientSubmissionId",isEdit?currentEditToken:currentSubmissionId);if(isEdit)fd.append("editId",editingRecord.id);
 
 const iframe=document.createElement("iframe");iframe.name="opr_submit_"+Date.now();iframe.style.display="none";document.body.appendChild(iframe);
 const form=document.createElement("form");form.method="POST";form.action=CONFIG.WEB_APP_URL;form.target=iframe.name;form.style.display="none";
@@ -1059,14 +1068,21 @@ const oprRecords={};
 function submitLabel(){ return editingRecord?"KEMASKINI OPR":"JANA OPR"; }
 
 /* V2 — Pilihan templat OPR */
+const TEMPLAT_INFO={
+  biru:{label:"🔵 Biru",cadangan:false,uncropped:false},
+  hijau:{label:"🟢 Hijau Alam",cadangan:true,uncropped:true},
+  islamik:{label:"🌙 Islamik",cadangan:true,uncropped:true}
+};
+function tplInfo(v){ return TEMPLAT_INFO[v]||TEMPLAT_INFO.biru; }
 function setTemplat(value,remember=true){
-  const v=value==="hijau"?"hijau":"biru";
+  const card=document.querySelector(`.tpl-card[data-templat="${value}"]`);
+  const v=TEMPLAT_INFO[value]&&(!card||!card.hidden||!remember)?value:"biru";
   $("templat").value=v;
   document.querySelectorAll(".tpl-card").forEach(c=>c.setAttribute("aria-checked",String(c.dataset.templat===v)));
   $("tplZoom").href=`assets/opr-templat-${v}-besar.jpg?v=20261014b`;
-  const hijau=v==="hijau";
-  $("cadanganWrap").hidden=!hijau;
-  $("cadangan").required=hijau;
+  const adaCadangan=tplInfo(v).cadangan;
+  $("cadanganWrap").hidden=!adaCadangan;
+  $("cadangan").required=adaCadangan;
   if(remember){ try{localStorage.setItem("oprTemplat",v)}catch(_){} }
 }
 function savedTemplat(){ try{return localStorage.getItem("oprTemplat")||"biru"}catch(_){return "biru"} }
@@ -1276,7 +1292,7 @@ ${historyText(r.cadangan)}`:""}</pre></details>`:"";
         <span class="history-chip">📅 ${historyText(r.tarikhMasa||"-")}</span>
         <span class="history-chip">🏷️ ${historyText(r.tahun||"-")}</span>
         <span class="history-chip">📂 ${historyText(r.unit||"-")}</span>
-        <span class="history-chip">${r.templat==="hijau"?"🟢 Hijau Alam":"🔵 Biru"}</span>
+        <span class="history-chip">${tplInfo(r.templat).label}</span>
       </div>
       <div class="history-grid">
         <div><b>Tempat:</b> ${historyText(r.tempat||"-")}</div>
