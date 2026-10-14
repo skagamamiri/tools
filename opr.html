@@ -294,7 +294,7 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
       <span class="tpl-check" aria-hidden="true">✓</span>
     </button>
     <button type="button" class="tpl-card" role="radio" aria-checked="false" data-templat="hijau">
-      <span class="tpl-thumb"><img src="assets/opr-templat-hijau.jpg?v=20261014c" alt="Pratonton templat Hijau" loading="lazy"></span>
+      <span class="tpl-thumb"><img src="assets/opr-templat-hijau.jpg?v=20261014d" alt="Pratonton templat Hijau" loading="lazy"></span>
       <span class="tpl-info">
         <span class="tpl-name">🟢 Hijau</span>
         <span class="tpl-desc">Saiz A4 · termasuk Cadangan Penambahbaikan</span>
@@ -1095,7 +1095,7 @@ function setTemplat(value,remember=true){
   const v=TEMPLAT_INFO[value]&&(!card||!card.hidden||!remember)?value:"biru";
   $("templat").value=v;
   document.querySelectorAll(".tpl-card").forEach(c=>c.setAttribute("aria-checked",String(c.dataset.templat===v)));
-  $("tplZoom").href=`assets/opr-templat-${v}-besar.jpg?v=20261014c`;
+  $("tplZoom").href=`assets/opr-templat-${v}-besar.jpg?v=20261014d`;
   const adaCadangan=tplInfo(v).cadangan;
   $("cadanganWrap").hidden=!adaCadangan;
   $("cadangan").required=adaCadangan;
