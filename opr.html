@@ -275,7 +275,7 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
   <input type="hidden" id="templat" name="templat" value="biru">
   <div class="tpl-grid" role="radiogroup" aria-labelledby="templatLabel">
     <button type="button" class="tpl-card" role="radio" aria-checked="true" data-templat="biru">
-      <span class="tpl-thumb"><img src="assets/opr-templat-biru.jpg" alt="Pratonton templat Biru" loading="lazy"></span>
+      <span class="tpl-thumb"><img src="assets/opr-templat-biru.jpg?v=20261014b" alt="Pratonton templat Biru" loading="lazy"></span>
       <span class="tpl-info">
         <span class="tpl-name">🔵 Biru</span>
         <span class="tpl-desc">Saiz A4 · Objektif, Aktiviti &amp; Impak</span>
@@ -283,7 +283,7 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
       <span class="tpl-check" aria-hidden="true">✓</span>
     </button>
     <button type="button" class="tpl-card" role="radio" aria-checked="false" data-templat="hijau">
-      <span class="tpl-thumb"><img src="assets/opr-templat-hijau.jpg" alt="Pratonton templat Hijau Alam" loading="lazy"></span>
+      <span class="tpl-thumb"><img src="assets/opr-templat-hijau.jpg?v=20261014b" alt="Pratonton templat Hijau Alam" loading="lazy"></span>
       <span class="tpl-info">
         <span class="tpl-name">🟢 Hijau Alam</span>
         <span class="tpl-desc">Saiz A4 · termasuk Cadangan Penambahbaikan</span>
@@ -291,7 +291,7 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
       <span class="tpl-check" aria-hidden="true">✓</span>
     </button>
   </div>
-  <div class="tpl-zoom-row"><a id="tplZoom" href="assets/opr-templat-biru-besar.jpg" target="_blank" rel="noopener">🔍 Lihat templat dipilih dalam saiz besar</a></div>
+  <div class="tpl-zoom-row"><a id="tplZoom" href="assets/opr-templat-biru-besar.jpg?v=20261014b" target="_blank" rel="noopener">🔍 Lihat templat dipilih dalam saiz besar</a></div>
 </div>
 <div><label for="tahun">Tahun</label><input id="tahun" name="tahun" type="number" min="2020" max="2100" required></div>
 <div><label for="unit">Unit</label><select id="unit" name="unit" required></select></div>
@@ -1063,7 +1063,7 @@ function setTemplat(value,remember=true){
   const v=value==="hijau"?"hijau":"biru";
   $("templat").value=v;
   document.querySelectorAll(".tpl-card").forEach(c=>c.setAttribute("aria-checked",String(c.dataset.templat===v)));
-  $("tplZoom").href=`assets/opr-templat-${v}-besar.jpg`;
+  $("tplZoom").href=`assets/opr-templat-${v}-besar.jpg?v=20261014b`;
   const hijau=v==="hijau";
   $("cadanganWrap").hidden=!hijau;
   $("cadangan").required=hijau;
