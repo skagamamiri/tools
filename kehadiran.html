@@ -72,6 +72,7 @@
   /* Paparan kelas (grid landskap) */
   #adminCard{padding:16px}
   .admin-tools .wk{min-height:42px;padding:0 12px}
+  .admin-tools .btn{min-height:42px;padding:0 14px;font-size:13px}
   .legend-row{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:#475569;margin:2px 0 10px;align-items:center}
   .legend-row .sw{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px}
   .sw.blue{background:#2563eb}.sw.red{background:#dc2626}.sw.grey{background:#e2e8f0;border:1px solid #cbd5e1}
@@ -93,14 +94,33 @@
   .cell.rehat{background:repeating-linear-gradient(45deg,#f8fafc 0 6px,#eef2f7 6px 12px);color:#94a3b8;align-items:center;font-weight:700;font-size:10px}
   .cell.cuti{background:#f8fafc;color:#94a3b8;align-items:center;justify-content:center;border:1px dashed #e2e8f0}
   @media(max-width:900px) and (orientation:portrait){.rotate-tip{display:inline-flex;gap:6px;align-items:center}}
+  .print-title{display:none}
+  #printAll{display:none}
   @media print{
     @page{size:A4 landscape;margin:8mm}
-    ict-header,#loginCard,#scanCard,#todayCard,#resultCard,.admin-tools .wk,.footer,.toast,.rotate-tip{display:none!important}
+    body{background:#fff}
+    ict-header,#loginCard,#scanCard,#todayCard,#resultCard,.admin-tools,.legend-row .rotate-tip,.footer,.toast,.rotate-tip,#loadingCard{display:none!important}
     main{width:100%;margin:0}
     .card{box-shadow:none;border:0;padding:0}
+    #adminCard .card-head{display:none}
+    .print-title{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 6px;font-size:16px}
+    .print-title small{font-size:11px;color:#475569;font-weight:600}
+    .grid-wrap{overflow:visible}
     .tgrid{min-width:0}
+    .tgrid{grid-template-rows:28px repeat(5,minmax(112px,auto))}
+    .cell{min-height:0}
+    .cell b{font-size:14px}
+    .cell span{font-size:11px}
+    .day{font-size:13px}
     .cell,.hd,.day,.sw{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    /* Cetak Semua Kelas: hanya kandungan #printAll, satu kelas satu halaman */
+    body.printing-all main{display:none!important}
+    body.printing-all #printAll{display:block}
+    .print-page{break-after:page;page-break-after:always}
+    .print-page:last-child{break-after:auto;page-break-after:auto}
+    .print-page .legend-row{margin:6px 0 0}
   }
+
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(140%);background:#0f172a;color:#fff;
     padding:12px 16px;border-radius:14px;font-size:13px;z-index:10000;transition:transform .25s ease;max-width:calc(100% - 32px)}
   .toast.show{transform:translateX(-50%) translateY(0)}
@@ -164,6 +184,8 @@
         <button type="button" class="btn ghost wk" id="wkPrev" aria-label="Minggu sebelum"><i class="fa-solid fa-chevron-left"></i></button>
         <input type="date" id="adminDate" aria-label="Pilih minggu">
         <button type="button" class="btn ghost wk" id="wkNext" aria-label="Minggu berikut"><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" class="btn ghost" id="printOneBtn"><i class="fa-solid fa-print"></i>Cetak Kelas Ini</button>
+        <button type="button" class="btn primary" id="printAllBtn"><i class="fa-solid fa-print"></i>Cetak Semua Kelas</button>
       </div>
     </div>
     <div class="legend-row">
@@ -176,6 +198,7 @@
   </section>
 </main>
 
+<div id="printAll" aria-hidden="true"></div>
 <div class="toast" id="toast"></div>
 <div class="footer">Hub Tool ICT • SK Agama (MIS) Miri • Jadual dibaca daripada Jadual PdP</div>
 
@@ -446,30 +469,31 @@
     loadAdmin();
   }
 
-  let adminSeq = 0;
-  async function loadAdmin() {
-    if (!$("gridClass").value) return;
-    const seq = ++adminSeq;
-    const code = $("gridClass").value;
+  function weekDates() {
     const mon = mondayOf($("adminDate").value || K.dateKey());
-    const dates = DAYS5.map((_, i) => K.dateKey(addDays(mon, i)));
-    const wrap = $("gridWrap");
-    wrap.innerHTML = `<div class="empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuatkan...</div>`;
+    return DAYS5.map((_, i) => K.dateKey(addDays(mon, i)));
+  }
 
-    let recs = [];
-    try {
-      const snap = await getDocs(query(collection(db, COL), where("date", ">=", dates[0]), where("date", "<=", dates[4])));
-      recs = snap.docs.map(d => d.data());
-    } catch (e) {
-      wrap.innerHTML = `<div class="notice warn">Gagal membaca rekod: ${esc(e.code || e.message)}</div>`;
-      return;
-    }
-    if (seq !== adminSeq) return;
+  async function loadWeekRecords(dates) {
+    const snap = await getDocs(query(collection(db, COL), where("date", ">=", dates[0]), where("date", "<=", dates[4])));
+    return snap.docs.map(d => d.data());
+  }
 
-    // Julat masa grid berdasarkan semua slot kelas ini.
+  function weekLabel(dates) {
+    const f = d => { const [y, m, dd] = d.split("-"); return `${dd}/${m}/${y}`; };
+    return `Minggu ${f(dates[0])} – ${f(dates[4])}`;
+  }
+
+  function classTitle(code) {
+    const c = tt.data.classes.find(x => x.code === code);
+    return `Kelas ${code}${c && c.name ? " " + c.name : ""}`;
+  }
+
+  // Bina grid satu kelas (HTML) untuk minggu yang diberi.
+  function buildGrid(code, recs, dates) {
     const byDay = DAYS5.map(d => K.classBlocks(tt.data, code, d));
     const all = byDay.flat();
-    if (!all.length) { wrap.innerHTML = `<div class="empty">Tiada jadual untuk kelas ini.</div>`; return; }
+    if (!all.length) return `<div class="empty">Tiada jadual untuk kelas ini.</div>`;
     const t0 = Math.floor(Math.min(...all.map(b => K.mins(b.start))) / SLOT) * SLOT;
     const t1 = Math.ceil(Math.max(...all.map(b => K.mins(b.end))) / SLOT) * SLOT;
     const cols = (t1 - t0) / SLOT;
@@ -477,13 +501,11 @@
     const now = K.nowInfo();
 
     const overlaps = (r, s, e) => r.slotMula && r.slotTamat && K.mins(r.slotMula) < e && K.mins(r.slotTamat) > s;
-    function scanned(date, s, e) {
-      return recs.some(r => r.date === date && (
-        (r.kelasJadual === code && overlaps(r, s, e)) ||
-        (r.jenis === "KELAS" && r.kod === code && r.status === "LUAR_JADUAL" &&
-          K.mins(r.masaImbas) >= s - K.EARLY_MIN && K.mins(r.masaImbas) < e)
-      ));
-    }
+    const scanned = (date, s, e) => recs.some(r => r.date === date && (
+      (r.kelasJadual === code && overlaps(r, s, e)) ||
+      (r.jenis === "KELAS" && r.kod === code && r.status === "LUAR_JADUAL" &&
+        K.mins(r.masaImbas) >= s - K.EARLY_MIN && K.mins(r.masaImbas) < e)
+    ));
 
     let html = `<div class="tgrid" style="grid-template-columns:76px repeat(${cols},minmax(0,1fr))">`;
     html += `<div class="hd">Hari</div>`;
@@ -513,9 +535,56 @@
         cursor = Math.max(cursor, e);
       });
     });
-    html += `</div>`;
-    wrap.innerHTML = html;
+    return html + `</div>`;
   }
+
+  const LEGEND_PRINT = `<div class="legend-row"><span><i class="sw blue"></i>Sudah imbas</span><span><i class="sw red"></i>Belum imbas</span><span><i class="sw grey"></i>Belum bermula</span></div>`;
+
+  let adminSeq = 0;
+  async function loadAdmin() {
+    if (!$("gridClass").value) return;
+    const seq = ++adminSeq;
+    const code = $("gridClass").value;
+    const dates = weekDates();
+    const wrap = $("gridWrap");
+    wrap.innerHTML = `<div class="empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuatkan...</div>`;
+    let recs;
+    try { recs = await loadWeekRecords(dates); }
+    catch (e) { wrap.innerHTML = `<div class="notice warn">Gagal membaca rekod: ${esc(e.code || e.message)}</div>`; return; }
+    if (seq !== adminSeq) return;
+    wrap.innerHTML = `<div class="print-title"><b>${esc(classTitle(code))}</b><small>${esc(weekLabel(dates))} • SK Agama (MIS) Miri</small></div>` +
+      buildGrid(code, recs, dates);
+  }
+
+  $("printOneBtn").addEventListener("click", () => window.print());
+
+  $("printAllBtn").addEventListener("click", async () => {
+    const btn = $("printAllBtn");
+    const old = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>Menyediakan...';
+    try {
+      const dates = weekDates();
+      const recs = await loadWeekRecords(dates);
+      const classes = tt.data.classes.slice().sort((a, b) => a.code.localeCompare(b.code));
+      $("printAll").innerHTML = classes.map(c => `<section class="print-page">
+        <div class="print-title"><b>${esc(classTitle(c.code))}</b><small>${esc(weekLabel(dates))} • SK Agama (MIS) Miri</small></div>
+        ${buildGrid(c.code, recs, dates)}${LEGEND_PRINT}</section>`).join("");
+      document.body.classList.add("printing-all");
+      const done = () => {
+        document.body.classList.remove("printing-all");
+        $("printAll").innerHTML = "";
+        window.removeEventListener("afterprint", done);
+      };
+      window.addEventListener("afterprint", done);
+      setTimeout(() => window.print(), 50);
+    } catch (e) {
+      toast("Gagal menyediakan cetakan: " + (e.code || e.message), "error");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = old;
+    }
+  });
 </script>
 </body>
 </html>
