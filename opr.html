@@ -730,14 +730,20 @@ function oprAiCallback(data){
   }
 
   if(data.field && $(data.field)){
-    $(data.field).value=String(data.text||"").trim();
+    let text=String(data.text||"").trim();
+    const max=tplInfo($("templat").value).cadanganMax;
+    if(data.field==="cadangan" && max) text=text.split(/\n+/).filter(l=>l.trim()).slice(0,max).join("\n");
+    $(data.field).value=text;
     $(data.field).dispatchEvent(new Event("input",{bubbles:true}));
   }
 
   if(data.generated){
     ["objektif","aktiviti","impak","cadangan"].forEach(field=>{
       if(data.generated[field] && $(field)){
-        $(field).value=String(data.generated[field]).trim();
+        let text=String(data.generated[field]).trim();
+        const max=tplInfo($("templat").value).cadanganMax;
+        if(field==="cadangan" && max) text=text.split(/\n+/).filter(l=>l.trim()).slice(0,max).join("\n");
+        $(field).value=text;
         $(field).dispatchEvent(new Event("input",{bubbles:true}));
       }
     });
@@ -1080,7 +1086,7 @@ function submitLabel(){ return editingRecord?"KEMASKINI OPR":"JANA OPR"; }
 /* V2 — Pilihan templat OPR */
 const TEMPLAT_INFO={
   biru:{label:"🔵 Biru",cadangan:false,uncropped:false},
-  hijau:{label:"🟢 Hijau",cadangan:true,uncropped:true},
+  hijau:{label:"🟢 Hijau",cadangan:true,uncropped:true,cadanganMax:3},
   islamik:{label:"🌙 Islamik",cadangan:true,uncropped:true,objektifPerenggan:true}
 };
 function tplInfo(v){ return TEMPLAT_INFO[v]||TEMPLAT_INFO.biru; }
