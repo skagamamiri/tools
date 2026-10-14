@@ -7,7 +7,7 @@
 <title>Kehadiran Kelas • Hub Tool ICT</title>
 <link rel="icon" href="data:,">
 <script src="ict-header.js"></script>
-<script src="kehadiran-data.js?v=20261014"></script>
+<script src="kehadiran-data.js?v=20261014c"></script>
 <script src="qr-scanner.js?v=20261014b" defer></script>
 <style>
   :root{
@@ -44,7 +44,6 @@
   .meta b{font-size:14px}
   .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:800}
   .chip.HADIR{background:#d1fae5;color:#065f46}
-  .chip.LEWAT{background:#fef3c7;color:#92400e}
   .chip.LUAR_JADUAL{background:#dbeafe;color:#1e40af}
   .chip.BELUM{background:#f1f5f9;color:#64748b}
   .chip.TIADA{background:#fee2e2;color:#991b1b}
@@ -70,6 +69,38 @@
   .stat b{display:block;font-size:22px}
   .stat small{font-size:11px;color:var(--muted)}
   .sub{font-size:14px;margin:16px 0 8px;color:#334155}
+  /* Paparan kelas (grid landskap) */
+  #adminCard{padding:16px}
+  .admin-tools .wk{min-height:42px;padding:0 12px}
+  .legend-row{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:#475569;margin:2px 0 10px;align-items:center}
+  .legend-row .sw{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px}
+  .sw.blue{background:#2563eb}.sw.red{background:#dc2626}.sw.grey{background:#e2e8f0;border:1px solid #cbd5e1}
+  .rotate-tip{display:none;color:#0f766e;font-weight:700}
+  .grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px}
+  .tgrid{display:grid;min-width:880px;gap:4px;font-size:11px}
+  .tgrid .hd{background:#0f766e;color:#fff;font-weight:800;text-align:center;padding:6px 2px;border-radius:8px;font-size:11px}
+  .tgrid .day{background:#134e4a;color:#fff;font-weight:800;border-radius:8px;padding:6px;display:flex;flex-direction:column;justify-content:center;text-align:center}
+  .tgrid .day small{font-weight:500;opacity:.8;font-size:10px}
+  .tgrid .day.today{background:#f59e0b;color:#111827}
+  .cell{border-radius:8px;padding:6px 6px;min-height:68px;display:flex;flex-direction:column;justify-content:center;gap:2px;line-height:1.25;overflow:hidden}
+  .cell b{font-size:12.5px;letter-spacing:.01em}
+  .cell span{font-size:10px;overflow-wrap:anywhere}
+  .cell.blue{background:#2563eb;color:#fff}
+  .cell.red{background:#dc2626;color:#fff}
+  .cell.grey{background:#f1f5f9;color:#334155;border:1px solid #e2e8f0}
+  .cell.none{background:#f8fafc;color:#94a3b8;border:1px dashed #e2e8f0}
+  .cell.none b{font-size:9px;overflow-wrap:anywhere}
+  .cell.rehat{background:repeating-linear-gradient(45deg,#f8fafc 0 6px,#eef2f7 6px 12px);color:#94a3b8;align-items:center;font-weight:700;font-size:10px}
+  .cell.cuti{background:#f8fafc;color:#94a3b8;align-items:center;justify-content:center;border:1px dashed #e2e8f0}
+  @media(max-width:900px) and (orientation:portrait){.rotate-tip{display:inline-flex;gap:6px;align-items:center}}
+  @media print{
+    @page{size:A4 landscape;margin:8mm}
+    ict-header,#loginCard,#scanCard,#todayCard,#resultCard,.admin-tools .wk,.footer,.toast,.rotate-tip{display:none!important}
+    main{width:100%;margin:0}
+    .card{box-shadow:none;border:0;padding:0}
+    .tgrid{min-width:0}
+    .cell,.hd,.day,.sw{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(140%);background:#0f172a;color:#fff;
     padding:12px 16px;border-radius:14px;font-size:13px;z-index:10000;transition:transform .25s ease;max-width:calc(100% - 32px)}
   .toast.show{transform:translateX(-50%) translateY(0)}
@@ -124,22 +155,24 @@
     <div id="extraList" class="list"></div>
   </section>
 
-  <!-- Pentadbir -->
+  <!-- Pentadbir: paparan kelas (grid jadual mingguan) -->
   <section id="adminCard" class="card hidden">
     <div class="card-head">
-      <div><h2>Laporan Kehadiran Guru</h2><p>Paparan Admin &amp; Pentadbir — semua guru mengikut tarikh.</p></div>
+      <div><h2>Paparan Kelas</h2><p>Biru = guru sudah imbas • Merah = belum imbas. Satu kelas setiap paparan.</p></div>
       <div class="admin-tools">
-        <input type="date" id="adminDate">
-        <select id="adminFilter">
-          <option value="ALL">Semua</option>
-          <option value="TIADA">Tiada rekod sahaja</option>
-          <option value="LEWAT">Lewat sahaja</option>
-          <option value="LUAR_JADUAL">Luar jadual sahaja</option>
-        </select>
+        <select id="gridClass" aria-label="Pilih kelas"></select>
+        <button type="button" class="btn ghost wk" id="wkPrev" aria-label="Minggu sebelum"><i class="fa-solid fa-chevron-left"></i></button>
+        <input type="date" id="adminDate" aria-label="Pilih minggu">
+        <button type="button" class="btn ghost wk" id="wkNext" aria-label="Minggu berikut"><i class="fa-solid fa-chevron-right"></i></button>
       </div>
     </div>
-    <div class="stats" id="adminStats"></div>
-    <div id="adminList" class="list"></div>
+    <div class="legend-row">
+      <span><i class="sw blue"></i>Sudah imbas</span>
+      <span><i class="sw red"></i>Belum imbas</span>
+      <span><i class="sw grey"></i>Belum bermula</span>
+      <span class="rotate-tip"><i class="fa-solid fa-mobile-screen-button fa-rotate-90"></i> Pusingkan telefon (landskap)</span>
+    </div>
+    <div class="grid-wrap" id="gridWrap"></div>
   </section>
 </main>
 
@@ -170,7 +203,7 @@
   const COL = "kehadiranKelas";
   const $ = id => document.getElementById(id);
   const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const STATUS_LABEL = { HADIR: "Hadir", LEWAT: "Lewat", LUAR_JADUAL: "Luar Jadual", BELUM: "Belum", TIADA: "Tiada Rekod" };
+  const STATUS_LABEL = { HADIR: "Hadir", LUAR_JADUAL: "Luar Jadual", BELUM: "Belum", TIADA: "Tiada Rekod" };
   const chip = (s, extra) => `<span class="chip ${s}">${STATUS_LABEL[s] || s}${extra ? " " + esc(extra) : ""}</span>`;
   const fmtDate = d => { const [y,m,dd] = d.split("-"); return `${dd}/${m}/${y}`; };
 
@@ -229,7 +262,7 @@
       show("scanCard", true);
       show("todayCard", true);
       await loadToday();
-      if (isAdmin) { show("adminCard", true); $("adminDate").value = K.dateKey(); loadAdmin(); }
+      if (isAdmin) { show("adminCard", true); initGrid(); }
       if (pendingCode) handleCode(pendingCode);
     } catch (e) {
       console.error(e);
@@ -279,7 +312,7 @@
       jenis: parsed.type, kod: parsed.value, label,
       slotMula: ev.slot ? ev.slot.start : null, slotTamat: ev.slot ? ev.slot.end : null,
       subjek: ev.slot ? (ev.slot.subject || "") : "", kelasJadual: ev.slot ? (ev.slot.class || "") : "",
-      status: ev.status, lewatMinit: ev.lewatMinit, sumber: ev.sumber,
+      status: ev.status, sumber: ev.sumber,
       guruJadual: ev.kelasSekarang ? (ev.kelasSekarang.teacher || "") : "",
       namaJadual: ttTeacher ? ttTeacher.name : "",
       email: user.email, uid: user.uid,
@@ -293,7 +326,7 @@
       <div class="result-title"><i class="fa-solid ${parsed.type === "KELAS" ? "fa-chalkboard-user" : "fa-door-open"}"></i> ${esc(label)}</div>`;
 
     if (ev.matched) {
-      body += `${chip(ev.status, ev.status === "LEWAT" ? ev.lewatMinit + " min" : "")}
+      body += `${chip(ev.status)}
         <div class="meta">
           <div><small>Slot</small><b>${esc(ev.slot.start)} – ${esc(ev.slot.end)}</b></div>
           <div><small>Subjek</small><b>${esc(ev.slot.subject || "-")}</b></div>
@@ -335,10 +368,10 @@
         await setDoc(doc(db, COL, id), { ...rec, createdAt: serverTimestamp() });
         if (navigator.vibrate) { try { navigator.vibrate([60, 40, 60]); } catch (e) {} }
         renderMessage("ok", "Kehadiran direkod",
-          `${esc(label)} • ${esc(rec.slotMula || now.time)}${rec.slotTamat ? "–" + esc(rec.slotTamat) : ""} • ${STATUS_LABEL[rec.status]}${rec.status === "LEWAT" ? " " + rec.lewatMinit + " min" : ""}`);
+          `${esc(label)} • ${esc(rec.slotMula || now.time)}${rec.slotTamat ? "–" + esc(rec.slotTamat) : ""} • ${STATUS_LABEL[rec.status]}`);
         toast("Kehadiran berjaya direkod.", "success");
         await loadToday();
-        if (isReviewerRole() && $("adminDate").value === now.date) loadAdmin();
+        if (isReviewerRole()) loadAdmin();
       } catch (e) {
         console.error(e);
         btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i>Cuba Lagi';
@@ -375,7 +408,7 @@
       const r = todayRecords.find(x => x.slotMula === b.start);
       if (r) used.add(r.id);
       const ended = now.mins >= K.mins(b.end);
-      const st = r ? chip(r.status, r.status === "LEWAT" ? r.lewatMinit + " min" : "") : chip(ended ? "TIADA" : "BELUM");
+      const st = r ? chip(r.status) : chip(ended ? "TIADA" : "BELUM");
       return `<div class="row"><div class="time">${esc(b.start)}–${esc(b.end)}</div>
         <div class="info"><b>${esc(b.class)} • ${esc(b.subject)}</b><span>${r ? "Diimbas " + esc(r.masaImbas) + " di " + esc(r.label) : ended ? "Slot telah tamat" : "Belum diimbas"}</span></div>${st}</div>`;
     }).join("") : `<div class="empty">Tiada slot PdP untuk anda hari ini.</div>`;
@@ -386,54 +419,102 @@
       <div class="info"><b>${esc(r.label)}</b><span>${esc(r.catatan || r.subjek || "")}</span></div>${chip(r.status)}</div>`).join("");
   }
 
-  /* ---------- Pentadbir ---------- */
-  $("adminDate").addEventListener("change", loadAdmin);
-  $("adminFilter").addEventListener("change", loadAdmin);
+  /* ---------- Pentadbir: paparan kelas ---------- */
+  const DAYS5 = ["ISNIN", "SELASA", "RABU", "KHAMIS", "JUMAAT"];
+  const SLOT = 30; // minit setiap lajur grid
 
+  function mondayOf(dateStr) {
+    const d = new Date(dateStr + "T00:00:00");
+    const dow = d.getDay(); // 0 Ahad
+    d.setDate(d.getDate() + (dow === 0 ? 1 : dow === 6 ? 2 : 1 - dow));
+    return d;
+  }
+  function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+
+  function initGrid() {
+    const sel = $("gridClass");
+    const classes = tt.data.classes.slice().sort((a, b) => a.code.localeCompare(b.code));
+    sel.innerHTML = classes.map(c => `<option value="${esc(c.code)}">${esc(c.code)} ${esc(c.name || "")}</option>`).join("");
+    let saved = null;
+    try { saved = localStorage.getItem("kehadiranGridClass"); } catch (e) {}
+    if (saved && classes.some(c => c.code === saved)) sel.value = saved;
+    $("adminDate").value = K.dateKey();
+    sel.addEventListener("change", () => { try { localStorage.setItem("kehadiranGridClass", sel.value); } catch (e) {} loadAdmin(); });
+    $("adminDate").addEventListener("change", loadAdmin);
+    $("wkPrev").addEventListener("click", () => { $("adminDate").value = K.dateKey(addDays(new Date($("adminDate").value + "T00:00:00"), -7)); loadAdmin(); });
+    $("wkNext").addEventListener("click", () => { $("adminDate").value = K.dateKey(addDays(new Date($("adminDate").value + "T00:00:00"), 7)); loadAdmin(); });
+    loadAdmin();
+  }
+
+  let adminSeq = 0;
   async function loadAdmin() {
-    const date = $("adminDate").value || K.dateKey();
-    const filter = $("adminFilter").value;
-    const day = ["AHAD","ISNIN","SELASA","RABU","KHAMIS","JUMAAT","SABTU"][new Date(date + "T00:00:00").getDay()];
-    const now = K.nowInfo();
-    $("adminList").innerHTML = `<div class="empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuatkan...</div>`;
+    if (!$("gridClass").value) return;
+    const seq = ++adminSeq;
+    const code = $("gridClass").value;
+    const mon = mondayOf($("adminDate").value || K.dateKey());
+    const dates = DAYS5.map((_, i) => K.dateKey(addDays(mon, i)));
+    const wrap = $("gridWrap");
+    wrap.innerHTML = `<div class="empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuatkan...</div>`;
+
     let recs = [];
     try {
-      const snap = await getDocs(query(collection(db, COL), where("date", "==", date)));
-      recs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const snap = await getDocs(query(collection(db, COL), where("date", ">=", dates[0]), where("date", "<=", dates[4])));
+      recs = snap.docs.map(d => d.data());
     } catch (e) {
-      $("adminList").innerHTML = `<div class="notice warn">Gagal membaca rekod: ${esc(e.code || e.message)}</div>`;
+      wrap.innerHTML = `<div class="notice warn">Gagal membaca rekod: ${esc(e.code || e.message)}</div>`;
       return;
     }
+    if (seq !== adminSeq) return;
 
-    // Bina senarai semua slot guru pada hari itu dan padankan dengan rekod.
-    const rows = [];
-    const matched = new Set();
-    tt.data.teachers.forEach(t => {
-      K.teacherBlocks(t, day).forEach(b => {
-        const r = recs.find(x => x.namaJadual === t.name && x.slotMula === b.start);
-        if (r) matched.add(r.id);
-        const ended = date < now.date || (date === now.date && now.mins >= K.mins(b.end));
-        const status = r ? r.status : (ended ? "TIADA" : "BELUM");
-        rows.push({ start: b.start, end: b.end, name: t.name, what: `${b.class} • ${b.subject}`, status, r });
+    // Julat masa grid berdasarkan semua slot kelas ini.
+    const byDay = DAYS5.map(d => K.classBlocks(tt.data, code, d));
+    const all = byDay.flat();
+    if (!all.length) { wrap.innerHTML = `<div class="empty">Tiada jadual untuk kelas ini.</div>`; return; }
+    const t0 = Math.floor(Math.min(...all.map(b => K.mins(b.start))) / SLOT) * SLOT;
+    const t1 = Math.ceil(Math.max(...all.map(b => K.mins(b.end))) / SLOT) * SLOT;
+    const cols = (t1 - t0) / SLOT;
+    const col = m => Math.round((m - t0) / SLOT) + 2; // lajur 1 = nama hari
+    const now = K.nowInfo();
+
+    const overlaps = (r, s, e) => r.slotMula && r.slotTamat && K.mins(r.slotMula) < e && K.mins(r.slotTamat) > s;
+    function scanned(date, s, e) {
+      return recs.some(r => r.date === date && (
+        (r.kelasJadual === code && overlaps(r, s, e)) ||
+        (r.jenis === "KELAS" && r.kod === code && r.status === "LUAR_JADUAL" &&
+          K.mins(r.masaImbas) >= s - K.EARLY_MIN && K.mins(r.masaImbas) < e)
+      ));
+    }
+
+    let html = `<div class="tgrid" style="grid-template-columns:76px repeat(${cols},minmax(0,1fr))">`;
+    html += `<div class="hd">Hari</div>`;
+    for (let m = t0; m < t1; m += SLOT) html += `<div class="hd">${K.hhmm(m)}</div>`;
+
+    DAYS5.forEach((day, i) => {
+      const date = dates[i];
+      const row = i + 2;
+      const [, mm, dd] = date.split("-");
+      html += `<div class="day${date === now.date ? " today" : ""}" style="grid-row:${row};grid-column:1">${day}<small>${dd}/${mm}</small></div>`;
+      let cursor = t0;
+      const blocks = byDay[i].slice().sort((a, b) => K.mins(a.start) - K.mins(b.start));
+      if (!blocks.length) {
+        html += `<div class="cell cuti" style="grid-row:${row};grid-column:2 / span ${cols}">Tiada jadual</div>`;
+        return;
+      }
+      blocks.forEach(b => {
+        const s = K.mins(b.start), e = K.mins(b.end);
+        if (s > cursor) html += `<div class="cell rehat" style="grid-row:${row};grid-column:${col(cursor)} / ${col(s)}">REHAT</div>`;
+        let cls;
+        if (!b.teacher) cls = "none";
+        else if (scanned(date, s, e)) cls = "blue";
+        else if (date < now.date || (date === now.date && now.mins >= s)) cls = "red";
+        else cls = "grey";
+        html += `<div class="cell ${cls}" style="grid-row:${row};grid-column:${col(s)} / ${col(e)}" title="${esc(b.start)}–${esc(b.end)}">
+          <b>${esc(b.subject)}</b><span>${esc(b.teacher || "")}</span></div>`;
+        cursor = Math.max(cursor, e);
       });
     });
-    recs.filter(r => !matched.has(r.id)).forEach(r => rows.push({
-      start: r.slotMula || r.masaImbas, end: r.slotTamat || "", name: r.displayName || r.namaJadual || r.email || "-",
-      what: `${r.label}${r.catatan ? " • " + r.catatan : ""}`, status: r.status, r
-    }));
-    rows.sort((a, b) => K.mins(a.start) - K.mins(b.start) || String(a.name).localeCompare(String(b.name)));
-
-    const count = s => rows.filter(x => x.status === s).length;
-    $("adminStats").innerHTML = [
-      ["HADIR", "Hadir", "#ecfdf5"], ["LEWAT", "Lewat", "#fffbeb"], ["TIADA", "Tiada rekod", "#fef2f2"], ["LUAR_JADUAL", "Luar jadual", "#eff6ff"]
-    ].map(([k, l, bg]) => `<div class="stat" style="background:${bg}"><b>${count(k)}</b><small>${l}</small></div>`).join("");
-
-    const list = filter === "ALL" ? rows : rows.filter(x => x.status === filter);
-    $("adminList").innerHTML = list.length ? list.map(x => `<div class="row">
-      <div class="time">${esc(x.start)}${x.end ? "–" + esc(x.end) : ""}</div>
-      <div class="info"><b>${esc(x.name)}</b><span>${esc(x.what)}${x.r ? " • imbas " + esc(x.r.masaImbas) + (x.r.jenis === "BILIK" ? " di " + esc(x.r.label) : "") : ""}</span></div>
-      ${chip(x.status, x.status === "LEWAT" && x.r ? x.r.lewatMinit + " min" : "")}</div>`).join("")
-      : `<div class="empty">${day === "SABTU" || day === "AHAD" ? "Hari cuti — tiada slot jadual." : "Tiada data untuk paparan ini."}</div>`;
+    html += `</div>`;
+    wrap.innerHTML = html;
   }
 </script>
 </body>

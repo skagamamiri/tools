@@ -22,7 +22,6 @@
 
   var PREFIX = 'ICTHUB';
   var EARLY_MIN = 15;   // boleh imbas sehingga 15 minit sebelum slot bermula
-  var LATE_MIN = 10;    // lebih 10 minit selepas slot bermula = LEWAT
   var DAY_NAMES = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU'];
 
   function makeCode(type, value) { return PREFIX + ':' + type + ':' + value; }
@@ -119,15 +118,13 @@
     return nowMins >= mins(block.start) - EARLY_MIN && nowMins < mins(block.end);
   }
 
-  function statusFor(startHHMM, nowMins) {
-    var late = nowMins - mins(startHHMM);
-    return late > LATE_MIN ? { status: 'LEWAT', lewatMinit: late } : { status: 'HADIR', lewatMinit: 0 };
-  }
+  // Status lewat tidak digunakan: imbasan dalam tetingkap slot = HADIR.
+  function statusFor() { return { status: 'HADIR', lewatMinit: 0 }; }
 
   /*
    * Tentukan apa yang patut direkod untuk imbasan ini.
    * opts: { data, teacher (objek jadual atau null), parsed, now (nowInfo), bookings (tempahan bilik guru hari ini) }
-   * Pulangan: { matched:boolean, slot:{start,end,subject,class}|null, status, lewatMinit, sumber, catatanSistem, kelasSekarang }
+   * Pulangan: { matched:boolean, slot:{start,end,subject,class}|null, status, sumber, kelasSekarang }
    */
   function evaluateScan(opts) {
     var now = opts.now, parsed = opts.parsed, teacher = opts.teacher;
@@ -172,7 +169,7 @@
   }
 
   global.KehadiranData = {
-    ROOMS: ROOMS, EARLY_MIN: EARLY_MIN, LATE_MIN: LATE_MIN,
+    ROOMS: ROOMS, EARLY_MIN: EARLY_MIN,
     makeCode: makeCode, parseCode: parseCode, codeLabel: codeLabel,
     mins: mins, hhmm: hhmm, dateKey: dateKey, nowInfo: nowInfo,
     loadTimetable: loadTimetable, findTeacher: findTeacher, normalizeName: normalizeName,
