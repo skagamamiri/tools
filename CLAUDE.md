@@ -54,5 +54,11 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 - Inputs: date, absent teachers (full day or a time range), optional programs (time range + classes; those class slots need no relief),
   settings (load cap ≤5/≤6/≤7 masa, admins 0/1/2 masa, avoid 4+ consecutive masa). 1 masa = 30-min slot.
 - Cap rule: a teacher may take another relief slot while their day total (timetable + relief already given) is ≤ cap.
+- Max relief per ordinary teacher per day (`maxRelief`, default 2).
+- Flexible teachers (Guru Pemulihan + Guru Bimbingan & Kaunseling, default list `DEFAULT_FLEX`, kept in localStorage `ganti_fleksibel`):
+  picked first, exempt from the load cap and the consecutive rule, own daily max (`flexMax`, default 6).
+- `EXTRA_TEACHERS` adds teachers with no timetable entries (Ku Muhammad Nadjri bin Ku Nasir, Guru B&K).
+- Co-taught class slot ("A / B" in the class timetable): if the partner is present, no relief — shown as KOLABORASI with the partner's name.
 - Admin (pentadbir) list is ticked in the page and kept in localStorage (`ganti_pentadbir`); settings in `ganti_tetapan`. Nothing is saved to Firestore.
-- Output: one-page grid of all teachers × slots (A4 landscape print), editable relief list, WhatsApp text copy.
+- Output: "Teach-In" slips in the school's form layout (one per absent teacher: Nama/Tarikh/Hari/Sebab + Nama Guru/Masa/Kelas-MP,
+  printed A4 portrait, 3 per page), plus a one-page grid of all teachers (A4 landscape), editable relief list, WhatsApp text copy.

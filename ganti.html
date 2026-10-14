@@ -54,6 +54,10 @@
   .opt input{min-height:0;margin:2px 0 0;accent-color:var(--green);width:17px;height:17px;flex:none}
   .opt b{font-size:14px}
   .opt small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .num-opt{cursor:default;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .num-opt select{min-height:38px;padding:6px 10px}
+  details.flex-box{margin:0 0 4px}
+  details.flex-box summary{margin-top:2px}
   .opt-group{font-size:11px;font-weight:800;letter-spacing:.06em;color:#94a3b8;text-transform:uppercase;margin:8px 0 2px}
   .chips{display:flex;flex-wrap:wrap;gap:6px}
   .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#fff;user-select:none}
@@ -70,7 +74,7 @@
   .stat{border:1px solid var(--line);border-radius:14px;padding:10px 12px}
   .stat b{display:block;font-size:22px}
   .stat span{font-size:12px;color:var(--muted);font-weight:700}
-  .stat.ok b{color:var(--green)} .stat.bad b{color:var(--red)} .stat.prog b{color:var(--purple)}
+  .stat.kol b{color:#b45309} .stat.ok b{color:var(--green)} .stat.bad b{color:var(--red)} .stat.prog b{color:var(--purple)}
   .tools{display:flex;gap:8px;flex-wrap:wrap}
   table.rl{width:100%;border-collapse:collapse;font-size:13px}
   table.rl th{text-align:left;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;padding:8px 6px;border-bottom:2px solid var(--line)}
@@ -79,8 +83,21 @@
   table.rl tr.unfilled td{background:#fff5f6}
   table.rl tr.prog td{background:#faf7ff;color:#5b21b6}
   .tag{display:inline-block;font-size:10px;font-weight:800;border-radius:6px;padding:2px 6px;background:#eef2f5;color:#475569}
+  .tag.amber{background:#fef3c7;color:#92400e}
+  table.rl tr.kolr td{background:#fffbeb}
   .tag.red{background:#fdecee;color:var(--red)} .tag.purple{background:#f3edff;color:#5b21b6}
 
+  .slips{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:16px}
+  .slip{break-inside:avoid;page-break-inside:avoid}
+  table.slip-t{width:100%;border-collapse:collapse;font-size:13px;color:#000;background:#fff}
+  table.slip-t th,table.slip-t td{border:1px solid #000;padding:3px 7px;height:24px}
+  table.slip-t .ttl{font-size:14px;text-align:center;font-weight:800}
+  table.slip-t .lab{text-align:center;font-weight:800;width:46%}
+  table.slip-t .hd th{text-align:center;font-weight:800}
+  table.slip-t td.m,table.slip-t td.k{text-align:center;width:22%}
+  table.slip-t td.k{width:32%}
+  table.slip-t td.none{color:var(--red);font-weight:800}
+  table.slip-t td.kol{color:#92400e}
   .print-title{display:none}
   .grid-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px;max-height:80vh}
   table.g{border-collapse:separate;border-spacing:0;font-size:11px;width:100%}
@@ -95,12 +112,14 @@
   table.g td.t{background:#eef6ff;color:#1e3a8a}
   table.g td.abs{background:#fdecee;color:#b4233a;text-decoration:line-through}
   table.g td.abs.cov{background:#f3edff;color:#6d28d9}
+  table.g td.abs.kol{background:#fef3c7;color:#92400e;text-decoration:none}
   table.g td.off{background:repeating-linear-gradient(45deg,#fff,#fff 4px,#fdf0f2 4px,#fdf0f2 8px)}
   table.g td.r{background:#d7f5e6;color:#065f46;outline:2px solid var(--green);outline-offset:-2px}
   table.g tr.is-abs td.tn{color:var(--red)}
   table.g td.sum{font-size:10.5px;padding:0 6px;font-weight:700;color:#475569}
   table.g td.sum.hl{color:var(--green-dark)}
   table.g tr.is-adm td.tn::after{content:" (P)";color:var(--amber);font-weight:800}
+  table.g tr.is-flex td.tn::after{content:" (F)";color:var(--blue);font-weight:800}
   .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:#475569;margin:10px 0 0}
   .legend i{display:inline-block;width:14px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px;border:1px solid #0001}
   .footer{text-align:center;color:#91a0ae;font-size:11px;padding:25px}
@@ -113,7 +132,6 @@
     .card-head p{margin-left:0}
   }
   @media print{
-    @page{size:A4 landscape;margin:7mm}
     body{background:#fff}
     ict-header,.no-print,.footer,.toast{display:none!important}
     main{width:100%;margin:0;display:block}
@@ -134,6 +152,14 @@
     .legend{font-size:7.5px;margin-top:3px}
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     #listCard{break-before:page}
+    body.print-slip #gridCard,body.print-slip #listCard{display:none!important}
+    body.print-grid #slipCard{display:none!important}
+    .slips{display:block}
+    .slip{margin:0 0 7mm}
+    table.slip-t{font-size:11pt}
+    table.slip-t th,table.slip-t td{height:6.2mm;padding:0 6px}
+    table.slip-t td.none{color:#000}
+    table.slip-t td.kol{color:#000}
     #listCard .card-head .tools{display:none}
     table.rl{font-size:10px}
     table.rl select{border:0;padding:0;min-height:0;appearance:none;-webkit-appearance:none;font-size:10px}
@@ -166,6 +192,7 @@
       <div><button class="btn primary" id="addAbsBtn" type="button">+ Tambah</button></div>
     </div>
     <div class="list" id="absList"></div>
+    <datalist id="sebabList"><option>MC</option><option>CRK</option><option>CUTI</option><option>KURSUS</option><option>UPDLP</option><option>MESYUARAT</option><option>URUSAN RASMI</option><option>PROGRAM LUAR</option></datalist>
   </section>
 
   <!-- 2. Program -->
@@ -203,6 +230,16 @@
       <label class="opt"><input type="radio" name="cap" value="5" checked><span><b>Guru yang 5 masa dan ke bawah sahaja</b><small>Lalai</small></span></label>
       <label class="opt"><input type="radio" name="cap" value="6"><span><b>Guru yang 6 masa dan ke bawah sahaja</b></span></label>
       <label class="opt"><input type="radio" name="cap" value="7"><span><b>Guru yang 7 masa dan ke bawah sahaja</b></span></label>
+      <div class="opt-group">Had masa ganti</div>
+      <div class="opt num-opt"><span><b>Maksimum masa ganti seorang guru sehari</b><small>Untuk guru biasa. Pentadbir dan guru fleksibel ada had sendiri.</small></span>
+        <select id="maxRelief"><option value="1">1 masa</option><option value="2" selected>2 masa</option><option value="3">3 masa</option><option value="4">4 masa</option><option value="5">5 masa</option></select></div>
+      <div class="opt-group">Guru fleksibel (Pemulihan / Bimbingan &amp; Kaunseling)</div>
+      <div class="opt num-opt"><span><b>Maksimum masa ganti guru fleksibel sehari</b><small>Guru fleksibel diutamakan dahulu dan tidak tertakluk kepada had masa guru atau had berturut-turut.</small></span>
+        <select id="flexMax"><option value="1">1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option><option value="4">4 masa</option><option value="5">5 masa</option><option value="6" selected>6 masa</option><option value="7">7 masa</option><option value="8">8 masa</option><option value="10">10 masa</option></select></div>
+      <details class="admins flex-box">
+        <summary>Senarai guru fleksibel (<span id="flexCount">0</span> dipilih)</summary>
+        <div class="admin-list" id="flexList"></div>
+      </details>
       <div class="opt-group">Pentadbir</div>
       <label class="opt"><input type="radio" name="adm" value="0" checked><span><b>Jangan libatkan pentadbir</b></span></label>
       <label class="opt"><input type="radio" name="adm" value="1"><span><b>Libatkan pentadbir sekali (beri 1 masa)</b></span></label>
@@ -220,28 +257,42 @@
     <button class="btn primary big" id="genBtn" type="button">⚡ Jana Guru Ganti</button>
   </div>
 
+  <!-- Keputusan: slip teach-in (format borang sekolah) -->
+  <section class="card hidden" id="slipCard">
+    <div class="card-head no-print">
+      <div>
+        <h2>Jadual Teach-In</h2>
+        <p id="slipSub" style="margin-left:0"></p>
+      </div>
+      <div class="tools">
+        <button class="btn ghost" id="copyBtn" type="button">Salin teks WhatsApp</button>
+        <button class="btn ghost" id="printGridBtn" type="button">Cetak Grid</button>
+        <button class="btn primary" id="printBtn" type="button">Cetak Teach-In</button>
+      </div>
+    </div>
+    <div class="stats no-print" id="stats"></div>
+    <div class="slips" id="slips"></div>
+  </section>
+
   <!-- Keputusan: grid -->
   <section class="card hidden" id="gridCard">
     <div class="card-head no-print">
       <div>
-        <h2>Jadual Guru Ganti</h2>
-        <p id="gridSub"></p>
-      </div>
-      <div class="tools">
-        <button class="btn ghost" id="copyBtn" type="button">Salin teks WhatsApp</button>
-        <button class="btn primary" id="printBtn" type="button">Cetak</button>
+        <h2>Paparan grid semua guru</h2>
+        <p id="gridSub" style="margin-left:0"></p>
       </div>
     </div>
     <div class="print-title"><b id="printTitle">Jadual Guru Ganti</b><small id="printSub"></small></div>
-    <div class="stats no-print" id="stats"></div>
     <div class="grid-wrap"><table class="g" id="grid"></table></div>
     <div class="legend">
       <span><i style="background:#eef6ff"></i>Kelas biasa</span>
       <span><i style="background:#d7f5e6;outline:2px solid var(--green);outline-offset:-2px"></i>Masa ganti</span>
       <span><i style="background:#fdecee"></i>Kelas guru tidak hadir</span>
       <span><i style="background:#f3edff"></i>Diganti program</span>
+      <span><i style="background:#fef3c7"></i>Kolaborasi (pasangan hadir)</span>
       <span><i style="background:repeating-linear-gradient(45deg,#fff,#fff 3px,#fdf0f2 3px,#fdf0f2 6px)"></i>Tidak hadir (tiada kelas)</span>
       <span><b style="color:var(--amber)">(P)</b> Pentadbir</span>
+      <span><b style="color:var(--blue)">(F)</b> Guru fleksibel</span>
       <span><b>Asal / Ganti / Jumlah</b> dalam masa (30 minit)</span>
     </div>
   </section>
@@ -267,18 +318,27 @@
   var KD = window.KehadiranData;
   var mins = KD.mins, hhmm = KD.hhmm;
   var DAY_NAMES = ['AHAD','ISNIN','SELASA','RABU','KHAMIS','JUMAAT','SABTU'];
-  var LS_ADMIN = 'ganti_pentadbir', LS_SET = 'ganti_tetapan';
+  var LS_ADMIN = 'ganti_pentadbir', LS_SET = 'ganti_tetapan', LS_FLEX = 'ganti_fleksibel';
+  // Guru tanpa jadual dalam jadual.html (cth. Guru Bimbingan & Kaunseling) — ditambah ke senarai guru.
+  var EXTRA_TEACHERS = ['Ku Muhammad Nadjri bin Ku Nasir'];
+  // Guru fleksibel lalai: Guru Pemulihan & Guru Bimbingan dan Kaunseling.
+  var DEFAULT_FLEX = ['Muhammad Saifullah bin Suhaimi', 'Ku Muhammad Nadjri bin Ku Nasir'];
+  var SUBJ_LABEL = { BA: 'B ARAB', TAS: 'TASMIK' };
   var $ = function(id){ return document.getElementById(id); };
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function lsGet(k, d){ try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } }
   function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
   function toast(msg){ var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove('show'); }, 2600); }
-  function shortName(n){ return String(n).replace(/\s+(bin|binti|bt|anak|ak)\s+.*$/i, ''); }
+  function shortName(n){ return String(n).replace(/\s+(bin|binti|bt|bte|anak|ak)\s+.*$/i, ''); }
+  function upShort(n){ return shortName(n).toUpperCase(); }
+  function subjLabel(s){ return SUBJ_LABEL[s] || s; }
+  function fmtT(t){ var p = t.split(':'); return (+p[0]) + '.' + p[1]; }
 
   var TT = null;              // { data, label }
   var teachers = [];          // nama guru (ikut susunan jadual)
   var classCodes = [];
   var admins = new Set(lsGet(LS_ADMIN, []));
+  var flex = new Set(lsGet(LS_FLEX, DEFAULT_FLEX));
   var absents = [];           // { name, full, from, to }
   var programs = [];          // { name, from, to, classes:[] }
   var D = null;               // model hari: { day, slots:[{start,end,brk}], tmap, cmap }
@@ -304,6 +364,7 @@
         for (var i = idx(e.start); i < idx(e.end); i++) if (i >= 0 && i < slots.length) row[i] = { class: e.class, subject: e.subject };
       });
     });
+    EXTRA_TEACHERS.forEach(function(n){ if (!tmap[n]) tmap[n] = new Array(slots.length).fill(null); });
     data.classes.forEach(function(c){
       var row = cmap[c.code] = new Array(slots.length).fill(null);
       c.entries.forEach(function(e){
@@ -364,6 +425,7 @@
         '<div class="seg"><button type="button" data-full="1" class="' + (a.full ? 'on' : '') + '">Seharian</button>' +
         '<button type="button" data-full="0" class="' + (a.full ? '' : 'on') + '">Beberapa masa</button></div>' +
         (a.full ? '' : '<select data-k="from"></select><span class="meta">hingga</span><select data-k="to"></select>') +
+        '<input data-k="reason" list="sebabList" placeholder="Sebab (cth. MC)" value="' + esc(a.reason || '') + '" style="width:150px">' +
         '<button class="btn danger" type="button" data-del="1">Buang</button></div>';
     }).join('');
     Array.prototype.forEach.call(el.querySelectorAll('.item'), function(row){
@@ -380,12 +442,17 @@
   });
   $('absList').addEventListener('change', function(ev){
     var row = ev.target.closest('.item'); if (!row || !ev.target.dataset.k) return;
-    absents[+row.dataset.i][ev.target.dataset.k] = ev.target.value; hideResults();
+    absents[+row.dataset.i][ev.target.dataset.k] = ev.target.value;
+    if (ev.target.dataset.k === 'reason' && R) renderResults(true); else hideResults();
+  });
+  $('absList').addEventListener('input', function(ev){
+    var row = ev.target.closest('.item'); if (!row || ev.target.dataset.k !== 'reason') return;
+    absents[+row.dataset.i].reason = ev.target.value;
   });
   $('addAbsBtn').addEventListener('click', function(){
     var n = $('teacherSel').value; if (!n){ toast('Pilih guru dahulu.'); return; }
     var b = bounds();
-    absents.push({ name: n, full: true, from: b[0], to: b[b.length - 1] });
+    absents.push({ name: n, full: true, from: b[0], to: b[b.length - 1], reason: '' });
     renderAbs(); hideResults();
   });
   $('teacherSel').addEventListener('change', function(){ if (this.value) $('addAbsBtn').click(); });
@@ -432,6 +499,16 @@
     }).join('');
     $('adminCount').textContent = admins.size;
   }
+  function renderFlex(){
+    $('flexList').innerHTML = teachers.map(function(n){
+      return '<label><input type="checkbox" value="' + esc(n) + '"' + (flex.has(n) ? ' checked' : '') + '>' + esc(n) + '</label>';
+    }).join('');
+    $('flexCount').textContent = flex.size;
+  }
+  $('flexList').addEventListener('change', function(ev){
+    if (ev.target.checked) flex.add(ev.target.value); else flex.delete(ev.target.value);
+    lsSet(LS_FLEX, Array.from(flex)); $('flexCount').textContent = flex.size; hideResults();
+  });
   $('adminList').addEventListener('change', function(ev){
     if (ev.target.checked) admins.add(ev.target.value); else admins.delete(ev.target.value);
     lsSet(LS_ADMIN, Array.from(admins)); $('adminCount').textContent = admins.size; hideResults();
@@ -440,7 +517,9 @@
     return {
       cap: +document.querySelector('input[name=cap]:checked').value,
       adm: +document.querySelector('input[name=adm]:checked').value,
-      noConsec: $('noConsec').checked
+      noConsec: $('noConsec').checked,
+      maxRelief: +$('maxRelief').value,
+      flexMax: +$('flexMax').value
     };
   }
   function restoreSettings(){
@@ -448,9 +527,11 @@
     var c = document.querySelector('input[name=cap][value="' + s.cap + '"]'); if (c) c.checked = true;
     var a = document.querySelector('input[name=adm][value="' + s.adm + '"]'); if (a) a.checked = true;
     if (typeof s.noConsec === 'boolean') $('noConsec').checked = s.noConsec;
+    if (s.maxRelief) $('maxRelief').value = String(s.maxRelief);
+    if (s.flexMax) $('flexMax').value = String(s.flexMax);
   }
   $('setCard').addEventListener('change', function(ev){
-    if (ev.target.name === 'cap' || ev.target.name === 'adm' || ev.target.id === 'noConsec'){ lsSet(LS_SET, getSettings()); hideResults(); }
+    if (ev.target.name === 'cap' || ev.target.name === 'adm' || ['noConsec','maxRelief','flexMax'].indexOf(ev.target.id) >= 0){ lsSet(LS_SET, getSettings()); hideResults(); }
     if (ev.target.name === 'adm' && ev.target.value !== '0' && !admins.size){ $('adminBox').open = true; toast('Tandakan guru yang merupakan pentadbir dahulu.'); }
   });
 
@@ -489,7 +570,8 @@
 
     var st = { relief: {}, set: set };
     teachers.forEach(function(t){ st.relief[t] = []; });
-    var open = needs.filter(function(n){ return !n.program; });
+    needs.forEach(function(n){ n.kolab = !n.program && n.partners.length > 0; });
+    var open = needs.filter(function(n){ return !n.program && !n.kolab; });
 
     // Tamak: isi dahulu slot yang paling sedikit calon.
     while (true){
@@ -523,50 +605,84 @@
     var out = [], i = need.i, set = st.set;
     teachers.forEach(function(t){
       if (absentAt(t, i) || busy(t, i, st)) return;
-      var isAdm = admins.has(t), L = load(t, st), rl = st.relief[t].length, run = runWith(t, i, st);
+      var isFlex = flex.has(t), isAdm = !isFlex && admins.has(t), L = load(t, st), rl = st.relief[t].length, run = runWith(t, i, st);
       var reason = '';
-      if (isAdm){
+      if (isFlex){
+        // Guru fleksibel: hanya tertakluk kepada had masa ganti guru fleksibel.
+        if (rl >= set.flexMax) reason = 'had fleksibel ' + set.flexMax + ' masa';
+      } else if (isAdm){
         if (set.adm === 0) reason = 'pentadbir';
         else if (rl >= set.adm) reason = 'had pentadbir';
       } else if (L > set.cap) reason = 'melebihi ' + set.cap + ' masa';
-      if (!reason && set.noConsec && run >= 4) reason = run + ' masa berturut';
+      else if (rl >= set.maxRelief) reason = 'sudah ' + rl + ' masa ganti';
+      if (!reason && !isFlex && set.noConsec && run >= 4) reason = run + ' masa berturut';
       if (strict && reason) return;
       var knows = Object.keys(TT.classTeachers[need.class] || {}).indexOf(t) >= 0;
-      out.push({ name: t, load: L, relief: rl, adm: isAdm, knows: knows, reason: reason });
+      out.push({ name: t, load: L, relief: rl, adm: isAdm, flex: isFlex, knows: knows, reason: reason });
     });
     out.sort(function(a, b){
-      return (a.reason ? 1 : 0) - (b.reason ? 1 : 0) || a.load - b.load || a.relief - b.relief ||
+      return (a.reason ? 1 : 0) - (b.reason ? 1 : 0) || (b.flex - a.flex) || a.load - b.load || a.relief - b.relief ||
         (b.knows - a.knows) || (a.adm - b.adm) || a.name.localeCompare(b.name);
     });
     return out;
   }
 
   /* ---------- Paparan keputusan ---------- */
-  function hideResults(){ ['gridCard','listCard'].forEach(function(id){ $(id).classList.add('hidden'); }); R = null; }
+  function hideResults(){ ['slipCard','gridCard','listCard'].forEach(function(id){ $(id).classList.add('hidden'); }); R = null; }
 
   function fmtDate(ds){
-    var p = ds.split('-'); return p[2] + '/' + p[1] + '/' + p[0];
+    var p = ds.split('-'); return p[2] + '.' + p[1] + '.' + p[0];
   }
-  function renderResults(){
+  function renderResults(keepScroll){
     var st = R.st, needs = R.needs;
     var filled = needs.filter(function(n){ return n.relief; }).length;
     var prog = needs.filter(function(n){ return n.program; }).length;
-    var unf = needs.length - filled - prog;
+    var kol = needs.filter(function(n){ return n.kolab; }).length;
+    var unf = needs.length - filled - prog - kol;
     var noun = { 5:'≤5', 6:'≤6', 7:'≤7' }[R.set.cap];
-    var setTxt = 'Had ' + noun + ' masa • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 4+ masa berturut' : '');
+    var setTxt = 'Had ' + noun + ' masa • Maks ' + R.set.maxRelief + ' ganti/guru • Fleksibel maks ' + R.set.flexMax + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 4+ masa berturut' : '');
     $('gridSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + setTxt + ' • ' + TT.label;
+    $('slipSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + absents.length + ' guru tidak hadir • ' + setTxt;
     $('printTitle').textContent = 'Jadual Guru Ganti — ' + R.day + ', ' + fmtDate(R.date);
     $('printSub').textContent = absents.length + ' guru tidak hadir • ' + filled + ' masa ganti' + (prog ? ' • ' + prog + ' diganti program' : '') + (unf ? ' • ' + unf + ' TIDAK TERISI' : '') + ' • ' + setTxt;
     $('stats').innerHTML =
       stat('', needs.length, 'Masa perlu diganti') + stat('ok', filled, 'Diisi guru ganti') +
-      stat('prog', prog, 'Diganti program') + stat(unf ? 'bad' : '', unf, 'Tidak terisi') +
+      stat('prog', prog, 'Diganti program') + stat('kol', kol, 'Kolaborasi (pasangan hadir)') + stat(unf ? 'bad' : '', unf, 'Tidak terisi') +
       stat('', new Set(needs.filter(function(n){ return n.relief; }).map(function(n){ return n.relief; })).size, 'Guru terlibat');
-    renderGrid(); renderList();
-    $('gridCard').classList.remove('hidden'); $('listCard').classList.remove('hidden');
+    renderSlips(); renderGrid(); renderList();
+    ['slipCard','gridCard','listCard'].forEach(function(id){ $(id).classList.remove('hidden'); });
+    if (keepScroll) return;
     if (unf) toast(unf + ' masa tidak terisi — cuba longgarkan tetapan atau pilih manual.');
-    $('gridCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('slipCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   function stat(cls, v, lbl){ return '<div class="stat ' + cls + '"><b>' + v + '</b><span>' + lbl + '</span></div>'; }
+
+  function reliefLabel(n){
+    if (n.program) return { t: n.program.name.toUpperCase(), c: '' };
+    if (n.kolab) return { t: 'KOLABORASI – ' + n.partners.map(upShort).join(', '), c: 'kol' };
+    if (n.relief) return { t: upShort(n.relief), c: '' };
+    return { t: 'TIADA GURU', c: 'none' };
+  }
+  function renderSlips(){
+    var MIN_ROWS = 8;
+    $('slips').innerHTML = absents.map(function(a){
+      var rows = R.needs.filter(function(n){ return n.absent.indexOf(a.name) >= 0; }).map(function(n){
+        var s = D.slots[n.i], lb = reliefLabel(n);
+        return '<tr><td class="' + lb.c + '">' + esc(lb.t) + '</td><td class="m">' + fmtT(s.start) + '-' + fmtT(s.end) +
+          '</td><td class="k">' + esc(n.class + ' ' + subjLabel(n.subject)) + '</td></tr>';
+      });
+      while (rows.length < MIN_ROWS) rows.push('<tr><td></td><td class="m"></td><td class="k"></td></tr>');
+      var why = (a.reason || '').toUpperCase() + (a.full ? '' : (a.reason ? ' ' : '') + '(' + fmtT(a.from) + '-' + fmtT(a.to) + ')');
+      return '<div class="slip"><table class="slip-t">' +
+        '<tr><th colspan="3" class="ttl">TEACH-IN SK AGAMA (MIS) MIRI</th></tr>' +
+        '<tr><th class="lab">NAMA GURU</th><td colspan="2">' + esc(a.name.toUpperCase()) + '</td></tr>' +
+        '<tr><th class="lab">TARIKH</th><td colspan="2">' + fmtDate(R.date) + '</td></tr>' +
+        '<tr><th class="lab">HARI</th><td colspan="2">' + R.day + '</td></tr>' +
+        '<tr><th class="lab">SEBAB</th><td colspan="2">' + esc(why) + '</td></tr>' +
+        '<tr class="hd"><th>NAMA GURU</th><th>MASA</th><th>KELAS / MP</th></tr>' +
+        rows.join('') + '</table></div>';
+    }).join('');
+  }
 
   function renderGrid(){
     var st = R.st, rmap = {};
@@ -581,15 +697,15 @@
     }).join('') + '<th>Asal</th><th>Ganti</th><th>Jum</th></tr></thead><tbody>';
     order.forEach(function(t){
       var isAbs = absSet.has(t), orig = (D.tmap[t] || []).filter(Boolean).length, rl = st.relief[t].length;
-      h += '<tr class="' + (isAbs ? 'is-abs ' : '') + (admins.has(t) ? 'is-adm' : '') + '"><td class="tn" title="' + esc(t) + '">' + esc(t) + '</td>';
+      h += '<tr class="' + (isAbs ? 'is-abs ' : '') + (flex.has(t) ? 'is-flex ' : admins.has(t) ? 'is-adm' : '') + '"><td class="tn" title="' + esc(t) + '">' + esc(t) + '</td>';
       D.slots.forEach(function(s, i){
         if (s.brk){ h += '<td class="brk"></td>'; return; }
         var x = D.tmap[t] && D.tmap[t][i], r = rmap[t + '@' + i];
         if (r){ h += '<td class="c r" title="Ganti ' + esc(r.absent.join(', ')) + '">' + esc(r.class) + '<small>' + esc(r.subject) + '</small></td>'; return; }
         if (x && absentAt(t, i)){
           var n = nmap[t + '@' + i];
-          var cov = n && n.program;
-          h += '<td class="c abs' + (cov ? ' cov' : '') + '" title="' + (cov ? 'Program: ' + esc(cov.name) : (n && n.relief ? 'Diganti: ' + esc(n.relief) : 'TIADA GANTI')) + '">' + esc(x.class) + '<small>' + (cov ? 'PROG' : (n && n.relief ? esc(shortName(n.relief)).slice(0, 8) : 'KOSONG')) + '</small></td>';
+          var cov = n && n.program, kl = n && n.kolab;
+          h += '<td class="c abs' + (cov ? ' cov' : '') + (kl ? ' kol' : '') + '" title="' + (cov ? 'Program: ' + esc(cov.name) : kl ? 'Kolaborasi: ' + esc(n.partners.join(', ')) : (n && n.relief ? 'Diganti: ' + esc(n.relief) : 'TIADA GANTI')) + '">' + esc(x.class) + '<small>' + (cov ? 'PROG' : kl ? 'KOLAB' : (n && n.relief ? esc(shortName(n.relief)).slice(0, 8) : 'KOSONG')) + '</small></td>';
           return;
         }
         if (x){ h += '<td class="c t">' + esc(x.class) + '<small>' + esc(x.subject) + '</small></td>'; return; }
@@ -605,19 +721,20 @@
     if (!R.needs.length) h += '<tr><td colspan="5" class="empty">Guru yang dipilih tiada kelas dalam masa tidak hadir.</td></tr>';
     R.needs.forEach(function(n, k){
       var s = D.slots[n.i];
-      var note = n.partners.length ? ' <span class="tag" title="Guru bersama hadir">+ ' + esc(n.partners.map(shortName).join(', ')) + ' hadir</span>' : '';
+      var note = '';
       var cell;
       if (n.program) cell = '<span class="tag purple">PROGRAM</span> ' + esc(n.program.name);
+      else if (n.kolab) cell = '<span class="tag amber">KOLABORASI</span> maklumkan ' + esc(n.partners.join(', '));
       else {
         var tmp = { relief: {}, set: R.set };
         Object.keys(R.st.relief).forEach(function(t){ tmp.relief[t] = R.st.relief[t].filter(function(i){ return !(t === n.relief && i === n.i); }); });
         var c = candidates(n, tmp, false);
         cell = '<select data-k="' + k + '"><option value="">— TIADA GURU GANTI —</option>' + c.map(function(x){
           return '<option value="' + esc(x.name) + '"' + (x.name === n.relief ? ' selected' : '') + '>' + esc(x.name) +
-            ' (' + x.load + ' masa' + (x.adm ? ', pentadbir' : '') + (x.reason ? ' — ' + esc(x.reason) : '') + ')</option>';
+            ' (' + x.load + ' masa' + (x.flex ? ', fleksibel' : x.adm ? ', pentadbir' : '') + (x.reason ? ' — ' + esc(x.reason) : '') + ')</option>';
         }).join('') + '</select>';
       }
-      h += '<tr class="' + (n.program ? 'prog' : (n.relief ? '' : 'unfilled')) + '"><td><b>' + s.start + '–' + s.end + '</b></td><td><b>' + esc(n.class) + '</b></td><td>' + esc(n.subject) +
+      h += '<tr class="' + (n.program ? 'prog' : n.kolab ? 'kolr' : (n.relief ? '' : 'unfilled')) + '"><td><b>' + s.start + '–' + s.end + '</b></td><td><b>' + esc(n.class) + '</b></td><td>' + esc(n.subject) +
         '</td><td>' + esc(n.absent.join(', ')) + note + '</td><td>' + cell + '</td></tr>';
     });
     $('relList').innerHTML = h + '</tbody>';
@@ -628,21 +745,32 @@
     if (n.relief) st.relief[n.relief] = st.relief[n.relief].filter(function(i){ return i !== n.i; });
     n.relief = ev.target.value || null;
     if (n.relief) st.relief[n.relief].push(n.i);
-    var y = window.scrollY; renderResults(); window.scrollTo(0, y);
+    renderResults(true);
   });
 
   /* ---------- Salin & cetak ---------- */
-  $('printBtn').addEventListener('click', function(){ window.print(); });
+  function doPrint(mode){
+    var css = mode === 'slip' ? '@page{size:A4 portrait;margin:12mm}' : '@page{size:A4 landscape;margin:7mm}';
+    var el = $('pageStyle'); if (!el){ el = document.createElement('style'); el.id = 'pageStyle'; document.head.appendChild(el); }
+    el.textContent = '@media print{' + css + '}';
+    document.body.classList.remove('print-slip', 'print-grid');
+    document.body.classList.add('print-' + mode);
+    window.print();
+  }
+  window.addEventListener('afterprint', function(){ document.body.classList.remove('print-slip', 'print-grid'); });
+  $('printBtn').addEventListener('click', function(){ doPrint('slip'); });
+  $('printGridBtn').addEventListener('click', function(){ doPrint('grid'); });
   $('copyBtn').addEventListener('click', function(){
     if (!R) return;
-    var lines = ['*JADUAL GURU GANTI*', R.day + ', ' + fmtDate(R.date), ''];
-    lines.push('*Guru tidak hadir:*');
-    absents.forEach(function(a){ lines.push('• ' + a.name + (a.full ? ' (seharian)' : ' (' + a.from + '–' + a.to + ')')); });
-    if (programs.length){ lines.push('', '*Program:*'); programs.forEach(function(p){ lines.push('• ' + p.name + ' ' + p.from + '–' + p.to + ' (' + (p.classes.length === classCodes.length ? 'semua kelas' : p.classes.join(', ')) + ')'); }); }
-    lines.push('', '*Guru ganti:*');
-    R.needs.forEach(function(n){
-      var s = D.slots[n.i];
-      lines.push(s.start + '–' + s.end + ' | ' + n.class + ' ' + n.subject + ' → ' + (n.program ? 'PROGRAM (' + n.program.name + ')' : (n.relief || '*TIADA GURU*')));
+    var lines = ['*TEACH-IN SK AGAMA (MIS) MIRI*', R.day + ', ' + fmtDate(R.date)];
+    absents.forEach(function(a){
+      lines.push('', '*' + a.name.toUpperCase() + '*' + (a.reason ? ' — ' + a.reason.toUpperCase() : '') + (a.full ? '' : ' (' + fmtT(a.from) + '-' + fmtT(a.to) + ')'));
+      var mine = R.needs.filter(function(n){ return n.absent.indexOf(a.name) >= 0; });
+      if (!mine.length) lines.push('Tiada kelas perlu diganti');
+      mine.forEach(function(n){
+        var s = D.slots[n.i];
+        lines.push(fmtT(s.start) + '-' + fmtT(s.end) + ' | ' + n.class + ' ' + subjLabel(n.subject) + ' → ' + reliefLabel(n).t);
+      });
     });
     var txt = lines.join('\n');
     (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function(){ toast('Teks disalin. Tampal di WhatsApp.'); }, function(){
@@ -667,16 +795,19 @@
   }
   KD.loadTimetable().then(function(tt){
     TT = tt;
-    teachers = tt.data.teachers.map(function(t){ return t.name; }).sort(function(a, b){ return a.localeCompare(b); });
+    teachers = tt.data.teachers.map(function(t){ return t.name; }).concat(EXTRA_TEACHERS.filter(function(n){
+      return !tt.data.teachers.some(function(t){ return t.name === n; });
+    })).sort(function(a, b){ return a.localeCompare(b); });
     classCodes = tt.data.classes.map(function(c){ return c.code; }).sort();
     TT.classTeachers = {};
     tt.data.teachers.forEach(function(t){ t.entries.forEach(function(e){ (TT.classTeachers[e.class] = TT.classTeachers[e.class] || {})[t.name] = 1; }); });
     admins = new Set(Array.from(admins).filter(function(n){ return teachers.indexOf(n) >= 0; }));
+    flex = new Set(Array.from(flex).filter(function(n){ return teachers.indexOf(n) >= 0; }));
     $('loadingCard').classList.add('hidden');
     ['absCard','progCard','setCard','genBar'].forEach(function(id){ $(id).classList.remove('hidden'); });
     $('dateIn').value = defaultDate();
     $('dateIn').addEventListener('change', onDate);
-    restoreSettings(); renderAdmins(); renderProgClasses(); onDate();
+    restoreSettings(); renderAdmins(); renderFlex(); renderProgClasses(); onDate();
   }).catch(function(e){
     $('loadingCard').innerHTML = '<div class="empty" style="color:var(--red)">' + esc(e.message) + '</div>';
   });
