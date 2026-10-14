@@ -230,6 +230,8 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
 .edit-banner[hidden]{display:none}
 .edit-banner b{display:block;font-size:14px;margin-bottom:3px}
 .edit-banner button{flex:0 0 auto;padding:8px 12px;font-size:12px}
+#cadanganWrap[hidden]{display:none!important}
+.template-pick select{font-weight:700}
 @media(max-width:520px){#historyModal .history-panel{height:auto;border-radius:14px}.opr-tab{padding:12px 12px;font-size:13px}}
 </style>
 </head>
@@ -255,6 +257,11 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
 </div>
 <form id="oprForm" autocomplete="off">
 <div class="grid">
+<div class="full template-pick"><label for="templat">Templat OPR</label>
+<select id="templat" name="templat">
+  <option value="biru">🔵 Biru (A4)</option>
+  <option value="hijau">🟢 Hijau Alam (A2) — dengan Cadangan Penambahbaikan</option>
+</select></div>
 <div><label for="tahun">Tahun</label><input id="tahun" name="tahun" type="number" min="2020" max="2100" required></div>
 <div><label for="unit">Unit</label><select id="unit" name="unit" required></select></div>
 <div><label for="subunit">Subunit</label><select id="subunit" name="subunit"></select><input id="subunitManual" type="text" placeholder="Masukkan subunit" style="display:none;margin-top:8px"></div>
@@ -323,6 +330,15 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
 </div>
 <textarea id="impak" name="impak" maxlength="1500" required placeholder="Nyatakan impak/hasil program..."></textarea>
 <div class="editor-hint">Tip: Taip setiap isi pada baris berasingan, kemudian pilih <b>Bullet</b> atau <b>Numbering</b>.</div>
+</div>
+<div class="full editor-wrap" id="cadanganWrap" hidden>
+<label for="cadangan">Cadangan Penambahbaikan</label>
+<div class="editor-toolbar" role="toolbar" aria-label="Format Cadangan Penambahbaikan">
+  <button type="button" class="format-btn" data-editor="cadangan" data-format="bullet" title="Tambah bullet pada baris terpilih">• Bullet</button>
+  <button type="button" class="format-btn" data-editor="cadangan" data-format="number" title="Tambah numbering pada baris terpilih">1. Numbering</button>
+</div>
+<textarea id="cadangan" name="cadangan" maxlength="1200" placeholder="Nyatakan cadangan penambahbaikan program..."></textarea>
+<div class="editor-hint">Bahagian ini dipaparkan dalam templat Hijau Alam sahaja.</div>
 </div>
 </div>
 <div class="section">2 Gambar Program</div>
@@ -398,7 +414,7 @@ function populateSubunits(){const unit=$("unit").value,s=$("subunit"),manual=$("
 function updateChildren(){let old=$("categoryWrap");if(old)old.remove();const unit=$("unit").value,map=unit==="Kurikulum"?KURIKULUM:unit==="HEM"?HEM:null;if(map){const p=$("subunit").parentElement,w=document.createElement("div");w.id="categoryWrap";w.style.marginTop="8px";const l=document.createElement("label");l.textContent="Kategori / Bidang (jika ada)";const sel=document.createElement("select");sel.id="category";sel.name="category";sel.add(new Option("— Tidak berkenaan / pilih jika perlu —",""));(map[$("subunit").value]||[]).forEach(x=>sel.add(new Option(x,x)));w.append(l,sel);p.appendChild(w)}$("subunitManual").style.display=$("subunit").value==="__MANUAL__"?"block":"none"}
 $("unit").addEventListener("change",populateSubunits);$("subunit").addEventListener("change",updateChildren);
 function getSubunit(){return $("subunit").value==="__MANUAL__"?$("subunitManual").value.trim():$("subunit").value}
-function readImage(file,maxSide=1000,quality=.72){return new Promise((resolve,reject)=>{if(!file)return reject(new Error("Gambar belum dipilih."));const r=new FileReader();r.onerror=()=>reject(new Error("Gagal membaca gambar."));r.onload=()=>{const img=new Image();img.onload=()=>{const TARGET=4/3;let sw=img.naturalWidth,sh=img.naturalHeight;const srcRatio=sw/sh;if(srcRatio>TARGET){sw=Math.round(sh*TARGET)}else if(srcRatio<TARGET){sh=Math.round(sw/TARGET)}let sx=Math.round((img.naturalWidth-sw)/2),sy=Math.round((img.naturalHeight-sh)/2);let w=sw,h=sh;const s=Math.min(1,maxSide/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,sx,sy,sw,sh,0,0,w,h);resolve(c.toDataURL("image/jpeg",quality))};img.onerror=()=>reject(new Error("Fail gambar tidak sah."));img.src=r.result};r.readAsDataURL(file)})}
+function readImage(file,maxSide=1000,quality=.72,ratio=4/3){return new Promise((resolve,reject)=>{if(!file)return reject(new Error("Gambar belum dipilih."));const r=new FileReader();r.onerror=()=>reject(new Error("Gagal membaca gambar."));r.onload=()=>{const img=new Image();img.onload=()=>{const TARGET=ratio;let sw=img.naturalWidth,sh=img.naturalHeight;const srcRatio=sw/sh;if(TARGET&&srcRatio>TARGET){sw=Math.round(sh*TARGET)}else if(TARGET&&srcRatio<TARGET){sh=Math.round(sw/TARGET)}let sx=Math.round((img.naturalWidth-sw)/2),sy=Math.round((img.naturalHeight-sh)/2);let w=sw,h=sh;const s=Math.min(1,maxSide/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,sx,sy,sw,sh,0,0,w,h);resolve(c.toDataURL("image/jpeg",quality))};img.onerror=()=>reject(new Error("Fail gambar tidak sah."));img.src=r.result};r.readAsDataURL(file)})}
 async function preview(file,id){if(!file)return;try{const data=await readImage(file,1000,.84);$(id).innerHTML=`<img src="${data}" alt="Preview">`}catch(err){$(id).innerHTML="";setStatus(err.message,"err")}}
 $("gambar1").addEventListener("change",e=>preview(e.target.files[0],"preview1"));$("gambar2").addEventListener("change",e=>preview(e.target.files[0],"preview2"));
 
@@ -668,13 +684,13 @@ function oprAiCallback(data){
   }
 
   if(data.generated){
-    ["objektif","aktiviti","impak"].forEach(field=>{
+    ["objektif","aktiviti","impak","cadangan"].forEach(field=>{
       if(data.generated[field] && $(field)){
         $(field).value=String(data.generated[field]).trim();
         $(field).dispatchEvent(new Event("input",{bubbles:true}));
       }
     });
-    setStatus("✓ AI telah menjana Objektif, Aktiviti dan Impak. Sila semak sebelum JANA OPR.","ok");
+    setStatus($("templat").value==="hijau"?"✓ AI telah menjana Objektif, Aktiviti, Impak dan Cadangan. Sila semak sebelum JANA OPR.":"✓ AI telah menjana Objektif, Aktiviti dan Impak. Sila semak sebelum JANA OPR.","ok");
   }else{
     setStatus("✓ AI telah menjana "+fieldLabel(data.field)+". Sila semak dan ubah jika perlu.","ok");
   }
@@ -911,10 +927,12 @@ const newId = (crypto && crypto.randomUUID)
 currentSubmissionId = isEdit ? editingRecord.id : newId;
 currentEditToken = isEdit ? newId : "";
 try{
-const [img1,img2]=await Promise.all([f1?readImage(f1):Promise.resolve(""),f2?readImage(f2):Promise.resolve("")]);
+const hijau=$("templat").value==="hijau";
+const imgArgs=hijau?[1600,.8,null]:[1000,.72,4/3];
+const [img1,img2]=await Promise.all([f1?readImage(f1,...imgArgs):Promise.resolve(""),f2?readImage(f2,...imgArgs):Promise.resolve("")]);
 const fd=new FormData();
 ["tajuk","tarikh","masa","tarikh_masa","tempat","anjuran","sasaran","disediakan_oleh","objektif","aktiviti","impak","tahun","unit"].forEach(k=>fd.append(k,$(k).value.trim()));
-fd.append("subunit",getSubunit());fd.append("kategori",$("category")?$("category").value:"");fd.append("gambar1",img1);fd.append("gambar2",img2);fd.append("tandatangan",signatureHasInk?signatureCanvas.toDataURL("image/png"):"");fd.append("email","");fd.append("clientTimestamp",new Date().toISOString());fd.append("clientSubmissionId",isEdit?currentEditToken:currentSubmissionId);if(isEdit)fd.append("editId",editingRecord.id);
+fd.append("templat",$("templat").value);fd.append("cadangan",$("templat").value==="hijau"?$("cadangan").value.trim():"");fd.append("subunit",getSubunit());fd.append("kategori",$("category")?$("category").value:"");fd.append("gambar1",img1);fd.append("gambar2",img2);fd.append("tandatangan",signatureHasInk?signatureCanvas.toDataURL("image/png"):"");fd.append("email","");fd.append("clientTimestamp",new Date().toISOString());fd.append("clientSubmissionId",isEdit?currentEditToken:currentSubmissionId);if(isEdit)fd.append("editId",editingRecord.id);
 
 const iframe=document.createElement("iframe");iframe.name="opr_submit_"+Date.now();iframe.style.display="none";document.body.appendChild(iframe);
 const form=document.createElement("form");form.method="POST";form.action=CONFIG.WEB_APP_URL;form.target=iframe.name;form.style.display="none";
@@ -1009,6 +1027,17 @@ let currentEditToken="";
 const oprRecords={};
 function submitLabel(){ return editingRecord?"KEMASKINI OPR":"JANA OPR"; }
 
+/* V2 — Pilihan templat OPR */
+function setTemplat(value,remember=true){
+  const v=value==="hijau"?"hijau":"biru";
+  $("templat").value=v;
+  const hijau=v==="hijau";
+  $("cadanganWrap").hidden=!hijau;
+  $("cadangan").required=hijau;
+  if(remember){ try{localStorage.setItem("oprTemplat",v)}catch(_){} }
+}
+function savedTemplat(){ try{return localStorage.getItem("oprTemplat")||"biru"}catch(_){return "biru"} }
+
 function setSelectValue(sel,value){
   if(!sel) return false;
   const ok=Array.from(sel.options).some(o=>o.value===value);
@@ -1048,7 +1077,8 @@ function startEdit(r){
   updateChildren();
   if(r.kategori) setSelectValue($("category"),r.kategori);
 
-  ["tajuk","tempat","anjuran","sasaran","objektif","aktiviti","impak"].forEach(k=>{$(k).value=r[k]||""});
+  setTemplat(r.templat||"biru",false);
+  ["tajuk","tempat","anjuran","sasaran","objektif","aktiviti","impak","cadangan"].forEach(k=>{$(k).value=r[k]||""});
   $("disediakan_oleh").value=r.disediakanOleh||"";
   const dt=parseTarikhMasa(r.tarikhMasa);
   if(dt.tarikh) $("tarikh").value=dt.tarikh;
@@ -1201,7 +1231,10 @@ ${historyText(r.objektif)}
 ${historyText(r.aktiviti)}
 
 <b>IMPAK</b>
-${historyText(r.impak)}</pre></details>`:"";
+${historyText(r.impak)}${r.cadangan?`
+
+<b>CADANGAN PENAMBAHBAIKAN</b>
+${historyText(r.cadangan)}`:""}</pre></details>`:"";
     const statusClass=r.status==="BERJAYA"?"ok":"";
     return `<article class="history-card">
       <div class="history-title">${historyText(r.tajuk||"Tanpa tajuk")}</div>
@@ -1210,6 +1243,7 @@ ${historyText(r.impak)}</pre></details>`:"";
         <span class="history-chip">📅 ${historyText(r.tarikhMasa||"-")}</span>
         <span class="history-chip">🏷️ ${historyText(r.tahun||"-")}</span>
         <span class="history-chip">📂 ${historyText(r.unit||"-")}</span>
+        <span class="history-chip">${r.templat==="hijau"?"🟢 Hijau Alam":"🔵 Biru"}</span>
       </div>
       <div class="history-grid">
         <div><b>Tempat:</b> ${historyText(r.tempat||"-")}</div>
@@ -1257,6 +1291,7 @@ $("historyList").addEventListener("click",e=>{
   const del=e.target.closest&&e.target.closest(".history-delete");
   if(del){ const r=oprRecords[del.dataset.deleteId]; if(r) deleteRecord(r,del); }
 });
+$("templat").addEventListener("change",()=>setTemplat($("templat").value));
 $("tabBtnJana").addEventListener("click",()=>showTab("jana"));
 $("tabBtnRekod").addEventListener("click",()=>showTab("rekod"));
 $("cancelEditBtn").addEventListener("click",cancelEdit);
@@ -1270,6 +1305,7 @@ $("resetBtn").addEventListener("click",()=>{
   $("tarikh").value=new Date().toISOString().slice(0,10);
   $("masa").value="08:00";
   updateTarikhMasa();
+  setTemplat(savedTemplat(),false);
   populateSubunits();
   $("preview1").textContent="Belum pilih gambar";
   $("preview2").textContent="Belum pilih gambar";
@@ -1287,6 +1323,7 @@ $("tarikh").value=new Date().toISOString().slice(0,10);
 $("masa").value="08:00";
 updateTarikhMasa();
 populateUnits();
+setTemplat(savedTemplat(),false);
 if(location.hash==="#rekod") showTab("rekod");
 </script>
 </body>
