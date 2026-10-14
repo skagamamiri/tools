@@ -98,6 +98,8 @@
   table.slip-t td.k{width:32%}
   table.slip-t td.none{color:var(--red);font-weight:800}
   table.slip-t td.kol{color:#92400e}
+  .prepared{margin-top:16px;font-size:14px;color:#000}
+  .prepared b{text-transform:uppercase}
   .print-title{display:none}
   .grid-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px;max-height:80vh}
   table.g{border-collapse:separate;border-spacing:0;font-size:11px;width:100%}
@@ -156,6 +158,7 @@
     body.print-grid #slipCard{display:none!important}
     .slips{display:block}
     .slip{margin:0 0 7mm}
+    .prepared{margin-top:2mm;font-size:11pt;break-inside:avoid}
     table.slip-t{font-size:11pt}
     table.slip-t th,table.slip-t td{height:6.2mm;padding:0 6px}
     table.slip-t td.none{color:#000}
@@ -253,6 +256,12 @@
     </details>
   </section>
 
+  <section class="card no-print hidden" id="byCard">
+    <div class="row">
+      <div class="grow"><label class="lbl" for="preparedBy">Jadual teach-in disediakan oleh</label><select id="preparedBy"></select></div>
+    </div>
+  </section>
+
   <div class="generate-bar no-print hidden" id="genBar">
     <button class="btn primary big" id="genBtn" type="button">⚡ Jana Guru Ganti</button>
   </div>
@@ -272,6 +281,7 @@
     </div>
     <div class="stats no-print" id="stats"></div>
     <div class="slips" id="slips"></div>
+    <div class="prepared" id="preparedLine"></div>
   </section>
 
   <!-- Keputusan: grid -->
@@ -499,6 +509,21 @@
     }).join('');
     $('adminCount').textContent = admins.size;
   }
+  var LS_BY = 'ganti_disediakan';
+  function renderPreparedBy(){
+    var last = lsGet(LS_BY, '');
+    $('preparedBy').innerHTML = '<option value="">— Pilih guru —</option>' + teachers.map(function(n){
+      return '<option' + (n === last ? ' selected' : '') + '>' + esc(n) + '</option>';
+    }).join('');
+  }
+  $('preparedBy').addEventListener('change', function(){
+    lsSet(LS_BY, this.value);
+    if (R) renderPreparedLine();
+  });
+  function renderPreparedLine(){
+    var by = $('preparedBy').value;
+    $('preparedLine').innerHTML = 'Jadual teach-in disediakan oleh: <b>' + esc(by || '______________________') + '</b>';
+  }
   function renderFlex(){
     $('flexList').innerHTML = teachers.map(function(n){
       return '<label><input type="checkbox" value="' + esc(n) + '"' + (flex.has(n) ? ' checked' : '') + '>' + esc(n) + '</label>';
@@ -649,7 +674,7 @@
       stat('', needs.length, 'Masa perlu diganti') + stat('ok', filled, 'Diisi guru ganti') +
       stat('prog', prog, 'Diganti program') + stat('kol', kol, 'Kolaborasi (pasangan hadir)') + stat(unf ? 'bad' : '', unf, 'Tidak terisi') +
       stat('', new Set(needs.filter(function(n){ return n.relief; }).map(function(n){ return n.relief; })).size, 'Guru terlibat');
-    renderSlips(); renderGrid(); renderList();
+    renderSlips(); renderPreparedLine(); renderGrid(); renderList();
     ['slipCard','gridCard','listCard'].forEach(function(id){ $(id).classList.remove('hidden'); });
     if (keepScroll) return;
     if (unf) toast(unf + ' masa tidak terisi — cuba longgarkan tetapan atau pilih manual.');
@@ -664,14 +689,13 @@
     return { t: 'TIADA GURU', c: 'none' };
   }
   function renderSlips(){
-    var MIN_ROWS = 8;
     $('slips').innerHTML = absents.map(function(a){
       var rows = R.needs.filter(function(n){ return n.absent.indexOf(a.name) >= 0; }).map(function(n){
         var s = D.slots[n.i], lb = reliefLabel(n);
         return '<tr><td class="' + lb.c + '">' + esc(lb.t) + '</td><td class="m">' + fmtT(s.start) + '-' + fmtT(s.end) +
           '</td><td class="k">' + esc(n.class + ' ' + subjLabel(n.subject)) + '</td></tr>';
       });
-      while (rows.length < MIN_ROWS) rows.push('<tr><td></td><td class="m"></td><td class="k"></td></tr>');
+      if (!rows.length) rows.push('<tr><td colspan="3" class="m">Tiada kelas perlu diganti</td></tr>');
       var why = (a.reason || '').toUpperCase() + (a.full ? '' : (a.reason ? ' ' : '') + '(' + fmtT(a.from) + '-' + fmtT(a.to) + ')');
       return '<div class="slip"><table class="slip-t">' +
         '<tr><th colspan="3" class="ttl">TEACH-IN SK AGAMA (MIS) MIRI</th></tr>' +
@@ -772,6 +796,7 @@
         lines.push(fmtT(s.start) + '-' + fmtT(s.end) + ' | ' + n.class + ' ' + subjLabel(n.subject) + ' → ' + reliefLabel(n).t);
       });
     });
+    if ($('preparedBy').value) lines.push('', 'Disediakan oleh: ' + $('preparedBy').value);
     var txt = lines.join('\n');
     (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function(){ toast('Teks disalin. Tampal di WhatsApp.'); }, function(){
       var ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
@@ -782,6 +807,7 @@
   $('genBtn').addEventListener('click', function(){
     if (!D.slots.length){ toast('Tiada jadual pada hari ini.'); return; }
     if (!absents.length){ toast('Tambah sekurang-kurangnya seorang guru tidak hadir.'); return; }
+    if (!$('preparedBy').value){ toast('Pilih guru yang menyediakan jadual teach-in.'); $('preparedBy').focus(); return; }
     if (absents.some(function(a){ return !a.full && mins(a.to) <= mins(a.from); })){ toast('Semak masa tidak hadir: masa tamat mesti selepas masa mula.'); return; }
     generate();
   });
@@ -804,10 +830,10 @@
     admins = new Set(Array.from(admins).filter(function(n){ return teachers.indexOf(n) >= 0; }));
     flex = new Set(Array.from(flex).filter(function(n){ return teachers.indexOf(n) >= 0; }));
     $('loadingCard').classList.add('hidden');
-    ['absCard','progCard','setCard','genBar'].forEach(function(id){ $(id).classList.remove('hidden'); });
+    ['absCard','progCard','setCard','byCard','genBar'].forEach(function(id){ $(id).classList.remove('hidden'); });
     $('dateIn').value = defaultDate();
     $('dateIn').addEventListener('change', onDate);
-    restoreSettings(); renderAdmins(); renderFlex(); renderProgClasses(); onDate();
+    restoreSettings(); renderAdmins(); renderFlex(); renderPreparedBy(); renderProgClasses(); onDate();
   }).catch(function(e){
     $('loadingCard').innerHTML = '<div class="empty" style="color:var(--red)">' + esc(e.message) + '</div>';
   });
