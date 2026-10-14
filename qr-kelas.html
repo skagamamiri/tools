@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#071a16">
+<title>Cetak Kod QR Kelas • Hub Tool ICT</title>
+<link rel="icon" href="data:,">
+<script src="ict-header.js"></script>
+<script src="kehadiran-data.js?v=20261014"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#f5f8fa;color:#172033;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  main{width:min(1100px,calc(100% - 24px));margin:18px auto 50px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;border:1px solid #dce5eb;border-radius:18px;padding:12px 14px;margin-bottom:14px}
+  .toolbar p{flex:1 1 260px;margin:0;font-size:13px;color:#526174;line-height:1.5}
+  .toolbar select,.toolbar button{border:1px solid #dce5eb;border-radius:12px;padding:10px 12px;font-family:inherit;font-size:14px;background:#fff}
+  .toolbar button{background:#009b62;border-color:#009b62;color:#fff;font-weight:700;cursor:pointer}
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .tag{background:#fff;border:2px solid #0f766e;border-radius:18px;padding:14px 12px 12px;text-align:center;break-inside:avoid;page-break-inside:avoid}
+  .tag .school{font-size:10px;font-weight:700;letter-spacing:.06em;color:#0f766e;text-transform:uppercase}
+  .tag .kind{font-size:11px;color:#64748b;margin-top:2px}
+  .tag .name{font-size:24px;font-weight:900;margin:2px 0 8px;line-height:1.1}
+  .tag .name small{display:block;font-size:13px;font-weight:700;color:#334155;margin-top:2px}
+  .qr{display:flex;justify-content:center;margin:4px auto 8px}
+  .qr img,.qr canvas{width:170px!important;height:170px!important}
+  .tag .hint{font-size:10.5px;color:#475569;line-height:1.4}
+  .status{text-align:center;color:#718096;padding:24px;font-size:13px}
+  @media(max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.qr img,.qr canvas{width:140px!important;height:140px!important}}
+  @media print{
+    @page{size:A4;margin:10mm}
+    body{background:#fff}
+    ict-header,.toolbar,.footer{display:none!important}
+    main{width:100%;margin:0}
+    .grid{grid-template-columns:repeat(3,1fr);gap:6mm}
+    .tag{border-width:1.5px}
+  }
+  .footer{text-align:center;color:#91a0ae;font-size:11px;padding:20px}
+</style>
+</head>
+<body>
+
+<ict-header
+  icon="fa-solid fa-qrcode"
+  title="Cetak Kod QR Kelas"
+  subtitle="Kod QR untuk ditampal di setiap kelas dan bilik khas.">
+</ict-header>
+
+<main>
+  <div class="toolbar">
+    <p>Cetak dan tampal di pintu atau papan kenyataan setiap kelas. Guru imbas melalui butang <b>Imbas QR</b> di ICT HUB untuk merekod kehadiran.</p>
+    <select id="filter">
+      <option value="ALL">Semua</option>
+      <option value="KELAS">Kelas sahaja</option>
+      <option value="BILIK">Bilik khas sahaja</option>
+    </select>
+    <button type="button" onclick="window.print()"><i class="fa-solid fa-print"></i> Cetak</button>
+  </div>
+  <div id="grid" class="grid"><div class="status">Memuatkan senarai kelas...</div></div>
+</main>
+<div class="footer">Hub Tool ICT • SK Agama (MIS) Miri</div>
+
+<script>
+(function () {
+  var K = window.KehadiranData;
+  var items = [];
+  var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+
+  function render() {
+    var f = document.getElementById('filter').value;
+    var grid = document.getElementById('grid');
+    var list = items.filter(function (x) { return f === 'ALL' || x.type === f; });
+    grid.innerHTML = list.map(function (x, i) {
+      return '<div class="tag">' +
+        '<div class="school">SK Agama (MIS) Miri</div>' +
+        '<div class="kind">' + (x.type === 'KELAS' ? 'Kehadiran Guru • Kelas' : 'Kehadiran Guru • Bilik Khas') + '</div>' +
+        '<div class="name">' + esc(x.title) + (x.sub ? '<small>' + esc(x.sub) + '</small>' : '') + '</div>' +
+        '<div class="qr" id="qr' + i + '"></div>' +
+        '<div class="hint">Buka ICT HUB → <b>Imbas QR</b></div>' +
+      '</div>';
+    }).join('');
+    list.forEach(function (x, i) {
+      new QRCode(document.getElementById('qr' + i), {
+        text: K.makeCode(x.type, x.value), width: 340, height: 340,
+        colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
+      });
+    });
+  }
+
+  document.getElementById('filter').addEventListener('change', render);
+
+  K.loadTimetable().then(function (tt) {
+    var classes = tt.data.classes.slice().sort(function (a, b) { return a.code.localeCompare(b.code); });
+    items = classes.map(function (c) {
+      return { type: 'KELAS', value: c.code, title: c.code, sub: [c.level ? 'Tahun ' + c.level : '', c.name].filter(Boolean).join(' ') };
+    }).concat(K.ROOMS.map(function (r) { return { type: 'BILIK', value: r, title: r, sub: '' }; }));
+    if (typeof QRCode === 'undefined') throw new Error('Pustaka QR tidak dapat dimuatkan.');
+    render();
+  }).catch(function (e) {
+    document.getElementById('grid').innerHTML = '<div class="status">' + esc(e.message) + '</div>';
+  });
+})();
+</script>
+</body>
+</html>

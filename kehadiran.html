@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#071a16">
+<title>Kehadiran Kelas • Hub Tool ICT</title>
+<link rel="icon" href="data:,">
+<script src="ict-header.js"></script>
+<script src="kehadiran-data.js?v=20261014"></script>
+<script src="qr-scanner.js?v=20261014b" defer></script>
+<style>
+  :root{
+    --green:#009b62;--green-dark:#06724d;--navy:#071a16;--ink:#172033;
+    --muted:#718096;--line:#dce5eb;--bg:#f5f8fa;--red:#e84b5f;--amber:#d97706;--blue:#2563eb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  main{width:min(1000px,calc(100% - 24px));margin:18px auto 50px;display:grid;gap:14px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 10px 30px #18314d0d}
+  .card h2{margin:0;font-size:17px}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .card-head p{margin:4px 0 0;color:var(--muted);font-size:12px}
+  .hidden{display:none!important}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:0;border-radius:14px;
+    padding:12px 16px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;min-height:46px}
+  .btn:active{transform:scale(.98)}
+  .btn.primary{background:var(--green);color:#fff}
+  .btn.amber{background:#f59e0b;color:#111827}
+  .btn.ghost{background:#fff;color:#334155;border:1px solid var(--line)}
+  .btn.block{width:100%}
+  .btn[disabled]{opacity:.6;cursor:wait}
+  .scan-hero{text-align:center;padding:22px 18px;background:linear-gradient(135deg,#0f766e,#134e4a);color:#fff;border:0}
+  .scan-hero h2{font-size:20px}
+  .scan-hero p{margin:6px 0 16px;color:#d1fae5;font-size:13px;line-height:1.5}
+  .scan-hero .btn{font-size:16px;min-height:54px;padding:14px 22px;background:#fbbf24;color:#0f172a}
+  .login-note{text-align:center;color:var(--muted);font-size:13px;line-height:1.6}
+  .login-note strong{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+  .result-title{font-size:20px;font-weight:800;margin:2px 0 4px}
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:12px 0}
+  .meta div{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+  .meta small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+  .meta b{font-size:14px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:800}
+  .chip.HADIR{background:#d1fae5;color:#065f46}
+  .chip.LEWAT{background:#fef3c7;color:#92400e}
+  .chip.LUAR_JADUAL{background:#dbeafe;color:#1e40af}
+  .chip.BELUM{background:#f1f5f9;color:#64748b}
+  .chip.TIADA{background:#fee2e2;color:#991b1b}
+  .notice{border-radius:14px;padding:11px 13px;font-size:13px;line-height:1.5;margin:10px 0}
+  .notice.warn{background:#fffbeb;border:1px solid #fde68a;color:#78350f}
+  .notice.info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a}
+  .notice.ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}
+  textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:14px;resize:vertical;min-height:64px}
+  label.lbl{display:block;font-size:12px;font-weight:700;color:#475569;margin:8px 0 4px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .actions .btn{flex:1 1 160px}
+  .list{display:grid;gap:8px}
+  .row{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:14px;background:#fff}
+  .row .time{flex:0 0 92px;font-weight:800;font-size:13px;color:#0f766e}
+  .row .info{flex:1;min-width:0}
+  .row .info b{display:block;font-size:14px}
+  .row .info span{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+  .empty{color:var(--muted);font-size:13px;text-align:center;padding:16px}
+  .admin-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .admin-tools input,.admin-tools select{border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:14px;background:#fff}
+  .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
+  .stat{border-radius:14px;padding:10px;text-align:center;border:1px solid var(--line)}
+  .stat b{display:block;font-size:22px}
+  .stat small{font-size:11px;color:var(--muted)}
+  .sub{font-size:14px;margin:16px 0 8px;color:#334155}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(140%);background:#0f172a;color:#fff;
+    padding:12px 16px;border-radius:14px;font-size:13px;z-index:10000;transition:transform .25s ease;max-width:calc(100% - 32px)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast.error{background:#be123c}
+  .toast.success{background:#047857}
+  .footer{text-align:center;color:#91a0ae;font-size:11px;padding:20px}
+  @media(max-width:560px){
+    .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .row .time{flex-basis:78px;font-size:12px}
+  }
+</style>
+</head>
+<body>
+
+<ict-header
+  icon="fa-solid fa-clipboard-check"
+  title="Kehadiran Kelas"
+  subtitle="Imbas kod QR kelas / bilik khas untuk merekod kehadiran guru.">
+</ict-header>
+
+<main>
+  <!-- Log masuk -->
+  <section id="loginCard" class="card">
+    <div class="login-note">
+      <strong>Log masuk diperlukan</strong>
+      Log masuk dengan akaun DELIMa untuk merekod kehadiran di kelas.
+    </div>
+    <div class="actions"><button id="googleLoginBtn" class="btn primary block" type="button"><i class="fa-brands fa-google"></i>Login Google</button></div>
+  </section>
+
+  <!-- Status memuat -->
+  <section id="loadingCard" class="card hidden"><div class="empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuatkan jadual...</div></section>
+
+  <!-- Hasil imbasan -->
+  <section id="resultCard" class="card hidden" aria-live="polite"></section>
+
+  <!-- Butang imbas -->
+  <section id="scanCard" class="card scan-hero hidden">
+    <h2><i class="fa-solid fa-qrcode"></i> Imbas Kod QR</h2>
+    <p>Sampai di kelas atau bilik khas? Imbas kod QR yang ditampal untuk menandakan anda hadir.</p>
+    <button id="scanBtn" class="btn" type="button"><i class="fa-solid fa-camera"></i>Imbas Sekarang</button>
+  </section>
+
+  <!-- Slot saya hari ini -->
+  <section id="todayCard" class="card hidden">
+    <div class="card-head">
+      <div><h2>Slot Saya Hari Ini</h2><p id="todayLabel"></p></div>
+    </div>
+    <div id="teacherWarn"></div>
+    <div id="todayList" class="list"></div>
+    <h3 class="sub" id="extraTitle">Rekod lain hari ini</h3>
+    <div id="extraList" class="list"></div>
+  </section>
+
+  <!-- Pentadbir -->
+  <section id="adminCard" class="card hidden">
+    <div class="card-head">
+      <div><h2>Laporan Kehadiran Guru</h2><p>Paparan Admin &amp; Pentadbir — semua guru mengikut tarikh.</p></div>
+      <div class="admin-tools">
+        <input type="date" id="adminDate">
+        <select id="adminFilter">
+          <option value="ALL">Semua</option>
+          <option value="TIADA">Tiada rekod sahaja</option>
+          <option value="LEWAT">Lewat sahaja</option>
+          <option value="LUAR_JADUAL">Luar jadual sahaja</option>
+        </select>
+      </div>
+    </div>
+    <div class="stats" id="adminStats"></div>
+    <div id="adminList" class="list"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+<div class="footer">Hub Tool ICT • SK Agama (MIS) Miri • Jadual dibaca daripada Jadual PdP</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence }
+    from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, where, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE",
+    authDomain: "skamis-hubtool.firebaseapp.com",
+    projectId: "skamis-hubtool",
+    storageBucket: "skamis-hubtool.firebasestorage.app",
+    messagingSenderId: "236769370780",
+    appId: "1:236769370780:web:9dfa07d772a721ecfe0359"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+  const K = window.KehadiranData;
+  const COL = "kehadiranKelas";
+  const $ = id => document.getElementById(id);
+  const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const STATUS_LABEL = { HADIR: "Hadir", LEWAT: "Lewat", LUAR_JADUAL: "Luar Jadual", BELUM: "Belum", TIADA: "Tiada Rekod" };
+  const chip = (s, extra) => `<span class="chip ${s}">${STATUS_LABEL[s] || s}${extra ? " " + esc(extra) : ""}</span>`;
+  const fmtDate = d => { const [y,m,dd] = d.split("-"); return `${dd}/${m}/${y}`; };
+
+  let user = null, teacher = null, tt = null, ttTeacher = null;
+  let todayRecords = [];
+  let pendingCode = new URLSearchParams(location.search).get("kod");
+
+  function toast(msg, type = "info") {
+    const t = $("toast");
+    t.textContent = msg;
+    t.className = "toast show " + type;
+    clearTimeout(window.__tt);
+    window.__tt = setTimeout(() => t.className = "toast", 3500);
+  }
+
+  // Admin + Pentadbir boleh melihat laporan (sama seperti isReviewer() dalam peraturan Firestore).
+  function isReviewerRole() { return !!teacher && (teacher.role === "admin" || teacher.role === "pentadbir"); }
+
+  function show(id, on) { $(id).classList.toggle("hidden", !on); }
+
+  function emailKey(e) { return String(e).toLowerCase().replace(/[^a-z0-9]/g, "-"); }
+  function recordId(date, email, start) { return `${date}_${emailKey(email)}_${start.replace(":", "")}`; }
+
+  /* ---------- Log masuk ---------- */
+  $("googleLoginBtn").addEventListener("click", async () => {
+    try {
+      const p = new GoogleAuthProvider();
+      p.setCustomParameters({ prompt: "select_account" });
+      await signInWithPopup(auth, p);
+    } catch (e) { toast(e.message || "Gagal log masuk.", "error"); }
+  });
+
+  onAuthStateChanged(auth, async u => {
+    user = u; teacher = null;
+    if (!u) {
+      show("loginCard", true); ["scanCard","todayCard","adminCard","loadingCard"].forEach(id => show(id, false));
+      window.ICTHeader?.clearUser();
+      if (pendingCode) renderMessage("info", "Log masuk dahulu", "Kod QR telah diimbas. Sila log masuk untuk merekod kehadiran.");
+      return;
+    }
+    show("loginCard", false);
+    show("loadingCard", true);
+    try {
+      const email = String(u.email || "").toLowerCase().trim();
+      const snap = await getDoc(doc(db, "teachers", email));
+      if (!snap.exists() || snap.data().active !== true) throw new Error("Akaun anda tidak disenaraikan sebagai guru aktif.");
+      teacher = snap.data();
+      const isAdmin = isReviewerRole();
+      const roleLabel = teacher.role === "admin" ? "ADMIN" : teacher.role === "pentadbir" ? "PENTADBIR" : "GURU";
+      window.ICTHeader?.setUser(teacher.displayName || u.displayName || u.email, roleLabel);
+
+      tt = await K.loadTimetable();
+      ttTeacher = K.findTeacher(tt.data, teacher.displayName || u.displayName);
+
+      show("loadingCard", false);
+      show("scanCard", true);
+      show("todayCard", true);
+      await loadToday();
+      if (isAdmin) { show("adminCard", true); $("adminDate").value = K.dateKey(); loadAdmin(); }
+      if (pendingCode) handleCode(pendingCode);
+    } catch (e) {
+      console.error(e);
+      show("loadingCard", false);
+      renderMessage("warn", "Tidak dapat dimuatkan", e.message);
+    }
+  });
+
+  /* ---------- Imbas ---------- */
+  $("scanBtn").addEventListener("click", () => {
+    if (!window.ICTQrScanner) return toast("Pengimbas belum sedia. Cuba lagi.", "error");
+    window.ICTQrScanner.open({ onCode: handleCode });
+  });
+
+  function clearCodeFromUrl() {
+    pendingCode = null;
+    if (location.search) history.replaceState(null, "", location.pathname);
+  }
+
+  async function loadMyBookings(date) {
+    try {
+      const snap = await getDocs(query(collection(db, "roomBookings"), where("date", "==", date)));
+      return snap.docs.map(d => d.data()).filter(b => String(b.email || "").toLowerCase() === user.email.toLowerCase());
+    } catch (e) { console.warn("Tempahan bilik tidak dapat dibaca:", e); return []; }
+  }
+
+  async function handleCode(text) {
+    const parsed = K.parseCode(text);
+    clearCodeFromUrl();
+    if (!parsed) return renderMessage("warn", "Kod tidak sah", "Kod QR ini bukan kod kelas atau bilik khas yang berdaftar.");
+
+    const now = K.nowInfo();
+    const bookings = parsed.type === "BILIK" ? await loadMyBookings(now.date) : [];
+    const ev = K.evaluateScan({ data: tt.data, teacher: ttTeacher, parsed, now, bookings });
+    const label = K.codeLabel(parsed, tt.data);
+    const start = ev.slot ? ev.slot.start : now.time;
+    const id = recordId(now.date, user.email, start);
+    const existing = todayRecords.find(r => r.id === id);
+
+    if (existing) {
+      return renderMessage("ok", "Sudah direkod",
+        `Kehadiran anda untuk slot ${esc(start)} telah direkod pada ${esc(existing.masaImbas)} (${esc(existing.label)}).`);
+    }
+
+    const rec = {
+      date: now.date, hari: now.day, masaImbas: now.time,
+      jenis: parsed.type, kod: parsed.value, label,
+      slotMula: ev.slot ? ev.slot.start : null, slotTamat: ev.slot ? ev.slot.end : null,
+      subjek: ev.slot ? (ev.slot.subject || "") : "", kelasJadual: ev.slot ? (ev.slot.class || "") : "",
+      status: ev.status, lewatMinit: ev.lewatMinit, sumber: ev.sumber,
+      guruJadual: ev.kelasSekarang ? (ev.kelasSekarang.teacher || "") : "",
+      namaJadual: ttTeacher ? ttTeacher.name : "",
+      email: user.email, uid: user.uid,
+      displayName: teacher.displayName || user.displayName || user.email,
+      versiJadual: tt.versionId
+    };
+
+    const card = $("resultCard");
+    show("resultCard", true);
+    let body = `<p style="margin:0;color:var(--muted);font-size:12px">Kod diimbas pada ${esc(now.time)}</p>
+      <div class="result-title"><i class="fa-solid ${parsed.type === "KELAS" ? "fa-chalkboard-user" : "fa-door-open"}"></i> ${esc(label)}</div>`;
+
+    if (ev.matched) {
+      body += `${chip(ev.status, ev.status === "LEWAT" ? ev.lewatMinit + " min" : "")}
+        <div class="meta">
+          <div><small>Slot</small><b>${esc(ev.slot.start)} – ${esc(ev.slot.end)}</b></div>
+          <div><small>Subjek</small><b>${esc(ev.slot.subject || "-")}</b></div>
+          <div><small>Kelas</small><b>${esc(ev.slot.class || "-")}</b></div>
+          <div><small>Sumber</small><b>${ev.sumber === "TEMPAHAN" ? "Tempahan bilik" : "Jadual PdP"}</b></div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="confirmBtn" type="button"><i class="fa-solid fa-check"></i>Sahkan Kehadiran</button>
+          <button class="btn ghost" id="cancelBtn" type="button">Batal</button>
+        </div>`;
+    } else {
+      const who = ev.kelasSekarang
+        ? `Mengikut jadual, kelas ini sekarang: <b>${esc(ev.kelasSekarang.subject)}</b> (${esc(ev.kelasSekarang.start)}–${esc(ev.kelasSekarang.end)})${ev.kelasSekarang.teacher ? " oleh <b>" + esc(ev.kelasSekarang.teacher) + "</b>" : ""}.`
+        : "";
+      body += `${chip("LUAR_JADUAL")}
+        <div class="notice info">Tiada slot anda di ${esc(label)} pada waktu ini. ${who}
+          Jika anda guru ganti atau ada sebab lain, rekod sebagai <b>Luar Jadual</b> dengan catatan.</div>
+        <label class="lbl" for="noteInput">Catatan (wajib)</label>
+        <textarea id="noteInput" maxlength="200" placeholder="Contoh: Guru ganti untuk Cikgu ... / Kelas tambahan"></textarea>
+        <div class="actions">
+          <button class="btn amber" id="confirmBtn" type="button"><i class="fa-solid fa-check"></i>Rekod Luar Jadual</button>
+          <button class="btn ghost" id="cancelBtn" type="button">Batal</button>
+        </div>`;
+    }
+    if (!ttTeacher) body += `<div class="notice warn">Nama anda tidak ditemui dalam jadual, jadi slot tidak dapat dipadankan. Hubungi Unit ICT.</div>`;
+    card.innerHTML = body;
+    card.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    $("cancelBtn").onclick = () => { show("resultCard", false); };
+    $("confirmBtn").onclick = async () => {
+      const btn = $("confirmBtn");
+      if (!ev.matched) {
+        const note = ($("noteInput").value || "").trim();
+        if (note.length < 3) { toast("Sila isi catatan.", "error"); $("noteInput").focus(); return; }
+        rec.catatan = note;
+      }
+      btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>Menyimpan...';
+      try {
+        await setDoc(doc(db, COL, id), { ...rec, createdAt: serverTimestamp() });
+        if (navigator.vibrate) { try { navigator.vibrate([60, 40, 60]); } catch (e) {} }
+        renderMessage("ok", "Kehadiran direkod",
+          `${esc(label)} • ${esc(rec.slotMula || now.time)}${rec.slotTamat ? "–" + esc(rec.slotTamat) : ""} • ${STATUS_LABEL[rec.status]}${rec.status === "LEWAT" ? " " + rec.lewatMinit + " min" : ""}`);
+        toast("Kehadiran berjaya direkod.", "success");
+        await loadToday();
+        if (isReviewerRole() && $("adminDate").value === now.date) loadAdmin();
+      } catch (e) {
+        console.error(e);
+        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i>Cuba Lagi';
+        toast(/permission/i.test(e.code || e.message)
+          ? "Tiada kebenaran menyimpan (mungkin sudah direkod). Hubungi Unit ICT jika berulang."
+          : (e.message || "Gagal menyimpan."), "error");
+      }
+    };
+  }
+
+  function renderMessage(kind, title, html) {
+    const card = $("resultCard");
+    show("resultCard", true);
+    const icon = kind === "ok" ? "fa-circle-check" : kind === "warn" ? "fa-triangle-exclamation" : "fa-circle-info";
+    card.innerHTML = `<div class="notice ${kind}" style="margin:0"><b><i class="fa-solid ${icon}"></i> ${esc(title)}</b><br>${html}</div>`;
+  }
+
+  /* ---------- Slot saya hari ini ---------- */
+  async function loadToday() {
+    const now = K.nowInfo();
+    $("todayLabel").textContent = `${now.day} • ${fmtDate(now.date)} • ${tt.label}`;
+    try {
+      const snap = await getDocs(query(collection(db, COL), where("email", "==", user.email), where("date", "==", now.date)));
+      todayRecords = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      console.error(e);
+      todayRecords = [];
+      $("teacherWarn").innerHTML = `<div class="notice warn">Rekod tidak dapat dibaca (${esc(e.code || e.message)}). Peraturan Firestore untuk <b>${COL}</b> mungkin belum ditetapkan.</div>`;
+    }
+    const blocks = K.teacherBlocks(ttTeacher, now.day);
+    if (!ttTeacher) $("teacherWarn").innerHTML = `<div class="notice warn">Nama anda (${esc(teacher.displayName || "")}) tidak dipadankan dengan jadual ${esc(tt.label)}.</div>`;
+    const used = new Set();
+    $("todayList").innerHTML = blocks.length ? blocks.map(b => {
+      const r = todayRecords.find(x => x.slotMula === b.start);
+      if (r) used.add(r.id);
+      const ended = now.mins >= K.mins(b.end);
+      const st = r ? chip(r.status, r.status === "LEWAT" ? r.lewatMinit + " min" : "") : chip(ended ? "TIADA" : "BELUM");
+      return `<div class="row"><div class="time">${esc(b.start)}–${esc(b.end)}</div>
+        <div class="info"><b>${esc(b.class)} • ${esc(b.subject)}</b><span>${r ? "Diimbas " + esc(r.masaImbas) + " di " + esc(r.label) : ended ? "Slot telah tamat" : "Belum diimbas"}</span></div>${st}</div>`;
+    }).join("") : `<div class="empty">Tiada slot PdP untuk anda hari ini.</div>`;
+
+    const extra = todayRecords.filter(r => !used.has(r.id));
+    show("extraTitle", extra.length > 0);
+    $("extraList").innerHTML = extra.map(r => `<div class="row"><div class="time">${esc(r.slotMula || r.masaImbas)}</div>
+      <div class="info"><b>${esc(r.label)}</b><span>${esc(r.catatan || r.subjek || "")}</span></div>${chip(r.status)}</div>`).join("");
+  }
+
+  /* ---------- Pentadbir ---------- */
+  $("adminDate").addEventListener("change", loadAdmin);
+  $("adminFilter").addEventListener("change", loadAdmin);
+
+  async function loadAdmin() {
+    const date = $("adminDate").value || K.dateKey();
+    const filter = $("adminFilter").value;
+    const day = ["AHAD","ISNIN","SELASA","RABU","KHAMIS","JUMAAT","SABTU"][new Date(date + "T00:00:00").getDay()];
+    const now = K.nowInfo();
+    $("adminList").innerHTML = `<div class="empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuatkan...</div>`;
+    let recs = [];
+    try {
+      const snap = await getDocs(query(collection(db, COL), where("date", "==", date)));
+      recs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      $("adminList").innerHTML = `<div class="notice warn">Gagal membaca rekod: ${esc(e.code || e.message)}</div>`;
+      return;
+    }
+
+    // Bina senarai semua slot guru pada hari itu dan padankan dengan rekod.
+    const rows = [];
+    const matched = new Set();
+    tt.data.teachers.forEach(t => {
+      K.teacherBlocks(t, day).forEach(b => {
+        const r = recs.find(x => x.namaJadual === t.name && x.slotMula === b.start);
+        if (r) matched.add(r.id);
+        const ended = date < now.date || (date === now.date && now.mins >= K.mins(b.end));
+        const status = r ? r.status : (ended ? "TIADA" : "BELUM");
+        rows.push({ start: b.start, end: b.end, name: t.name, what: `${b.class} • ${b.subject}`, status, r });
+      });
+    });
+    recs.filter(r => !matched.has(r.id)).forEach(r => rows.push({
+      start: r.slotMula || r.masaImbas, end: r.slotTamat || "", name: r.displayName || r.namaJadual || r.email || "-",
+      what: `${r.label}${r.catatan ? " • " + r.catatan : ""}`, status: r.status, r
+    }));
+    rows.sort((a, b) => K.mins(a.start) - K.mins(b.start) || String(a.name).localeCompare(String(b.name)));
+
+    const count = s => rows.filter(x => x.status === s).length;
+    $("adminStats").innerHTML = [
+      ["HADIR", "Hadir", "#ecfdf5"], ["LEWAT", "Lewat", "#fffbeb"], ["TIADA", "Tiada rekod", "#fef2f2"], ["LUAR_JADUAL", "Luar jadual", "#eff6ff"]
+    ].map(([k, l, bg]) => `<div class="stat" style="background:${bg}"><b>${count(k)}</b><small>${l}</small></div>`).join("");
+
+    const list = filter === "ALL" ? rows : rows.filter(x => x.status === filter);
+    $("adminList").innerHTML = list.length ? list.map(x => `<div class="row">
+      <div class="time">${esc(x.start)}${x.end ? "–" + esc(x.end) : ""}</div>
+      <div class="info"><b>${esc(x.name)}</b><span>${esc(x.what)}${x.r ? " • imbas " + esc(x.r.masaImbas) + (x.r.jenis === "BILIK" ? " di " + esc(x.r.label) : "") : ""}</span></div>
+      ${chip(x.status, x.status === "LEWAT" && x.r ? x.r.lewatMinit + " min" : "")}</div>`).join("")
+      : `<div class="empty">${day === "SABTU" || day === "AHAD" ? "Hari cuti — tiada slot jadual." : "Tiada data untuk paparan ini."}</div>`;
+  }
+</script>
+</body>
+</html>
