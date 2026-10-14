@@ -1,26 +1,22 @@
-// Tambah ke dalam Firebase Console → Firestore → Rules, di dalam blok:
-//   match /databases/{database}/documents { ... }
-// (Fungsi ini boleh diletak bersama fungsi sedia ada; tukar nama jika bertembung.)
+// Blok ini sudah digabungkan ke dalam peraturan Firestore penuh (Firebase Console → Firestore → Rules).
+// Ia menggunakan fungsi sedia ada isActiveTeacher(), isReviewer() dan isAdmin().
+    // ==========================================
+    // KEHADIRAN KELAS (IMBAS KOD QR)
+    // ==========================================
+    match /kehadiranKelas/{recordId} {
+      // Guru baca rekod sendiri; Admin + Pentadbir baca semua (laporan).
+      allow read: if isActiveTeacher()
+        && (
+          isReviewer()
+          || resource.data.email == request.auth.token.email
+        );
 
-function khGuruAktif() {
-  return request.auth != null
-    && exists(/databases/$(database)/documents/teachers/$(request.auth.token.email))
-    && get(/databases/$(database)/documents/teachers/$(request.auth.token.email)).data.active == true;
-}
-function khAdmin() {
-  return khGuruAktif()
-    && get(/databases/$(database)/documents/teachers/$(request.auth.token.email)).data.role == "admin";
-}
+      // Guru hanya mencipta rekod sendiri; tidak boleh diubah selepas disimpan.
+      allow create: if isActiveTeacher()
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status in ['HADIR', 'LEWAT', 'LUAR_JADUAL'];
 
-match /kehadiranKelas/{id} {
-  // Guru hanya boleh mencipta rekod sendiri; tidak boleh ubah selepas disimpan.
-  allow create: if khGuruAktif()
-    && request.resource.data.email == request.auth.token.email
-    && request.resource.data.uid == request.auth.uid
-    && request.resource.data.status in ["HADIR", "LEWAT", "LUAR_JADUAL"];
-  // Guru baca rekod sendiri; admin baca semua.
-  allow read: if khGuruAktif()
-    && (resource.data.email == request.auth.token.email || khAdmin());
-  // Hanya admin boleh betulkan / padam.
-  allow update, delete: if khAdmin();
-}
+      // Hanya Admin boleh membetulkan atau memadam rekod.
+      allow update, delete: if isAdmin();
+    }

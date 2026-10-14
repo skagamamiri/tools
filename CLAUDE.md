@@ -29,7 +29,7 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 - `roomBookings` — special-room bookings (tempahan.html). Activities with a room create
   linked bookings (`aktivitiId`, `sumber: "aktiviti"`). Read requires an active teacher.
 - `kehadiranKelas` — teacher class attendance from QR scans (kehadiran.html). Doc id
-  `<date>_<email-key>_<slotStart HHMM>`; create-only for the teacher, admins read all.
+  `<date>_<email-key>_<slotStart HHMM>`; create-only for the teacher; admin + pentadbir read all (report). Rules block is live in the Console.
   Required rules are in `firestore-rules-kehadiran.txt`.
 - Room list is duplicated in `tempahan.html`, `aktiviti.html` and `kehadiran-data.js` (`ROOMS`); keep in sync.
 

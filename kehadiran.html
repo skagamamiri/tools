@@ -127,7 +127,7 @@
   <!-- Pentadbir -->
   <section id="adminCard" class="card hidden">
     <div class="card-head">
-      <div><h2>Laporan Kehadiran Guru</h2><p>Paparan pentadbir — semua guru mengikut tarikh.</p></div>
+      <div><h2>Laporan Kehadiran Guru</h2><p>Paparan Admin &amp; Pentadbir — semua guru mengikut tarikh.</p></div>
       <div class="admin-tools">
         <input type="date" id="adminDate">
         <select id="adminFilter">
@@ -186,6 +186,9 @@
     window.__tt = setTimeout(() => t.className = "toast", 3500);
   }
 
+  // Admin + Pentadbir boleh melihat laporan (sama seperti isReviewer() dalam peraturan Firestore).
+  function isReviewerRole() { return !!teacher && (teacher.role === "admin" || teacher.role === "pentadbir"); }
+
   function show(id, on) { $(id).classList.toggle("hidden", !on); }
 
   function emailKey(e) { return String(e).toLowerCase().replace(/[^a-z0-9]/g, "-"); }
@@ -215,8 +218,9 @@
       const snap = await getDoc(doc(db, "teachers", email));
       if (!snap.exists() || snap.data().active !== true) throw new Error("Akaun anda tidak disenaraikan sebagai guru aktif.");
       teacher = snap.data();
-      const isAdmin = teacher.role === "admin";
-      window.ICTHeader?.setUser(teacher.displayName || u.displayName || u.email, isAdmin ? "ADMIN" : "GURU");
+      const isAdmin = isReviewerRole();
+      const roleLabel = teacher.role === "admin" ? "ADMIN" : teacher.role === "pentadbir" ? "PENTADBIR" : "GURU";
+      window.ICTHeader?.setUser(teacher.displayName || u.displayName || u.email, roleLabel);
 
       tt = await K.loadTimetable();
       ttTeacher = K.findTeacher(tt.data, teacher.displayName || u.displayName);
@@ -334,7 +338,7 @@
           `${esc(label)} • ${esc(rec.slotMula || now.time)}${rec.slotTamat ? "–" + esc(rec.slotTamat) : ""} • ${STATUS_LABEL[rec.status]}${rec.status === "LEWAT" ? " " + rec.lewatMinit + " min" : ""}`);
         toast("Kehadiran berjaya direkod.", "success");
         await loadToday();
-        if (teacher.role === "admin" && $("adminDate").value === now.date) loadAdmin();
+        if (isReviewerRole() && $("adminDate").value === now.date) loadAdmin();
       } catch (e) {
         console.error(e);
         btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i>Cuba Lagi';
