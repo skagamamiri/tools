@@ -47,3 +47,12 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   landscape grid (days × 30-min columns); cell blue = scanned, red = started but not scanned, grey = not started.
   No late (LEWAT) status is used. "Cetak Kelas Ini" / "Cetak Semua Kelas" print A4 landscape, one class per page.
 - Firestore security rules are edited by the owner in the Firebase Console, not from here.
+
+## Guru Ganti (ganti.html)
+
+- Relief-teacher generator. Reads the timetable via `KehadiranData.loadTimetable()` (kehadiran-data.js) — no copy of the jadual.
+- Inputs: date, absent teachers (full day or a time range), optional programs (time range + classes; those class slots need no relief),
+  settings (load cap ≤5/≤6/≤7 masa, admins 0/1/2 masa, avoid 4+ consecutive masa). 1 masa = 30-min slot.
+- Cap rule: a teacher may take another relief slot while their day total (timetable + relief already given) is ≤ cap.
+- Admin (pentadbir) list is ticked in the page and kept in localStorage (`ganti_pentadbir`); settings in `ganti_tetapan`. Nothing is saved to Firestore.
+- Output: one-page grid of all teachers × slots (A4 landscape print), editable relief list, WhatsApp text copy.
