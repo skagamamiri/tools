@@ -245,7 +245,17 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
 .tpl-card[aria-checked="true"] .tpl-check{display:flex}
 .tpl-zoom-row{margin-top:8px;font-size:12px}
 .tpl-zoom-row a{color:var(--blue);font-weight:700;text-decoration:none}
-@media(max-width:520px){.tpl-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){
+  .tpl-grid{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+    padding:4px 4px 10px;margin:6px -4px 0;scrollbar-width:none;overscroll-behavior-x:contain}
+  .tpl-grid::-webkit-scrollbar{display:none}
+  .tpl-card{flex:0 0 44%;max-width:190px;scroll-snap-align:start}
+  .tpl-card:hover{transform:none}
+}
+.tpl-dots{display:none;justify-content:center;gap:6px;margin-top:2px}
+.tpl-dots span{width:7px;height:7px;border-radius:50%;background:#c9d4e2;transition:background .2s,width .2s}
+.tpl-dots span.on{background:var(--blue);width:18px;border-radius:4px}
+@media(max-width:700px){.tpl-dots{display:flex}}
 @media(max-width:520px){#historyModal .history-panel{height:auto;border-radius:14px}.opr-tab{padding:12px 12px;font-size:13px}}
 </style>
 </head>
@@ -300,6 +310,7 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
       <span class="tpl-check" aria-hidden="true">✓</span>
     </button>
   </div>
+  <div class="tpl-dots" id="tplDots" aria-hidden="true"></div>
   <div class="tpl-zoom-row"><a id="tplZoom" href="assets/opr-templat-biru-besar.jpg?v=20261014b" target="_blank" rel="noopener">🔍 Lihat templat dipilih dalam saiz besar</a></div>
 </div>
 <div><label for="tahun">Tahun</label><input id="tahun" name="tahun" type="number" min="2020" max="2100" required></div>
@@ -1086,7 +1097,33 @@ function setTemplat(value,remember=true){
     ?"Tulis objektif dalam satu perenggan (2–3 ayat). Contoh: Program ini dilaksanakan bagi..."
     :"Nyatakan objektif program...";
   if(remember){ try{localStorage.setItem("oprTemplat",v)}catch(_){} }
+  tplScrollToSelected();
+  tplUpdateDots();
 }
+/* Paparan slaid templat di mobile */
+function tplCards(){ return [...document.querySelectorAll(".tpl-card:not([hidden])")]; }
+function tplScrollToSelected(){
+  const grid=document.querySelector(".tpl-grid"), card=document.querySelector('.tpl-card[aria-checked="true"]');
+  if(!grid||!card||grid.scrollWidth<=grid.clientWidth) return;
+  const target=card.offsetLeft-grid.offsetLeft-4;
+  const visible=card.offsetLeft-grid.offsetLeft>=grid.scrollLeft && card.offsetLeft-grid.offsetLeft+card.offsetWidth<=grid.scrollLeft+grid.clientWidth;
+  if(!visible) grid.scrollTo({left:Math.max(0,target),behavior:"smooth"});
+}
+function tplUpdateDots(){
+  const dots=$("tplDots"), grid=document.querySelector(".tpl-grid");
+  if(!dots||!grid) return;
+  const cards=tplCards();
+  if(dots.children.length!==cards.length) dots.innerHTML=cards.map(()=>"<span></span>").join("");
+  const mid=grid.scrollLeft+grid.clientWidth/2;
+  let near=0, best=Infinity;
+  cards.forEach((c,i)=>{const d=Math.abs(c.offsetLeft-grid.offsetLeft+c.offsetWidth/2-mid); if(d<best){best=d;near=i;}});
+  const atEnd=grid.scrollLeft+grid.clientWidth>=grid.scrollWidth-4;
+  if(atEnd) near=cards.length-1; else if(grid.scrollLeft<=4) near=0;
+  [...dots.children].forEach((d,i)=>d.classList.toggle("on",i===near));
+}
+document.querySelector(".tpl-grid").addEventListener("scroll",()=>requestAnimationFrame(tplUpdateDots),{passive:true});
+window.addEventListener("resize",tplUpdateDots);
+
 function savedTemplat(){ try{return localStorage.getItem("oprTemplat")||"biru"}catch(_){return "biru"} }
 
 function setSelectValue(sel,value){
