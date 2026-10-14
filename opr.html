@@ -291,12 +291,11 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
       </span>
       <span class="tpl-check" aria-hidden="true">✓</span>
     </button>
-    <!-- Islamik: buang atribut hidden selepas ID templat dimasukkan dalam Code.gs -->
-    <button type="button" class="tpl-card" role="radio" aria-checked="false" data-templat="islamik" hidden>
+    <button type="button" class="tpl-card" role="radio" aria-checked="false" data-templat="islamik">
       <span class="tpl-thumb"><img src="assets/opr-templat-islamik.jpg?v=20261014b" alt="Pratonton templat Islamik" loading="lazy"></span>
       <span class="tpl-info">
         <span class="tpl-name">🌙 Islamik</span>
-        <span class="tpl-desc">Saiz A4 · termasuk Cadangan Penambahbaikan</span>
+        <span class="tpl-desc">Saiz A4 · Objektif berperenggan · termasuk Cadangan</span>
       </span>
       <span class="tpl-check" aria-hidden="true">✓</span>
     </button>
@@ -618,7 +617,7 @@ function aiCleanup(){
 
 function aiBuildUrl(field, callback){
   const ctx=aiContext();
-  const params={mode:"ai",callback,field,_:Date.now()};
+  const params={mode:"ai",callback,field,templat:$("templat").value,_:Date.now()};
   Object.entries(ctx).forEach(([k,v])=>params[k]=v);
   const qs=Object.entries(params).map(([k,v])=>encodeURIComponent(k)+"="+encodeURIComponent(String(v??""))).join("&");
   return CONFIG.WEB_APP_URL+(CONFIG.WEB_APP_URL.includes("?")?"&":"?")+qs;
@@ -1071,7 +1070,7 @@ function submitLabel(){ return editingRecord?"KEMASKINI OPR":"JANA OPR"; }
 const TEMPLAT_INFO={
   biru:{label:"🔵 Biru",cadangan:false,uncropped:false},
   hijau:{label:"🟢 Hijau Alam",cadangan:true,uncropped:true},
-  islamik:{label:"🌙 Islamik",cadangan:true,uncropped:true}
+  islamik:{label:"🌙 Islamik",cadangan:true,uncropped:true,objektifPerenggan:true}
 };
 function tplInfo(v){ return TEMPLAT_INFO[v]||TEMPLAT_INFO.biru; }
 function setTemplat(value,remember=true){
@@ -1083,6 +1082,9 @@ function setTemplat(value,remember=true){
   const adaCadangan=tplInfo(v).cadangan;
   $("cadanganWrap").hidden=!adaCadangan;
   $("cadangan").required=adaCadangan;
+  $("objektif").placeholder=tplInfo(v).objektifPerenggan
+    ?"Tulis objektif dalam satu perenggan (2–3 ayat). Contoh: Program ini dilaksanakan bagi..."
+    :"Nyatakan objektif program...";
   if(remember){ try{localStorage.setItem("oprTemplat",v)}catch(_){} }
 }
 function savedTemplat(){ try{return localStorage.getItem("oprTemplat")||"biru"}catch(_){return "biru"} }
