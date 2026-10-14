@@ -231,7 +231,20 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
 .edit-banner b{display:block;font-size:14px;margin-bottom:3px}
 .edit-banner button{flex:0 0 auto;padding:8px 12px;font-size:12px}
 #cadanganWrap[hidden]{display:none!important}
-.template-pick select{font-weight:700}
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,190px));gap:12px;margin-top:6px}
+.tpl-card{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0;margin:0;background:#fff;border:2px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;text-align:left;box-shadow:0 2px 8px rgba(15,40,80,.06);transition:border-color .15s,box-shadow .15s,transform .15s;color:var(--text);font:inherit}
+.tpl-card:hover{border-color:#9db9e0;transform:translateY(-1px)}
+.tpl-card[aria-checked="true"]{border-color:var(--blue);box-shadow:0 0 0 3px rgba(7,86,183,.15)}
+.tpl-thumb{display:block;aspect-ratio:260/368;background:#eef2f7;overflow:hidden}
+.tpl-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.tpl-info{display:flex;flex-direction:column;gap:2px;padding:9px 10px 10px}
+.tpl-name{font-weight:800;font-size:13px}
+.tpl-desc{font-size:11px;color:var(--muted);line-height:1.35}
+.tpl-check{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;display:none;align-items:center;justify-content:center;font-weight:900;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.tpl-card[aria-checked="true"] .tpl-check{display:flex}
+.tpl-zoom-row{margin-top:8px;font-size:12px}
+.tpl-zoom-row a{color:var(--blue);font-weight:700;text-decoration:none}
+@media(max-width:520px){.tpl-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){#historyModal .history-panel{height:auto;border-radius:14px}.opr-tab{padding:12px 12px;font-size:13px}}
 </style>
 </head>
@@ -257,11 +270,29 @@ button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgb
 </div>
 <form id="oprForm" autocomplete="off">
 <div class="grid">
-<div class="full template-pick"><label for="templat">Templat OPR</label>
-<select id="templat" name="templat">
-  <option value="biru">🔵 Biru (A4)</option>
-  <option value="hijau">🟢 Hijau Alam (A2) — dengan Cadangan Penambahbaikan</option>
-</select></div>
+<div class="full template-pick">
+  <label id="templatLabel">Pilih Templat OPR</label>
+  <input type="hidden" id="templat" name="templat" value="biru">
+  <div class="tpl-grid" role="radiogroup" aria-labelledby="templatLabel">
+    <button type="button" class="tpl-card" role="radio" aria-checked="true" data-templat="biru">
+      <span class="tpl-thumb"><img src="assets/opr-templat-biru.jpg" alt="Pratonton templat Biru" loading="lazy"></span>
+      <span class="tpl-info">
+        <span class="tpl-name">🔵 Biru</span>
+        <span class="tpl-desc">Saiz A4 · Objektif, Aktiviti &amp; Impak</span>
+      </span>
+      <span class="tpl-check" aria-hidden="true">✓</span>
+    </button>
+    <button type="button" class="tpl-card" role="radio" aria-checked="false" data-templat="hijau">
+      <span class="tpl-thumb"><img src="assets/opr-templat-hijau.jpg" alt="Pratonton templat Hijau Alam" loading="lazy"></span>
+      <span class="tpl-info">
+        <span class="tpl-name">🟢 Hijau Alam</span>
+        <span class="tpl-desc">Saiz A2 · termasuk Cadangan Penambahbaikan</span>
+      </span>
+      <span class="tpl-check" aria-hidden="true">✓</span>
+    </button>
+  </div>
+  <div class="tpl-zoom-row"><a id="tplZoom" href="assets/opr-templat-biru-besar.jpg" target="_blank" rel="noopener">🔍 Lihat templat dipilih dalam saiz besar</a></div>
+</div>
 <div><label for="tahun">Tahun</label><input id="tahun" name="tahun" type="number" min="2020" max="2100" required></div>
 <div><label for="unit">Unit</label><select id="unit" name="unit" required></select></div>
 <div><label for="subunit">Subunit</label><select id="subunit" name="subunit"></select><input id="subunitManual" type="text" placeholder="Masukkan subunit" style="display:none;margin-top:8px"></div>
@@ -1031,6 +1062,8 @@ function submitLabel(){ return editingRecord?"KEMASKINI OPR":"JANA OPR"; }
 function setTemplat(value,remember=true){
   const v=value==="hijau"?"hijau":"biru";
   $("templat").value=v;
+  document.querySelectorAll(".tpl-card").forEach(c=>c.setAttribute("aria-checked",String(c.dataset.templat===v)));
+  $("tplZoom").href=`assets/opr-templat-${v}-besar.jpg`;
   const hijau=v==="hijau";
   $("cadanganWrap").hidden=!hijau;
   $("cadangan").required=hijau;
@@ -1291,7 +1324,7 @@ $("historyList").addEventListener("click",e=>{
   const del=e.target.closest&&e.target.closest(".history-delete");
   if(del){ const r=oprRecords[del.dataset.deleteId]; if(r) deleteRecord(r,del); }
 });
-$("templat").addEventListener("change",()=>setTemplat($("templat").value));
+document.querySelectorAll(".tpl-card").forEach(c=>c.addEventListener("click",()=>setTemplat(c.dataset.templat)));
 $("tabBtnJana").addEventListener("click",()=>showTab("jana"));
 $("tabBtnRekod").addEventListener("click",()=>showTab("rekod"));
 $("cancelEditBtn").addEventListener("click",cancelEdit);
