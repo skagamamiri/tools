@@ -82,3 +82,18 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   CORS error, browser showed "You need access"). If redeploying, check the /exec URL answers a plain GET with
   {"ok":true,...} from the ganti.html origin.
 - School week comes from erph.html (`const WEEKS=[...].map` and `CUTI`), fetched and parsed — keep that shape intact.
+
+## e-Kokurikulum (ekokurikulum.html)
+
+- Three forms + records: Daftar Hadir (perjumpaan ke-, tarikh, masa mula/tamat, jenis unit, unit, tick students present),
+  Laporan Aktiviti (Daftar Laporan Mingguan: tajuk, aktiviti, laporan murid photo, Sivik, PikeBM, rumusan, guru pembimbing,
+  gambar 1–4 + ulasan, kemahiran berfikir + kata kerja KBAT filtered by level, signatures disediakan/disemak), Pencapaian,
+  and Rekod (list/print/delete; print attendance slip, laporan A4 with photos, unit attendance summary grid, pencapaian list).
+- Backend: Apps Script `apps-script/ekokurikulum.gs` (URL in `EKOKU_URL`) on the e-Kokurikulum Google Sheet
+  (ID in `SHEET_ID`). Same Firebase ID-token check as teach-in-drive.gs; POST text/plain JSON `{action, idToken, ...}`.
+  Tabs: MURID (student list — wide format NAMA|KELAS|KELAB/PERSATUAN|BADAN BERUNIFORM|SUKAN/PERMAINAN|RUMAH SUKAN, or long
+  format NAMA|KELAS|JENIS UNIT|UNIT; headers detected by keyword), UNIT (JENIS UNIT|UNIT options), KEHADIRAN, LAPORAN, PENCAPAIAN.
+  Photos go to Drive `E-KOKURIKULUM/<UNIT>/` (file IDs in the sheet; page reads them back via action `images`).
+  Signatures are small PNG data URLs stored in the cell. Same unit + perjumpaan → asks to replace.
+- Guru pembimbing list comes from the timetable via `KehadiranData.loadTimetable()`. Laporan text draft kept in localStorage `ekoku_draf_laporan`.
+- Sivik / PikeBM / KBAT lists are constants at the top of the module script.
