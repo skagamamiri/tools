@@ -59,6 +59,11 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   picked first, exempt from the load cap and the consecutive rule, own daily max (`flexMax`, default 6).
 - `EXTRA_TEACHERS` adds teachers with no timetable entries (Ku Muhammad Nadjri bin Ku Nasir, Guru B&K).
 - Co-taught class slot ("A / B" in the class timetable): if the partner is present, no relief — shown as KOLABORASI with the partner's name.
+- Program option per program: teachers of the program's classes either stay with the program (default) or are released (`free`) —
+  released teachers are not busy in those slots and can be given relief.
+- Optional Google sign-in on the page (Firebase, same pattern as kehadiran.html). Signed-in active teachers load `gantiSekatan`
+  (admin-set "teacher may not be given teach-in": teacher, `day` SEMUA/ISNIN…/"" or `date` YYYY-MM-DD, from, to, reason) and
+  the generator skips those slots. Only role `admin` sees the "Sekatan teach-in" card (add/delete). Rules: `firestore-rules-ganti.txt`.
 - Admin (pentadbir) list is ticked in the page and kept in localStorage (`ganti_pentadbir`); settings in `ganti_tetapan`. Nothing is saved to Firestore.
 - Output: "Teach-In" slips in the school's form layout (one per absent teacher: Nama/Tarikh/Hari/Sebab + Nama Guru/Masa/Kelas-MP,
   no blank padding rows; "Disediakan oleh" (preparer, required, remembered in localStorage `ganti_disediakan`) printed after the last slip;

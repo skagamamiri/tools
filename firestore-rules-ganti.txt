@@ -1,0 +1,12 @@
+// Tambah blok ini ke dalam peraturan Firestore penuh (Firebase Console → Firestore → Rules),
+// di dalam `match /databases/{database}/documents { ... }`, sebelah blok kehadiranKelas.
+// Ia menggunakan fungsi sedia ada isActiveTeacher() dan isAdmin().
+    // ==========================================
+    // GURU GANTI — SEKATAN TEACH-IN (ganti.html)
+    // ==========================================
+    match /gantiSekatan/{id} {
+      // Semua guru aktif boleh membaca (supaya sekatan terpakai kepada sesiapa yang menjana jadual).
+      allow read: if isActiveTeacher();
+      // Hanya Admin boleh menambah atau memadam sekatan.
+      allow create, update, delete: if isAdmin();
+    }

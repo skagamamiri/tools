@@ -67,6 +67,9 @@
   .admin-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px 12px;margin-top:8px;font-size:13px}
   .admin-list label{display:flex;gap:8px;align-items:center;cursor:pointer}
   .admin-list input{min-height:0;width:15px;height:15px;accent-color:var(--green)}
+  .login-strip{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 16px;font-size:13px;color:#475569}
+  .login-strip b{color:var(--ink)}
+  .step.adm{background:#d97706}
   .generate-bar{display:flex;justify-content:center;padding:4px 0}
 
   /* Keputusan */
@@ -116,6 +119,8 @@
   table.g td.abs.cov{background:#f3edff;color:#6d28d9}
   table.g td.abs.kol{background:#fef3c7;color:#92400e;text-decoration:none}
   table.g td.off{background:repeating-linear-gradient(45deg,#fff,#fff 4px,#fdf0f2 4px,#fdf0f2 8px)}
+  table.g td.cov{background:#f3edff;color:#6d28d9}
+  table.g td.blk{background:repeating-linear-gradient(45deg,#fff,#fff 4px,#fff4d6 4px,#fff4d6 8px);color:#b45309}
   table.g td.r{background:#d7f5e6;color:#065f46;outline:2px solid var(--green);outline-offset:-2px}
   table.g tr.is-abs td.tn{color:var(--red)}
   table.g td.sum{font-size:10.5px;padding:0 6px;font-weight:700;color:#475569}
@@ -180,6 +185,36 @@
 <main>
   <section class="card no-print" id="loadingCard"><div class="empty">Memuatkan jadual waktu…</div></section>
 
+  <!-- Log masuk (pilihan): diperlukan untuk memuatkan sekatan teach-in; admin boleh mengurus sekatan -->
+  <section class="card no-print login-strip" id="loginStrip">
+    <div id="loginMsg">Menyemak log masuk…</div>
+    <button class="btn ghost small hidden" id="loginBtn" type="button">Log masuk Google</button>
+  </section>
+
+  <!-- ADMIN SAHAJA: sekatan teach-in -->
+  <section class="card no-print hidden" id="blockCard">
+    <div class="card-head">
+      <div>
+        <h2><span class="step adm">A</span>Sekatan teach-in <span class="tag amber">Admin sahaja</span></h2>
+        <p>Guru tidak akan dipilih untuk teach-in pada masa yang ditetapkan. Terpakai kepada semua yang menjana jadual.</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="grow"><label class="lbl" for="blkTeacher">Guru</label><select id="blkTeacher"></select></div>
+      <div><label class="lbl" for="blkWhen">Bila</label>
+        <select id="blkWhen"><option value="SEMUA">Setiap hari</option><option>ISNIN</option><option>SELASA</option><option>RABU</option><option>KHAMIS</option><option>JUMAAT</option><option value="TARIKH">Tarikh tertentu…</option></select></div>
+      <div class="hidden" id="blkDateWrap"><label class="lbl" for="blkDate">Tarikh</label><input type="date" id="blkDate"></div>
+      <div><label class="lbl" for="blkFrom">Dari</label><select id="blkFrom"></select></div>
+      <div><label class="lbl" for="blkTo">Hingga</label><select id="blkTo"></select></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="grow"><label class="lbl" for="blkReason">Sebab</label><input id="blkReason" list="blkReasonList" placeholder="cth. Bertugas di kantin, Mesyuarat Kurikulum"></div>
+      <div><button class="btn primary" id="blkAddBtn" type="button">+ Tambah Sekatan</button></div>
+    </div>
+    <datalist id="blkReasonList"><option>Bertugas</option><option>Mesyuarat</option><option>Urusan pejabat</option><option>Kelas pemulihan</option><option>Sesi kaunseling</option><option>Tugas khas</option></datalist>
+    <div class="list" id="blkList"></div>
+  </section>
+
   <!-- 1. Tarikh & guru tidak hadir -->
   <section class="card no-print hidden" id="absCard">
     <div class="card-head">
@@ -216,6 +251,11 @@
       <button class="btn ghost small" id="progNoneBtn" type="button">Kosongkan</button>
     </label>
     <div class="chips" id="progClasses"></div>
+    <label class="lbl" style="margin-top:14px">Guru yang sepatutnya mengajar kelas terlibat</label>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="progFree" value="0" checked><span><b>Turut bertugas bersama program</b><small>Guru mengiringi kelas ke program — tidak dipanggil untuk teach-in.</small></span></label>
+      <label class="opt"><input type="radio" name="progFree" value="1"><span><b>Dibebaskan untuk membantu teach-in</b><small>Kelas diurus oleh program — guru boleh dipanggil menggantikan kelas lain pada masa itu.</small></span></label>
+    </div>
     <div style="margin-top:12px"><button class="btn primary" id="addProgBtn" type="button">+ Daftar Program</button></div>
     <div class="list" id="progList"></div>
   </section>
@@ -300,6 +340,7 @@
       <span><i style="background:#fdecee"></i>Kelas guru tidak hadir</span>
       <span><i style="background:#f3edff"></i>Diganti program</span>
       <span><i style="background:#fef3c7"></i>Kolaborasi (pasangan hadir)</span>
+      <span><i style="background:repeating-linear-gradient(45deg,#fff,#fff 3px,#fff4d6 3px,#fff4d6 6px)"></i>Sekatan teach-in</span>
       <span><i style="background:repeating-linear-gradient(45deg,#fff,#fff 3px,#fdf0f2 3px,#fdf0f2 6px)"></i>Tidak hadir (tiada kelas)</span>
       <span><b style="color:var(--amber)">(P)</b> Pentadbir</span>
       <span><b style="color:var(--blue)">(F)</b> Guru fleksibel</span>
@@ -484,7 +525,8 @@
     var from = $('progFrom').value, to = $('progTo').value;
     if (!cls.length){ toast('Pilih sekurang-kurangnya satu kelas.'); return; }
     if (mins(to) <= mins(from)){ toast('Masa tamat mesti selepas masa mula.'); return; }
-    programs.push({ name: name, from: from, to: to, classes: cls });
+    var free = document.querySelector('input[name=progFree]:checked').value === '1';
+    programs.push({ name: name, from: from, to: to, classes: cls, free: free });
     $('progName').value = ''; setAllProg(false);
     renderProgs(); hideResults();
   });
@@ -493,7 +535,8 @@
     if (!programs.length){ el.innerHTML = ''; return; }
     el.innerHTML = programs.map(function(p, i){
       return '<div class="item"><div class="name">' + esc(p.name) + '<div class="meta">' + p.from + '–' + p.to + ' • ' +
-        (p.classes.length === classCodes.length ? 'Semua kelas' : esc(p.classes.join(', '))) + '</div></div>' +
+        (p.classes.length === classCodes.length ? 'Semua kelas' : esc(p.classes.join(', '))) +
+        ' • <b>' + (p.free ? 'Guru dibebaskan untuk teach-in' : 'Guru bertugas bersama program') + '</b></div></div>' +
         '<button class="btn danger" type="button" data-pdel="' + i + '">Buang</button></div>';
     }).join('');
   }
@@ -617,8 +660,26 @@
     renderResults();
   }
 
-  function load(name, st){ return (D.tmap[name] || []).filter(Boolean).length + st.relief[name].length; }
-  function busy(name, i, st){ return !!(D.tmap[name] && D.tmap[name][i]) || st.relief[name].indexOf(i) >= 0; }
+  // Guru yang kelasnya dibawa ke program "dibebaskan" pada slot itu.
+  function freedAt(name, i){
+    var x = D.tmap[name] && D.tmap[name][i]; if (!x || absentAt(name, i)) return null;
+    var p = programFor(x.class, i); return p && p.free ? p : null;
+  }
+  function teaching(name, i){ return !!(D.tmap[name] && D.tmap[name][i]) && !freedAt(name, i); }
+  function load(name, st){
+    var n = 0; (D.tmap[name] || []).forEach(function(x, i){ if (x && !freedAt(name, i)) n++; });
+    return n + st.relief[name].length;
+  }
+  function busy(name, i, st){ return teaching(name, i) || st.relief[name].indexOf(i) >= 0; }
+  // Sekatan teach-in daripada admin (Firestore gantiSekatan, dimuatkan oleh skrip log masuk).
+  function blockedAt(name, i){
+    var s = D.slots[i], date = $('dateIn').value;
+    return (window.GANTI_SEKATAN || []).find(function(b){
+      if (b.teacher !== name) return false;
+      if (b.date ? b.date !== date : (b.day !== 'SEMUA' && b.day !== D.day)) return false;
+      return s.m >= mins(b.from) && s.m < mins(b.to);
+    }) || null;
+  }
   function runWith(name, i, st){ // panjang rantaian mengajar berturut jika slot i ditambah
     var n = 1, j;
     for (j = i - 1; j >= 0 && !D.slots[j].brk && busy(name, j, st); j--) n++;
@@ -630,9 +691,12 @@
     var out = [], i = need.i, set = st.set;
     teachers.forEach(function(t){
       if (absentAt(t, i) || busy(t, i, st)) return;
+      var blk = blockedAt(t, i);
       var isFlex = flex.has(t), isAdm = !isFlex && admins.has(t), L = load(t, st), rl = st.relief[t].length, run = runWith(t, i, st);
-      var reason = '';
-      if (isFlex){
+      var reason = blk ? 'sekatan: ' + (blk.reason || 'admin') : '';
+      if (reason){
+        // disekat oleh admin pada masa ini
+      } else if (isFlex){
         // Guru fleksibel: hanya tertakluk kepada had masa ganti guru fleksibel.
         if (rl >= set.flexMax) reason = 'had fleksibel ' + set.flexMax + ' masa';
       } else if (isAdm){
@@ -732,8 +796,11 @@
           h += '<td class="c abs' + (cov ? ' cov' : '') + (kl ? ' kol' : '') + '" title="' + (cov ? 'Program: ' + esc(cov.name) : kl ? 'Kolaborasi: ' + esc(n.partners.join(', ')) : (n && n.relief ? 'Diganti: ' + esc(n.relief) : 'TIADA GANTI')) + '">' + esc(x.class) + '<small>' + (cov ? 'PROG' : kl ? 'KOLAB' : (n && n.relief ? esc(shortName(n.relief)).slice(0, 8) : 'KOSONG')) + '</small></td>';
           return;
         }
+        var fp = x && freedAt(t, i);
+        if (fp){ h += '<td class="c cov" title="Dibebaskan: ' + esc(fp.name) + '">' + esc(x.class) + '<small>PROG</small></td>'; return; }
         if (x){ h += '<td class="c t">' + esc(x.class) + '<small>' + esc(x.subject) + '</small></td>'; return; }
-        h += '<td class="c' + (absentAt(t, i) ? ' off' : '') + '"></td>';
+        var bk = !absentAt(t, i) && blockedAt(t, i);
+        h += '<td class="c' + (absentAt(t, i) ? ' off' : bk ? ' blk' : '') + '"' + (bk ? ' title="Sekatan: ' + esc(bk.reason || '') + '"' : '') + '>' + (bk ? '<small>SEKAT</small>' : '') + '</td>';
       });
       h += '<td class="sum">' + orig + '</td><td class="sum' + (rl ? ' hl' : '') + '">' + (rl || '–') + '</td><td class="sum">' + (isAbs ? '–' : orig + rl) + '</td></tr>';
     });
@@ -812,6 +879,12 @@
     generate();
   });
 
+  window.GantiUI = {
+    ready: null,
+    teachers: function(){ return teachers.slice(); },
+    changed: function(){ hideResults(); }
+  };
+
   /* ---------- Mula ---------- */
   function defaultDate(){
     var d = new Date();
@@ -819,7 +892,7 @@
     while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
     return KD.dateKey(d);
   }
-  KD.loadTimetable().then(function(tt){
+  window.GantiUI.ready = KD.loadTimetable().then(function(tt){
     TT = tt;
     teachers = tt.data.teachers.map(function(t){ return t.name; }).concat(EXTRA_TEACHERS.filter(function(n){
       return !tt.data.teachers.some(function(t){ return t.name === n; });
@@ -834,10 +907,110 @@
     $('dateIn').value = defaultDate();
     $('dateIn').addEventListener('change', onDate);
     restoreSettings(); renderAdmins(); renderFlex(); renderPreparedBy(); renderProgClasses(); onDate();
+    return teachers;
   }).catch(function(e){
     $('loadingCard').innerHTML = '<div class="empty" style="color:var(--red)">' + esc(e.message) + '</div>';
   });
 })();
+</script>
+<script type="module">
+  // Log masuk Firebase (pilihan) — untuk membaca sekatan teach-in, dan admin mengurusnya.
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence }
+    from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, collection, getDocs, addDoc, deleteDoc, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+  const app = initializeApp({
+    apiKey: "AIzaSyAPz0zv7RuEHHrmVyO8ECLHv-Hn3dGDZnE",
+    authDomain: "skamis-hubtool.firebaseapp.com",
+    projectId: "skamis-hubtool",
+    storageBucket: "skamis-hubtool.firebasestorage.app",
+    messagingSenderId: "236769370780",
+    appId: "1:236769370780:web:9dfa07d772a721ecfe0359"
+  });
+  const auth = getAuth(app), db = getFirestore(app);
+  setPersistence(auth, browserLocalPersistence).catch(() => {});
+  const COL = "gantiSekatan";
+  const $ = id => document.getElementById(id);
+  const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const fmtD = d => { const [y, m, dd] = d.split("-"); return `${dd}.${m}.${y}`; };
+  window.GANTI_SEKATAN = [];
+  let isAdmin = false;
+
+  function msg(html, showBtn) { $("loginMsg").innerHTML = html; $("loginBtn").classList.toggle("hidden", !showBtn); }
+
+  $("loginBtn").addEventListener("click", async () => {
+    try { const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt: "select_account" }); await signInWithPopup(auth, p); }
+    catch (e) { msg("Gagal log masuk: " + esc(e.message), true); }
+  });
+
+  async function loadBlocks() {
+    const snap = await getDocs(collection(db, COL));
+    window.GANTI_SEKATAN = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => a.teacher.localeCompare(b.teacher) || String(a.from).localeCompare(String(b.from)));
+    window.GantiUI && window.GantiUI.changed();
+    if (isAdmin) renderBlocks();
+    return window.GANTI_SEKATAN.length;
+  }
+
+  onAuthStateChanged(auth, async u => {
+    isAdmin = false; window.GANTI_SEKATAN = []; $("blockCard").classList.add("hidden");
+    if (!u) { window.ICTHeader?.clearUser(); msg("Log masuk dengan akaun DELIMa supaya <b>sekatan teach-in</b> yang ditetapkan admin turut diambil kira.", true); return; }
+    try {
+      const snap = await getDoc(doc(db, "teachers", String(u.email || "").toLowerCase().trim()));
+      if (!snap.exists() || snap.data().active !== true) { msg("Akaun ini bukan guru aktif — sekatan teach-in tidak dimuatkan.", true); return; }
+      const t = snap.data();
+      isAdmin = t.role === "admin";
+      window.ICTHeader?.setUser(t.displayName || u.displayName || u.email, isAdmin ? "ADMIN" : t.role === "pentadbir" ? "PENTADBIR" : "GURU");
+      if (isAdmin) { await window.GantiUI.ready; initForm(); $("blockCard").classList.remove("hidden"); }
+      const n = await loadBlocks();
+      msg(`Log masuk sebagai <b>${esc(t.displayName || u.email)}</b> • ${n} sekatan teach-in diambil kira.`, false);
+    } catch (e) {
+      console.error(e);
+      msg("Sekatan teach-in tidak dapat dimuatkan (" + esc(e.code || e.message) + ").", false);
+    }
+  });
+
+  /* ---------- Borang admin ---------- */
+  let formReady = false;
+  function times(from, to) { const o = []; for (let m = from; m <= to; m += 30) o.push(String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0")); return o; }
+  function initForm() {
+    if (formReady) return; formReady = true;
+    $("blkTeacher").innerHTML = '<option value="">— Pilih guru —</option>' + window.GantiUI.teachers().map(n => `<option>${esc(n)}</option>`).join("");
+    const t = times(7 * 60, 13 * 60);
+    $("blkFrom").innerHTML = t.slice(0, -1).map(x => `<option>${x}</option>`).join("");
+    $("blkTo").innerHTML = t.slice(1).map(x => `<option>${x}</option>`).join("");
+    $("blkTo").value = "07:30";
+    $("blkWhen").addEventListener("change", () => $("blkDateWrap").classList.toggle("hidden", $("blkWhen").value !== "TARIKH"));
+    $("blkAddBtn").addEventListener("click", addBlock);
+    $("blkList").addEventListener("click", async ev => {
+      const id = ev.target.dataset.bdel; if (!id) return;
+      if (!confirm("Padam sekatan ini?")) return;
+      try { await deleteDoc(doc(db, COL, id)); await loadBlocks(); } catch (e) { alert("Gagal memadam: " + (e.code || e.message)); }
+    });
+  }
+  async function addBlock() {
+    const teacher = $("blkTeacher").value, when = $("blkWhen").value, from = $("blkFrom").value, to = $("blkTo").value;
+    const reason = $("blkReason").value.trim(), date = $("blkDate").value;
+    if (!teacher) return alert("Pilih guru.");
+    if (to <= from) return alert("Masa tamat mesti selepas masa mula.");
+    if (when === "TARIKH" && !date) return alert("Pilih tarikh.");
+    if (!reason) return alert("Isikan sebab sekatan.");
+    const data = { teacher, from, to, reason, day: when === "TARIKH" ? "" : when, date: when === "TARIKH" ? date : "",
+      createdBy: auth.currentUser.email, createdAt: serverTimestamp() };
+    $("blkAddBtn").disabled = true;
+    try { await addDoc(collection(db, COL), data); $("blkReason").value = ""; await loadBlocks(); }
+    catch (e) { alert("Gagal menyimpan: " + (e.code || e.message) + "\nPastikan peraturan Firestore untuk gantiSekatan sudah ditambah."); }
+    finally { $("blkAddBtn").disabled = false; }
+  }
+  function renderBlocks() {
+    const list = window.GANTI_SEKATAN;
+    $("blkList").innerHTML = list.length ? list.map(b => `<div class="item"><div class="name">${esc(b.teacher)}
+        <div class="meta">${b.date ? fmtD(b.date) : (b.day === "SEMUA" ? "Setiap hari" : "Setiap " + esc(b.day))} • ${esc(b.from)}–${esc(b.to)} • ${esc(b.reason)}</div></div>
+        <button class="btn danger" type="button" data-bdel="${esc(b.id)}">Padam</button></div>`).join("")
+      : '<div class="empty">Tiada sekatan.</div>';
+  }
 </script>
 </body>
 </html>
