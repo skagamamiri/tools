@@ -40,7 +40,9 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   A room/location scan is recorded against the teacher's current timetable slot (`kelasJadual`), so that
   class's cell in Paparan Kelas turns blue too. Print them from `qr-kelas.html` (4 per A4 portrait page, 2 x 2).
 - `qr-scanner.js` adds the mobile-only "Imbas QR" button to the index profile card and sends valid codes to
-  `kehadiran.html?kod=...`.
+  `kehadiran.html?kod=...`. It drives the camera itself (getUserMedia + `<video playsinline muted>`, needed for iPhone)
+  and decodes with BarcodeDetector or jsQR (jsdelivr, lazy). html5-qrcode is no longer used (failed on iPhone).
+  If the live camera fails it offers "Ambil Gambar QR" (`<input capture=environment>`).
 - The timetable is NOT duplicated: `kehadiran-data.js` fetches `jadual.html` and reads `VERSION_DATA` /
   `DEFAULT_VERSION_ID`. Keep that `const VERSION_DATA = [ ... \n];` block shape intact when updating jadual.html.
 - kehadiran.html: scans that match the timetable/booking are saved automatically (no confirm tap); out-of-timetable
