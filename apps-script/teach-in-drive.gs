@@ -74,7 +74,9 @@ function verifyTeacher_(idToken) {
 }
 
 function rootFolder_() {
-  if (ROOT_FOLDER_ID) return DriveApp.getFolderById(ROOT_FOLDER_ID);
+  // Terima ID atau pautan penuh folder Drive (…/folders/<ID>?usp=sharing).
+  const id = String(ROOT_FOLDER_ID || '').replace(/^.*\/folders\//, '').replace(/[?#].*$/, '').trim();
+  if (id) return DriveApp.getFolderById(id);
   const it = DriveApp.getRootFolder().getFoldersByName(ROOT_FOLDER_NAME);
   return it.hasNext() ? it.next() : DriveApp.getRootFolder().createFolder(ROOT_FOLDER_NAME);
 }
