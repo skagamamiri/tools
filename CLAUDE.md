@@ -43,7 +43,8 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   `kehadiran.html?kod=...`.
 - The timetable is NOT duplicated: `kehadiran-data.js` fetches `jadual.html` and reads `VERSION_DATA` /
   `DEFAULT_VERSION_ID`. Keep that `const VERSION_DATA = [ ... \n];` block shape intact when updating jadual.html.
-- kehadiran.html: teacher scan flow + "Paparan Kelas" for admin/pentadbir — one class per view (dropdown), weekly
+- kehadiran.html: scans that match the timetable/booking are saved automatically (no confirm tap); out-of-timetable
+  scans (LUAR_JADUAL) still need a note + manual tap. Plus "Paparan Kelas" for admin/pentadbir — one class per view (dropdown), weekly
   landscape grid (days × 30-min columns); cell blue = scanned, red = started but not scanned, grey = not started.
   No late (LEWAT) status is used. "Cetak Kelas Ini" / "Cetak Semua Kelas" print A4 landscape, one class per page.
 - Firestore security rules are edited by the owner in the Firebase Console, not from here.

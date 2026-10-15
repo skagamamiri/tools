@@ -7,7 +7,7 @@
 <title>Kehadiran Kelas • Hub Tool ICT</title>
 <link rel="icon" href="data:,">
 <script src="ict-header.js"></script>
-<script src="kehadiran-data.js?v=20261014d"></script>
+<script src="kehadiran-data.js?v=20261015"></script>
 <script src="qr-scanner.js?v=20261014b" defer></script>
 <style>
   :root{
@@ -358,8 +358,8 @@
           <div><small>Sumber</small><b>${ev.sumber === "TEMPAHAN" ? "Tempahan bilik" : "Jadual PdP"}</b></div>
         </div>
         <div class="actions">
-          <button class="btn primary" id="confirmBtn" type="button"><i class="fa-solid fa-check"></i>Sahkan Kehadiran</button>
-          <button class="btn ghost" id="cancelBtn" type="button">Batal</button>
+          <button class="btn primary" id="confirmBtn" type="button" disabled><i class="fa-solid fa-spinner fa-spin"></i>Merekod kehadiran...</button>
+          <button class="btn ghost hidden" id="cancelBtn" type="button">Batal</button>
         </div>`;
     } else {
       const who = ev.kelasSekarang
@@ -380,7 +380,7 @@
     card.scrollIntoView({ behavior: "smooth", block: "start" });
 
     $("cancelBtn").onclick = () => { show("resultCard", false); };
-    $("confirmBtn").onclick = async () => {
+    const save = async () => {
       const btn = $("confirmBtn");
       if (!ev.matched) {
         const note = ($("noteInput").value || "").trim();
@@ -392,18 +392,23 @@
         await setDoc(doc(db, COL, id), { ...rec, createdAt: serverTimestamp() });
         if (navigator.vibrate) { try { navigator.vibrate([60, 40, 60]); } catch (e) {} }
         renderMessage("ok", "Kehadiran direkod",
-          `${esc(label)} • ${esc(rec.slotMula || now.time)}${rec.slotTamat ? "–" + esc(rec.slotTamat) : ""} • ${STATUS_LABEL[rec.status]}`);
+          `${esc(label)} • ${esc(rec.slotMula || now.time)}${rec.slotTamat ? "–" + esc(rec.slotTamat) : ""}${rec.subjek ? " • " + esc(rec.subjek) : ""}${rec.kelasJadual && rec.jenis === "BILIK" ? " • Kelas " + esc(rec.kelasJadual) : ""} • ${STATUS_LABEL[rec.status]}`);
         toast("Kehadiran berjaya direkod.", "success");
         await loadToday();
         if (isReviewerRole()) loadAdmin();
       } catch (e) {
         console.error(e);
-        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i>Cuba Lagi';
+        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i>Cuba Lagi';
+        show("cancelBtn", true);
         toast(/permission/i.test(e.code || e.message)
           ? "Tiada kebenaran menyimpan (mungkin sudah direkod). Hubungi Unit ICT jika berulang."
           : (e.message || "Gagal menyimpan."), "error");
       }
     };
+    $("confirmBtn").onclick = save;
+    // Imbasan sepadan dengan jadual / tempahan: rekod terus tanpa perlu tekan Sahkan.
+    // Luar jadual (kelas yang bukan sepatutnya): guru perlu isi catatan dan tekan sendiri.
+    if (ev.matched) save();
   }
 
   function renderMessage(kind, title, html) {
