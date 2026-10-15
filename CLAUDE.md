@@ -72,6 +72,8 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   idToken, week, fileName, pdfBase64) to the Apps Script web app `apps-script/teach-in-drive.gs` (URL in `TEACHIN_DRIVE_URL`).
   The script verifies the Firebase ID token by reading teachers/<email> via Firestore REST, then saves to Drive
   `TEACH IN / MINGGU NN / DD.MM.YYYY HARI.pdf` (same name is replaced). Requires sign-in on the page.
-  Deploy the web app from a non-DELIMa Google account: the moe-dl.edu.my domain blocks anonymous/cross-origin calls
-  to web apps even when "Who has access" is Anyone (fetch fails with a CORS error). Live and working since Oct 2026.
+  The working deployment is owned by the school's DELIMa admin account (Oct 2026). An earlier deployment from
+  sekolah-8965-cm1@moe-dl.edu.my was blocked for outside callers even with "Who has access: Anyone" (fetch failed with a
+  CORS error, browser showed "You need access"). If redeploying, check the /exec URL answers a plain GET with
+  {"ok":true,...} from the ganti.html origin.
 - School week comes from erph.html (`const WEEKS=[...].map` and `CUTI`), fetched and parsed — keep that shape intact.
