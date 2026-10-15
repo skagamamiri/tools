@@ -35,6 +35,12 @@
   .btn:active{transform:scale(.98)}
   .btn.primary{background:var(--green);color:#fff}
   .btn.big{font-size:16px;min-height:52px;padding:14px 26px}
+  .btn.save{background:#1d4ed8;color:#fff}
+  .btn[disabled]{opacity:.6;cursor:wait}
+  .save-status{margin:0 0 12px;padding:10px 14px;border-radius:12px;font-size:13px;background:#eff6ff;color:#1e3a8a;border:1px solid #bfdbfe}
+  .save-status.ok{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+  .save-status.err{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+  .save-status a{color:inherit;font-weight:800}
   .btn.ghost{background:#fff;color:#334155;border:1px solid var(--line)}
   .btn.danger{background:#fff;color:var(--red);border:1px solid #f5c2c9;min-height:36px;padding:6px 10px}
   .btn.small{min-height:34px;padding:6px 12px;font-size:13px}
@@ -317,8 +323,10 @@
         <button class="btn ghost" id="copyBtn" type="button">Salin teks WhatsApp</button>
         <button class="btn ghost" id="printGridBtn" type="button">Cetak Grid</button>
         <button class="btn primary" id="printBtn" type="button">Cetak Teach-In</button>
+        <button class="btn save" id="saveBtn" type="button">Simpan Rekod</button>
       </div>
     </div>
+    <div class="save-status hidden no-print" id="saveStatus"></div>
     <div class="stats no-print" id="stats"></div>
     <div class="slips" id="slips"></div>
     <div class="prepared" id="preparedLine"></div>
@@ -717,7 +725,7 @@
   }
 
   /* ---------- Paparan keputusan ---------- */
-  function hideResults(){ ['slipCard','gridCard','listCard'].forEach(function(id){ $(id).classList.add('hidden'); }); R = null; }
+  function hideResults(){ var ss = $('saveStatus'); if (ss) ss.className = 'save-status hidden no-print'; ['slipCard','gridCard','listCard'].forEach(function(id){ $(id).classList.add('hidden'); }); R = null; }
 
   function fmtDate(ds){
     var p = ds.split('-'); return p[2] + '.' + p[1] + '.' + p[0];
@@ -839,6 +847,107 @@
     renderResults(true);
   });
 
+  /* ---------- Simpan Rekod (PDF → Google Drive melalui Apps Script) ---------- */
+  // URL Web App daripada apps-script/teach-in-drive.gs (Deploy → Web app). Kosong = belum dipasang.
+  var TEACHIN_DRIVE_URL = '';
+
+  // Minggu persekolahan dibaca terus daripada erph.html (WEEKS & CUTI) — tidak disalin ke sini.
+  var weeksPromise = null;
+  function loadWeeks(){
+    if (weeksPromise) return weeksPromise;
+    weeksPromise = fetch('./erph.html', { cache: 'no-cache' }).then(function(r){ return r.text(); }).then(function(src){
+      var m = /const\s+WEEKS\s*=\s*(\[[\s\S]*?\])\s*\.map/.exec(src);
+      if (!m) throw new Error('Senarai minggu dalam erph.html tidak ditemui');
+      /* eslint-disable-next-line no-new-func */
+      var weeks = new Function('return ' + m[1])().map(function(w){ return { date: w[0], code: w[1] }; });
+      var c = /const\s+CUTI\s*=\s*(\[[^\]]*\])/.exec(src);
+      var cuti = c ? new Function('return ' + c[1])() : [];
+      return { weeks: weeks, cuti: cuti };
+    }).catch(function(e){ weeksPromise = null; throw e; });
+    return weeksPromise;
+  }
+  // Pulangkan kod minggu (cth. "M37") untuk tarikh YYYY-MM-DD, atau null jika di luar minggu persekolahan.
+  function schoolWeek(W, date){
+    if (W.cuti.indexOf(date) >= 0) return null;
+    var cur = null;
+    W.weeks.forEach(function(w){ if (w.date <= date) cur = w; });
+    if (!cur) return null;
+    var days = (new Date(date + 'T00:00:00Z') - new Date(cur.date + 'T00:00:00Z')) / 864e5;
+    return days < 7 ? cur.code : null;
+  }
+
+  var libPromise = null;
+  function loadScript(src){
+    return new Promise(function(res, rej){ var sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = function(){ rej(new Error('Gagal memuatkan ' + src)); }; document.head.appendChild(sc); });
+  }
+  function loadPdfLib(){
+    if (libPromise) return libPromise;
+    libPromise = (window.jspdf ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'))
+      .then(function(){ return loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'); })
+      .catch(function(e){ libPromise = null; throw e; });
+    return libPromise;
+  }
+
+  // PDF vector: satu jadual per guru tidak hadir (format slip sekolah), A4 menegak.
+  function buildPdf(){
+    var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    var M = 15, W = 210 - 2 * M, y = M;
+    var base = { theme: 'grid', margin: { left: M, right: M, top: M, bottom: M }, pageBreak: 'avoid',
+      styles: { font: 'helvetica', fontSize: 10, textColor: 0, lineColor: 0, lineWidth: 0.2, fillColor: false, cellPadding: { top: 1.4, bottom: 1.4, left: 2, right: 2 }, valign: 'middle' },
+      columnStyles: { 0: { cellWidth: W * 0.46 }, 1: { cellWidth: W * 0.22, halign: 'center' }, 2: { cellWidth: W * 0.32, halign: 'center' } } };
+    var lab = function(t){ return { content: t, styles: { fontStyle: 'bold', halign: 'center' } }; };
+    absents.forEach(function(a){
+      var rows = R.needs.filter(function(n){ return n.absent.indexOf(a.name) >= 0; }).map(function(n){
+        var sl = D.slots[n.i];
+        return [reliefLabel(n).t, fmtT(sl.start) + '-' + fmtT(sl.end), n.class + ' ' + subjLabel(n.subject)];
+      });
+      if (!rows.length) rows.push([{ content: 'Tiada kelas perlu diganti', colSpan: 3, styles: { halign: 'center' } }]);
+      var why = (a.reason || '').toUpperCase() + (a.full ? '' : (a.reason ? ' ' : '') + '(' + fmtT(a.from) + '-' + fmtT(a.to) + ')');
+      var body = [
+        [{ content: 'TEACH-IN SK AGAMA (MIS) MIRI', colSpan: 3, styles: { fontStyle: 'bold', halign: 'center', fontSize: 11 } }],
+        [lab('NAMA GURU'), { content: a.name.toUpperCase(), colSpan: 2, styles: { halign: 'left' } }],
+        [lab('TARIKH'), { content: fmtDate(R.date), colSpan: 2, styles: { halign: 'left' } }],
+        [lab('HARI'), { content: R.day, colSpan: 2, styles: { halign: 'left' } }],
+        [lab('SEBAB'), { content: why, colSpan: 2, styles: { halign: 'left' } }],
+        [lab('NAMA GURU'), lab('MASA'), lab('KELAS / MP')]
+      ].concat(rows);
+      doc.autoTable(Object.assign({}, base, { startY: y, body: body }));
+      y = doc.lastAutoTable.finalY + 8;
+    });
+    var by = $('preparedBy').value;
+    if (y > 297 - M - 8){ doc.addPage(); y = M; }
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text('Jadual teach-in disediakan oleh: ', M, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text(String(by).toUpperCase(), M + doc.getTextWidth('Jadual teach-in disediakan oleh: '), y);
+    return doc;
+  }
+
+  function saveMsg(html, cls){ var el = $('saveStatus'); el.innerHTML = html; el.className = 'save-status no-print ' + (cls || ''); }
+
+  $('saveBtn').addEventListener('click', function(){
+    if (!R) return;
+    if (!TEACHIN_DRIVE_URL){ saveMsg('Simpan ke Google Drive belum dipasang (URL Apps Script belum ditetapkan dalam ganti.html).', 'err'); return; }
+    var A = window.GantiAuth;
+    if (!A || !A.user()){ saveMsg('Sila <b>log masuk</b> dengan akaun DELIMa (bahagian atas halaman) sebelum menyimpan rekod.', 'err'); $('loginStrip').scrollIntoView({ behavior: 'smooth' }); return; }
+    var btn = $('saveBtn'); btn.disabled = true;
+    var fileName = fmtDate(R.date) + ' ' + R.day + '.pdf', week;
+    saveMsg('Menyediakan PDF…');
+    Promise.all([loadWeeks(), loadPdfLib(), A.token()]).then(function(res){
+      var code = schoolWeek(res[0], R.date);
+      week = code ? 'MINGGU ' + code.replace(/^M/, '') : 'LUAR MINGGU PERSEKOLAHAN';
+      var pdf = buildPdf();
+      var b64 = pdf.output('datauristring').split(',')[1];
+      saveMsg('Menyimpan <b>' + esc(fileName) + '</b> ke Google Drive (TEACH IN / ' + esc(week) + ')…');
+      return fetch(TEACHIN_DRIVE_URL, { method: 'POST', body: JSON.stringify({ idToken: res[2], week: week, fileName: fileName, pdfBase64: b64 }) });
+    }).then(function(r){ return r.json(); }).then(function(j){
+      if (!j.ok) throw new Error(j.error || 'Gagal menyimpan.');
+      saveMsg('✔ Rekod disimpan: <b>TEACH IN / ' + esc(j.week) + ' / ' + esc(j.name) + '</b> — <a href="' + esc(j.url) + '" target="_blank" rel="noopener">Buka PDF</a> • <a href="' + esc(j.folderUrl) + '" target="_blank" rel="noopener">Buka folder</a>', 'ok');
+    }).catch(function(e){
+      saveMsg('Gagal menyimpan rekod: ' + esc(e.message || e), 'err');
+    }).then(function(){ btn.disabled = false; });
+  });
+
   /* ---------- Salin & cetak ---------- */
   function doPrint(mode){
     var css = mode === 'slip' ? '@page{size:A4 portrait;margin:12mm}' : '@page{size:A4 landscape;margin:7mm}';
@@ -882,7 +991,10 @@
   window.GantiUI = {
     ready: null,
     teachers: function(){ return teachers.slice(); },
-    changed: function(){ hideResults(); }
+    changed: function(){ hideResults(); },
+    // Diagnostik: jana PDF slip / kod minggu tanpa memuat naik.
+    pdf: function(){ return loadPdfLib().then(buildPdf); },
+    weekFor: function(date){ return loadWeeks().then(function(W){ return schoolWeek(W, date); }); }
   };
 
   /* ---------- Mula ---------- */
@@ -937,6 +1049,8 @@
   const fmtD = d => { const [y, m, dd] = d.split("-"); return `${dd}.${m}.${y}`; };
   window.GANTI_SEKATAN = [];
   let isAdmin = false;
+  // Untuk butang "Simpan Rekod": token log masuk dihantar ke Apps Script untuk pengesahan guru.
+  window.GantiAuth = { user: () => auth.currentUser, token: () => auth.currentUser ? auth.currentUser.getIdToken() : Promise.resolve(null) };
 
   function msg(html, showBtn) { $("loginMsg").innerHTML = html; $("loginBtn").classList.toggle("hidden", !showBtn); }
 
