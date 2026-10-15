@@ -95,6 +95,23 @@
   .cell.rehat{background:repeating-linear-gradient(45deg,#f8fafc 0 6px,#eef2f7 6px 12px);color:#94a3b8;align-items:center;font-weight:700;font-size:10px}
   .cell.cuti{background:#f8fafc;color:#94a3b8;align-items:center;justify-content:center;border:1px dashed #e2e8f0}
   @media(max-width:900px) and (orientation:portrait){.rotate-tip{display:inline-flex;gap:6px;align-items:center}}
+  .t-summary{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+  .t-summary div{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:8px 12px;min-width:110px}
+  .t-summary small{display:block;font-size:11px;color:var(--muted)}
+  .t-summary b{font-size:17px}
+  .t-summary .pct.low b{color:#dc2626}.t-summary .pct.mid b{color:#d97706}.t-summary .pct.high b{color:#2563eb}
+  .cell.free{background:transparent;border:1px dashed #eef2f7}
+  /* Rumusan mingguan (cetak) */
+  .sum-table{width:100%;border-collapse:collapse;font-size:11px}
+  .sum-table th{background:#0f766e;color:#fff;padding:6px;text-align:left;font-size:10.5px}
+  .sum-table td{padding:5px 6px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
+  .sum-table td.n{text-align:center;white-space:nowrap}
+  .sum-table tr:nth-child(even) td{background:#f8fafc}
+  .bar{position:relative;height:10px;background:#fee2e2;border-radius:5px;overflow:hidden;min-width:90px}
+  .bar i{position:absolute;inset:0 auto 0 0;background:#2563eb}
+  .pct-low{color:#dc2626;font-weight:800}.pct-mid{color:#d97706;font-weight:800}.pct-high{color:#2563eb;font-weight:800}
+  .sum-note{font-size:10.5px;color:#475569;margin:6px 0 8px;line-height:1.5}
+  .sum-foot{display:flex;gap:16px;font-size:11px;margin-top:8px;font-weight:700}
   .print-title{display:none}
   #printAll{display:none}
   @media print{
@@ -120,7 +137,13 @@
     .print-page{break-after:page;page-break-after:always}
     .print-page:last-child{break-after:auto;page-break-after:auto}
     .print-page .legend-row{margin:6px 0 0}
+    .print-page.portrait{page:potret}
+    .print-page.portrait .print-title{font-size:15px}
+    .sum-table th,.sum-table td,.bar,.bar i{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .sum-table thead{display:table-header-group}
+    .sum-table tr{break-inside:avoid}
   }
+  @page potret{size:A4 portrait;margin:10mm}
 
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(calc(100% + 40px));opacity:0;visibility:hidden;pointer-events:none;background:#0f172a;color:#fff;
     padding:12px 16px;border-radius:14px;font-size:13px;z-index:10000;transition:transform .25s ease,opacity .25s ease,visibility .25s;max-width:calc(100% - 32px)}
@@ -197,6 +220,25 @@
     </div>
     <div class="grid-wrap" id="gridWrap"></div>
   </section>
+
+  <!-- Pentadbir: paparan guru (jadual mingguan seorang guru) + rumusan -->
+  <section id="teacherCard" class="card hidden">
+    <div class="card-head">
+      <div><h2>Paparan Guru</h2><p id="teacherWeekNote">Minggu mengikut tarikh di Paparan Kelas.</p></div>
+      <div class="admin-tools">
+        <select id="gridTeacher" aria-label="Pilih guru"></select>
+        <button type="button" class="btn ghost" id="printTeacherBtn"><i class="fa-solid fa-print"></i>Cetak Guru Ini</button>
+        <button type="button" class="btn primary" id="printSummaryBtn"><i class="fa-solid fa-chart-column"></i>Cetak Rumusan Mingguan</button>
+      </div>
+    </div>
+    <div class="t-summary" id="teacherSummary"></div>
+    <div class="legend-row">
+      <span><i class="sw blue"></i>Sudah imbas</span>
+      <span><i class="sw red"></i>Belum imbas</span>
+      <span><i class="sw grey"></i>Belum bermula</span>
+    </div>
+    <div class="grid-wrap" id="teacherGridWrap"></div>
+  </section>
 </main>
 
 <div id="printAll" aria-hidden="true"></div>
@@ -263,7 +305,7 @@
   onAuthStateChanged(auth, async u => {
     user = u; teacher = null;
     if (!u) {
-      show("loginCard", true); ["scanCard","todayCard","adminCard","loadingCard"].forEach(id => show(id, false));
+      show("loginCard", true); ["scanCard","todayCard","adminCard","teacherCard","loadingCard"].forEach(id => show(id, false));
       window.ICTHeader?.clearUser();
       if (pendingCode) renderMessage("info", "Log masuk dahulu", "Kod QR telah diimbas. Sila log masuk untuk merekod kehadiran.");
       return;
@@ -395,7 +437,7 @@
           `${esc(label)} • ${esc(rec.slotMula || now.time)}${rec.slotTamat ? "–" + esc(rec.slotTamat) : ""}${rec.subjek ? " • " + esc(rec.subjek) : ""}${rec.kelasJadual && rec.jenis === "BILIK" ? " • Kelas " + esc(rec.kelasJadual) : ""} • ${STATUS_LABEL[rec.status]}`);
         toast("Kehadiran berjaya direkod.", "success");
         await loadToday();
-        if (isReviewerRole()) loadAdmin();
+        if (isReviewerRole()) { loadAdmin(); loadTeacherView(); }
       } catch (e) {
         console.error(e);
         btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i>Cuba Lagi';
@@ -469,10 +511,24 @@
     if (saved && classes.some(c => c.code === saved)) sel.value = saved;
     $("adminDate").value = K.dateKey();
     sel.addEventListener("change", () => { try { localStorage.setItem("kehadiranGridClass", sel.value); } catch (e) {} loadAdmin(); });
-    $("adminDate").addEventListener("change", loadAdmin);
-    $("wkPrev").addEventListener("click", () => { $("adminDate").value = K.dateKey(addDays(new Date($("adminDate").value + "T00:00:00"), -7)); loadAdmin(); });
-    $("wkNext").addEventListener("click", () => { $("adminDate").value = K.dateKey(addDays(new Date($("adminDate").value + "T00:00:00"), 7)); loadAdmin(); });
+    const reloadWeek = () => { loadAdmin(); loadTeacherView(); };
+    $("adminDate").addEventListener("change", reloadWeek);
+    $("wkPrev").addEventListener("click", () => { $("adminDate").value = K.dateKey(addDays(new Date($("adminDate").value + "T00:00:00"), -7)); reloadWeek(); });
+    $("wkNext").addEventListener("click", () => { $("adminDate").value = K.dateKey(addDays(new Date($("adminDate").value + "T00:00:00"), 7)); reloadWeek(); });
+
+    // Paparan Guru
+    const tsel = $("gridTeacher");
+    const teachers = tt.data.teachers.slice().sort((a, b) => a.name.localeCompare(b.name));
+    tsel.innerHTML = teachers.map(t => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join("");
+    let savedT = null;
+    try { savedT = localStorage.getItem("kehadiranGridTeacher"); } catch (e) {}
+    if (savedT && teachers.some(t => t.name === savedT)) tsel.value = savedT;
+    else if (ttTeacher) tsel.value = ttTeacher.name;
+    tsel.addEventListener("change", () => { try { localStorage.setItem("kehadiranGridTeacher", tsel.value); } catch (e) {} loadTeacherView(); });
+    show("teacherCard", true);
+
     loadAdmin();
+    loadTeacherView();
   }
 
   function weekDates() {
@@ -547,6 +603,159 @@
 
   const LEGEND_PRINT = `<div class="legend-row"><span><i class="sw blue"></i>Sudah imbas</span><span><i class="sw red"></i>Belum imbas</span><span><i class="sw grey"></i>Belum bermula</span></div>`;
 
+  /* ---------- Paparan Guru & Rumusan ---------- */
+  // Julat masa grid guru: ikut seluruh jadual sekolah supaya semua guru sama lebar.
+  let schoolRange = null;
+  function getSchoolRange() {
+    if (schoolRange) return schoolRange;
+    let lo = Infinity, hi = -Infinity;
+    tt.data.classes.forEach(c => c.entries.forEach(e => { lo = Math.min(lo, K.mins(e.start)); hi = Math.max(hi, K.mins(e.end)); }));
+    schoolRange = { t0: Math.floor(lo / SLOT) * SLOT, t1: Math.ceil(hi / SLOT) * SLOT };
+    return schoolRange;
+  }
+
+  const recOverlaps = (r, s, e) => r.slotMula && r.slotTamat && K.mins(r.slotMula) < e && K.mins(r.slotTamat) > s;
+  const teacherRecFor = (recs, t, date, s, e) =>
+    recs.find(r => r.date === date && r.namaJadual === t.name && r.status !== "LUAR_JADUAL" && recOverlaps(r, s, e));
+
+  // Kira masa (1 masa = 30 minit) seminggu dan masa yang diimbas untuk seorang guru.
+  function teacherStats(t, recs, dates) {
+    const now = K.nowInfo();
+    let total = 0, scanned = 0, passed = 0;
+    DAYS5.forEach((day, i) => {
+      K.teacherBlocks(t, day).forEach(b => {
+        const s = K.mins(b.start), e = K.mins(b.end), m = (e - s) / SLOT;
+        total += m;
+        if (teacherRecFor(recs, t, dates[i], s, e)) scanned += m;
+        if (dates[i] < now.date || (dates[i] === now.date && now.mins >= s)) passed += m;
+      });
+    });
+    const luar = recs.filter(r => r.namaJadual === t.name && r.status === "LUAR_JADUAL").length;
+    return { total, scanned, passed, luar, pct: total ? (scanned / total) * 100 : null };
+  }
+  const pctText = p => p == null ? "-" : p.toFixed(1) + "%";
+  const pctClass = p => p == null ? "" : p < 50 ? "low" : p < 80 ? "mid" : "high";
+
+  function buildTeacherGrid(t, recs, dates) {
+    const { t0, t1 } = getSchoolRange();
+    const cols = (t1 - t0) / SLOT;
+    const col = m => Math.round((m - t0) / SLOT) + 2;
+    const now = K.nowInfo();
+    let html = `<div class="tgrid" style="grid-template-columns:76px repeat(${cols},minmax(0,1fr))">`;
+    html += `<div class="hd">Hari</div>`;
+    for (let m = t0; m < t1; m += SLOT) html += `<div class="hd">${K.hhmm(m)}</div>`;
+    DAYS5.forEach((day, i) => {
+      const date = dates[i], row = i + 2;
+      const [, mm, dd] = date.split("-");
+      html += `<div class="day${date === now.date ? " today" : ""}" style="grid-row:${row};grid-column:1">${day}<small>${dd}/${mm}</small></div>`;
+      const blocks = K.teacherBlocks(t, day);
+      if (!blocks.length) {
+        html += `<div class="cell cuti" style="grid-row:${row};grid-column:2 / span ${cols}">Tiada kelas</div>`;
+        return;
+      }
+      let cursor = t0;
+      blocks.forEach(b => {
+        const s = K.mins(b.start), e = K.mins(b.end);
+        if (s > cursor) html += `<div class="cell free" style="grid-row:${row};grid-column:${col(cursor)} / ${col(s)}"></div>`;
+        const rec = teacherRecFor(recs, t, date, s, e);
+        const cls = rec ? "blue" : (date < now.date || (date === now.date && now.mins >= s)) ? "red" : "grey";
+        html += `<div class="cell ${cls}" style="grid-row:${row};grid-column:${col(s)} / ${col(e)}" title="${esc(b.start)}–${esc(b.end)}">
+          <b>${esc(b.subject)}</b><span>Kelas ${esc(b.class || "-")}</span>${rec && rec.jenis === "BILIK" ? `<em class="loc"><i class="fa-solid fa-location-dot"></i> ${esc(rec.kod)}</em>` : ""}</div>`;
+        cursor = Math.max(cursor, e);
+      });
+    });
+    return html + `</div>`;
+  }
+
+  function summaryBoxes(st) {
+    return `<div><small>Masa seminggu</small><b>${st.total}</b></div>
+      <div><small>Masa diimbas</small><b>${st.scanned}</b></div>
+      <div class="pct ${pctClass(st.pct)}"><small>Peratus imbas</small><b>${pctText(st.pct)}</b></div>
+      <div><small>Masa sudah berlalu</small><b>${st.passed}</b></div>
+      <div><small>Imbasan luar jadual</small><b>${st.luar}</b></div>`;
+  }
+
+  let teacherSeq = 0;
+  async function loadTeacherView() {
+    const name = $("gridTeacher").value;
+    if (!name) return;
+    const t = tt.data.teachers.find(x => x.name === name);
+    const seq = ++teacherSeq;
+    const dates = weekDates();
+    $("teacherWeekNote").textContent = `${weekLabel(dates)} (ikut tarikh di Paparan Kelas) • 1 masa = 30 minit`;
+    const wrap = $("teacherGridWrap");
+    wrap.innerHTML = `<div class="empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuatkan...</div>`;
+    let recs;
+    try { recs = await loadWeekRecords(dates); }
+    catch (e) { wrap.innerHTML = `<div class="notice warn">Gagal membaca rekod: ${esc(e.code || e.message)}</div>`; return; }
+    if (seq !== teacherSeq) return;
+    $("teacherSummary").innerHTML = summaryBoxes(teacherStats(t, recs, dates));
+    wrap.innerHTML = buildTeacherGrid(t, recs, dates);
+  }
+
+  function buildSummaryTable(recs, dates) {
+    const rows = tt.data.teachers.slice().sort((a, b) => a.name.localeCompare(b.name))
+      .map(t => ({ t, st: teacherStats(t, recs, dates) }))
+      .filter(x => x.st.total > 0);
+    const sumTotal = rows.reduce((a, x) => a + x.st.total, 0);
+    const sumScan = rows.reduce((a, x) => a + x.st.scanned, 0);
+    const now = K.nowInfo();
+    const unfinished = now.date <= dates[4];
+    return `<p class="sum-note">Peratus imbas = masa diimbas ÷ jumlah masa seminggu × 100. 1 masa = 30 minit.
+        ${unfinished ? "<b>Minggu belum tamat</b> — masa yang belum berlaku dikira belum diimbas." : ""}</p>
+      <table class="sum-table">
+        <thead><tr><th style="width:28px">Bil</th><th>Nama Guru</th><th class="n">Jumlah Masa</th><th class="n">Masa Diimbas</th><th class="n">Peratus</th><th style="width:22%"></th><th class="n">Luar Jadual</th></tr></thead>
+        <tbody>${rows.map((x, i) => `<tr>
+          <td class="n">${i + 1}</td><td>${esc(x.t.name)}</td>
+          <td class="n">${x.st.total}</td><td class="n">${x.st.scanned}</td>
+          <td class="n pct-${pctClass(x.st.pct)}">${pctText(x.st.pct)}</td>
+          <td><div class="bar"><i style="width:${Math.min(100, x.st.pct || 0).toFixed(1)}%"></i></div></td>
+          <td class="n">${x.st.luar || ""}</td></tr>`).join("")}</tbody>
+      </table>
+      <div class="sum-foot"><span>Jumlah guru: ${rows.length}</span><span>Jumlah masa: ${sumTotal}</span><span>Diimbas: ${sumScan}</span>
+        <span>Purata sekolah: ${pctText(sumTotal ? sumScan / sumTotal * 100 : null)}</span></div>`;
+  }
+
+  // Cetak kandungan khas (#printAll) sahaja, kemudian pulihkan halaman.
+  function printOnly(html) {
+    $("printAll").innerHTML = html;
+    document.body.classList.add("printing-all");
+    const done = () => {
+      document.body.classList.remove("printing-all");
+      $("printAll").innerHTML = "";
+      window.removeEventListener("afterprint", done);
+    };
+    window.addEventListener("afterprint", done);
+    setTimeout(() => window.print(), 50);
+  }
+
+  async function withBusy(btnId, fn) {
+    const btn = $(btnId), old = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>Menyediakan...';
+    try { await fn(); }
+    catch (e) { toast("Gagal menyediakan cetakan: " + (e.code || e.message), "error"); }
+    finally { btn.disabled = false; btn.innerHTML = old; }
+  }
+
+  $("printTeacherBtn").addEventListener("click", () => withBusy("printTeacherBtn", async () => {
+    const dates = weekDates();
+    const recs = await loadWeekRecords(dates);
+    const t = tt.data.teachers.find(x => x.name === $("gridTeacher").value);
+    const st = teacherStats(t, recs, dates);
+    printOnly(`<section class="print-page">
+      <div class="print-title"><b>${esc(t.name)}</b><small>${esc(weekLabel(dates))} • ${st.scanned}/${st.total} masa diimbas (${pctText(st.pct)}) • SK Agama (MIS) Miri</small></div>
+      ${buildTeacherGrid(t, recs, dates)}${LEGEND_PRINT}</section>`);
+  }));
+
+  $("printSummaryBtn").addEventListener("click", () => withBusy("printSummaryBtn", async () => {
+    const dates = weekDates();
+    const recs = await loadWeekRecords(dates);
+    printOnly(`<section class="print-page portrait">
+      <div class="print-title"><b>Rumusan Kehadiran Guru di Kelas (Imbasan QR)</b><small>${esc(weekLabel(dates))} • SK Agama (MIS) Miri</small></div>
+      ${buildSummaryTable(recs, dates)}</section>`);
+  }));
+
   let adminSeq = 0;
   async function loadAdmin() {
     if (!$("gridClass").value) return;
@@ -563,7 +772,14 @@
       buildGrid(code, recs, dates);
   }
 
-  $("printOneBtn").addEventListener("click", () => window.print());
+  $("printOneBtn").addEventListener("click", () => withBusy("printOneBtn", async () => {
+    const dates = weekDates();
+    const recs = await loadWeekRecords(dates);
+    const code = $("gridClass").value;
+    printOnly(`<section class="print-page">
+      <div class="print-title"><b>${esc(classTitle(code))}</b><small>${esc(weekLabel(dates))} • SK Agama (MIS) Miri</small></div>
+      ${buildGrid(code, recs, dates)}${LEGEND_PRINT}</section>`);
+  }));
 
   $("printAllBtn").addEventListener("click", async () => {
     const btn = $("printAllBtn");
