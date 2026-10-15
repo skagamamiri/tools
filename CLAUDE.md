@@ -38,7 +38,7 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 
 - QR text format: `ICTHUB:KELAS:<code e.g. 4A>` or `ICTHUB:BILIK:<room/location name>` (any of `SCAN_ROOMS`).
   A room/location scan is recorded against the teacher's current timetable slot (`kelasJadual`), so that
-  class's cell in Paparan Kelas turns blue too. Print them from `qr-kelas.html`.
+  class's cell in Paparan Kelas turns blue too. Print them from `qr-kelas.html` (4 per A4 portrait page, 2 x 2).
 - `qr-scanner.js` adds the mobile-only "Imbas QR" button to the index profile card and sends valid codes to
   `kehadiran.html?kod=...`.
 - The timetable is NOT duplicated: `kehadiran-data.js` fetches `jadual.html` and reads `VERSION_DATA` /

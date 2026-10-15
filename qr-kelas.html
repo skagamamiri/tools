@@ -28,14 +28,29 @@
   .tag .hint{font-size:10.5px;color:#475569;line-height:1.4}
   .status{text-align:center;color:#718096;padding:24px;font-size:13px}
   @media(max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.qr img,.qr canvas{width:140px!important;height:140px!important}}
+  /* Skrin: helaian disusun terus dalam grid. Cetak: 4 kod QR (2 x 2) setiap halaman A4. */
+  .sheet{display:contents}
   @media print{
-    @page{size:A4;margin:10mm}
+    @page{size:A4 portrait;margin:10mm}
     body{background:#fff}
     ict-header,.toolbar,.footer{display:none!important}
     main{width:100%;margin:0}
-    .grid{grid-template-columns:repeat(3,1fr);gap:6mm}
-    .tag{border-width:1.5px}
+    .grid{display:block}
+    .sheet{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(2,minmax(0,1fr));gap:6mm;
+      height:276mm;break-after:page;page-break-after:always}
+    .sheet:last-child{break-after:auto;page-break-after:auto}
+    .tag{min-height:0;overflow:hidden;border-width:2px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:6mm 4mm;
+      -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .tag .school{font-size:12pt}
+    .tag .kind{font-size:10pt;margin-top:1mm}
+    .tag .name{font-size:34pt;margin:2mm 0 4mm}
+    .tag .name small{font-size:13pt;margin-top:1mm}
+    .tag.bilik .name{font-size:24pt}
+    .qr{margin:0 auto 4mm}
+    .qr img,.qr canvas{width:72mm!important;height:72mm!important}
+    .tag .hint{font-size:11pt}
   }
+
   .footer{text-align:center;color:#91a0ae;font-size:11px;padding:20px}
 </style>
 </head>
@@ -71,18 +86,24 @@
     var f = document.getElementById('filter').value;
     var grid = document.getElementById('grid');
     var list = items.filter(function (x) { return f === 'ALL' || x.type === f; });
-    grid.innerHTML = list.map(function (x, i) {
-      return '<div class="tag">' +
+    var tagHtml = function (x, i) {
+      return '<div class="tag' + (x.type === 'BILIK' ? ' bilik' : '') + '">' +
         '<div class="school">SK Agama (MIS) Miri</div>' +
         '<div class="kind">' + (x.type === 'KELAS' ? 'Kehadiran Guru • Kelas' : 'Kehadiran Guru • Bilik Khas / Lokasi') + '</div>' +
         '<div class="name">' + esc(x.title) + (x.sub ? '<small>' + esc(x.sub) + '</small>' : '') + '</div>' +
         '<div class="qr" id="qr' + i + '"></div>' +
         '<div class="hint">Buka ICT HUB → <b>Imbas QR</b></div>' +
       '</div>';
-    }).join('');
+    };
+    // Kumpulkan 4 kod setiap helaian (satu halaman A4 semasa dicetak).
+    var html = '';
+    for (var p = 0; p < list.length; p += 4) {
+      html += '<div class="sheet">' + list.slice(p, p + 4).map(function (x, j) { return tagHtml(x, p + j); }).join('') + '</div>';
+    }
+    grid.innerHTML = html;
     list.forEach(function (x, i) {
       new QRCode(document.getElementById('qr' + i), {
-        text: K.makeCode(x.type, x.value), width: 340, height: 340,
+        text: K.makeCode(x.type, x.value), width: 512, height: 512,
         colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
       });
     });
