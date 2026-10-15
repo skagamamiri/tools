@@ -47,6 +47,10 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   scans (LUAR_JADUAL) still need a note + manual tap. Plus "Paparan Kelas" for admin/pentadbir — one class per view (dropdown), weekly
   landscape grid (days × 30-min columns); cell blue = scanned, red = started but not scanned, grey = not started.
   No late (LEWAT) status is used. "Cetak Kelas Ini" / "Cetak Semua Kelas" print A4 landscape, one class per page.
+- "Paparan Guru" (admin/pentadbir, below Paparan Kelas, same week): teacher dropdown, weekly grid of that teacher's slots
+  (blue/red/grey), stats boxes. 1 masa = 30 min. "Cetak Rumusan Mingguan" prints A4 portrait table of all teachers:
+  jumlah masa seminggu, masa diimbas (records with namaJadual = teacher, not LUAR_JADUAL), peratus, luar jadual count.
+  All print buttons render into #printAll via printOnly().
 - Firestore security rules are edited by the owner in the Firebase Console, not from here.
 
 ## Guru Ganti (ganti.html)
