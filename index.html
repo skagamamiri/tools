@@ -698,6 +698,75 @@
         }
 
 </style>
+    <style id="adminLightTheme">
+        /* Panel Pentadbir — mod cerah (lalai). Gaya gelap asal kekal bila html.dark. */
+        html:not(.dark) #adminModal { background:#f1f5f9 !important; }
+        html:not(.dark) #adminModal .admin-modal-shell {
+            background:#f8fafc !important;
+            box-shadow:0 20px 50px rgba(15,23,42,.12), 0 0 0 1px rgba(15,23,42,.06) !important;
+        }
+        html:not(.dark) #adminModal .admin-topbar {
+            background:linear-gradient(135deg,#064e3b,#047857 55%,#0f766e) !important;
+        }
+        html:not(.dark) #adminModal .admin-topbar .text-slate-400 { color:#d1fae5 !important; }
+        html:not(.dark) #adminModal .admin-tabbar {
+            background:#ffffff !important;
+            border-color:#e2e8f0 !important;
+        }
+        html:not(.dark) #adminModal .admin-tabbar button { color:#475569; }
+        html:not(.dark) #adminModal .admin-tabbar button:hover { background:#f1f5f9 !important; color:#0f172a; }
+        html:not(.dark) #adminModal .admin-tabbar button.text-brand-600,
+        html:not(.dark) #adminModal .admin-tabbar button.active { color:#047857 !important; background:#ecfdf5 !important; }
+        html:not(.dark) #adminModal .admin-content { background:#f8fafc !important; }
+        html:not(.dark) #adminModal #adminAuthStep { background:#f8fafc !important; }
+        html:not(.dark) #adminModal .admin-section-card,
+        html:not(.dark) #adminModal .admin-stat-card,
+        html:not(.dark) #adminModal .teacher-card {
+            background:#ffffff !important;
+            border:1px solid #e2e8f0 !important;
+            box-shadow:0 4px 14px rgba(15,23,42,.05) !important;
+        }
+        html:not(.dark) #adminModal .teacher-card:hover { border-color:#6ee7b7 !important; }
+        html:not(.dark) #adminModal .admin-input {
+            background:#ffffff !important;
+            border-color:#cbd5e1 !important;
+            color:#0f172a !important;
+        }
+        html:not(.dark) #adminModal .admin-input::placeholder { color:#94a3b8; }
+
+        /* Warna gelap yang ditulis terus dalam markup & senarai dinamik */
+        html:not(.dark) #adminModal .admin-content .text-white:not(.admin-primary-btn):not([class*="bg-brand"]):not([class*="bg-emerald-6"]):not([class*="bg-rose-6"]):not([class*="bg-sky-6"]):not([class*="bg-slate-900"]),
+        html:not(.dark) #adminModal #adminAuthStep .text-white:not(.admin-brand-icon):not([class*="bg-slate-900"]) { color:#0f172a !important; }
+        html:not(.dark) #adminModal .admin-content .text-slate-200,
+        html:not(.dark) #adminModal .admin-content .text-slate-300 { color:#334155 !important; }
+        html:not(.dark) #adminModal .admin-content .text-slate-400,
+        html:not(.dark) #adminModal #adminAuthStep .text-slate-400 { color:#64748b !important; }
+        html:not(.dark) #adminModal .admin-content :not(textarea).text-emerald-300,
+        html:not(.dark) #adminModal .admin-content :not(textarea).text-emerald-400,
+        html:not(.dark) #adminModal .admin-content .\!text-emerald-300,
+        html:not(.dark) #adminModal .admin-content .\!text-emerald-400 { color:#047857 !important; }
+        html:not(.dark) #adminModal .admin-content .text-sky-300,
+        html:not(.dark) #adminModal .admin-content .text-sky-400 { color:#0369a1 !important; }
+        html:not(.dark) #adminModal .admin-content .text-amber-300,
+        html:not(.dark) #adminModal .admin-content .text-amber-400 { color:#b45309 !important; }
+        html:not(.dark) #adminModal .admin-content .text-rose-300,
+        html:not(.dark) #adminModal .admin-content .text-rose-400 { color:#be123c !important; }
+        html:not(.dark) #adminModal .admin-content :not(textarea).bg-slate-950,
+        html:not(.dark) #adminModal .admin-content :not(textarea)[class*="bg-slate-950/"],
+        html:not(.dark) #adminModal .admin-content :not(textarea)[class*="bg-slate-900/"] { background:#f8fafc !important; }
+        html:not(.dark) #adminModal .admin-content select.bg-slate-900,
+        html:not(.dark) #adminModal .admin-content input.bg-slate-900 { background:#ffffff !important; color:#0f172a !important; }
+        html:not(.dark) #adminModal .admin-content :not(textarea).bg-slate-800,
+        html:not(.dark) #adminModal .admin-content [class*="bg-slate-800/"] { background:#f1f5f9 !important; }
+        html:not(.dark) #adminModal .admin-content .border-slate-700,
+        html:not(.dark) #adminModal .admin-content .border-slate-800,
+        html:not(.dark) #adminModal .admin-content [class*="border-slate-700/"],
+        html:not(.dark) #adminModal .admin-content [class*="border-white/"] { border-color:#e2e8f0 !important; }
+        html:not(.dark) #adminModal .admin-content .hover\:bg-slate-800:hover { background:#f1f5f9 !important; }
+        html:not(.dark) #adminModal .admin-content [class*="bg-white/5"],
+        html:not(.dark) #adminModal .admin-content [class*="bg-white/10"] { background:#f1f5f9 !important; }
+        html:not(.dark) #adminModal .admin-scroll::-webkit-scrollbar-thumb { background:rgba(100,116,139,.3); }
+    </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between pb-20 md:pb-6">
 
@@ -1516,9 +1585,6 @@
                     <button id="tabBtnTeachers" onclick="switchAdminTab('TEACHERS')" class="flex-1 min-w-[140px] py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center">
                         <i class="fa-solid fa-user-shield mr-1.5 text-brand-600"></i>Akses Guru
                     </button>
-                    <button id="tabBtnAssignments" onclick="switchAdminTab('ASSIGNMENTS')" class="flex-1 min-w-[180px] py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-center">
-                        <i class="fa-solid fa-users-gear mr-1.5 text-brand-600"></i>Pembahagian Penyemak
-                    </button>
                 </div>
 
                 <!-- Tab Content Body -->
@@ -1715,72 +1781,6 @@
                         </div>
                     </div>
 
-                <!-- PEMBAHAGIAN PENYEMAK -->
-                <div id="manageAssignmentsView" class="hidden w-full">
-                    <div class="admin-section-card rounded-3xl p-4 sm:p-5">
-                        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                            <div class="min-w-0">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="section-eyebrow !text-emerald-400">eRPH • FIRESTORE</span>
-                                    <span class="text-[9px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-300 font-bold">REVIEW ASSIGNMENTS</span>
-                                </div>
-                                <h4 class="font-heading font-extrabold text-base text-white mt-1">Pembahagian Penyemak eRPH</h4>
-                                <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                                    Tetapkan setiap guru kepada seorang penyemak. Pembahagian ini disimpan dalam
-                                    <code class="text-emerald-300">reviewAssignments</code>.
-                                </p>
-                            </div>
-                            <button onclick="loadReviewerAssignments()" type="button"
-                                    class="shrink-0 px-4 py-2.5 rounded-xl border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-800">
-                                <i class="fa-solid fa-rotate mr-1.5"></i>Muat Semula
-                            </button>
-                        </div>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 mt-5">
-                            <div class="rounded-2xl border border-slate-700 bg-slate-950/40 p-4">
-                                <label for="assignmentReviewerSelect" class="block text-[10px] uppercase tracking-wider text-slate-400 font-extrabold mb-2">
-                                    Penyemak
-                                </label>
-                                <select id="assignmentReviewerSelect"
-                                        onchange="window.renderAssignmentTeachers()"
-                                        class="w-full px-3 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500">
-                                </select>
-
-                                <div class="mt-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3">
-                                    <div class="text-[9px] uppercase tracking-wider text-emerald-300 font-extrabold">Jumlah guru</div>
-                                    <div id="assignmentSelectedCount" class="text-2xl font-heading font-extrabold text-white mt-1">0</div>
-                                    <div class="text-[10px] text-slate-400 mt-1">ditugaskan kepada penyemak ini</div>
-                                </div>
-                            </div>
-
-                            <div class="rounded-2xl border border-slate-700 bg-slate-950/40 overflow-hidden">
-                                <div class="px-4 py-3 border-b border-slate-700 flex items-center justify-between gap-3">
-                                    <div>
-                                        <div class="text-[9px] uppercase tracking-wider text-slate-400 font-extrabold">Senarai Guru</div>
-                                        <div class="text-[10px] text-slate-500 mt-0.5">Tick guru yang hendak disemak oleh penyemak dipilih.</div>
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button onclick="selectAllAssignmentTeachers(true)" type="button"
-                                                class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-200 text-[9px] font-bold">
-                                            Semua
-                                        </button>
-                                        <button onclick="selectAllAssignmentTeachers(false)" type="button"
-                                                class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-200 text-[9px] font-bold">
-                                            Kosong
-                                        </button>
-                                    </div>
-                                </div>
-                                <div id="assignmentTeacherList" class="max-h-[460px] overflow-y-auto p-3 space-y-2"></div>
-                                <div class="px-4 py-3 border-t border-slate-700 flex justify-end">
-                                    <button onclick="saveReviewerAssignments()" type="button"
-                                            class="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold">
-                                        <i class="fa-solid fa-floppy-disk mr-1.5"></i>Simpan Pembahagian
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
 
 
