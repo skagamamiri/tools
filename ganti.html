@@ -380,6 +380,8 @@
       <div class="opt-group">Lain-lain</div>
       <label class="opt"><input type="checkbox" id="noConsec" checked><span><b>Elakkan guru mengajar 3 masa atau lebih secara berturut-turut</b><small>Tugas teach-in tidak akan diberikan sekiranya ia menyebabkan guru mengajar 3 masa atau lebih tanpa rehat. Waktu rehat dikira sebagai pemisah.</small></span></label>
       <label class="opt"><input type="checkbox" id="noAdjacent" checked><span><b>Elakkan teach-in bersambung dengan kelas asal guru</b><small>Tugas teach-in tidak akan diberikan pada masa sejurus sebelum atau selepas kelas guru itu sendiri. Waktu rehat dikira sebagai pemisah.</small></span></label>
+      <label class="opt"><input type="checkbox" id="weekFair" checked><span><b>Utamakan guru yang belum diberikan teach-in pada minggu tersebut</b><small>Sistem membaca Rekod Mingguan (hari lain dalam minggu yang sama) dan memilih guru yang paling sedikit teach-in terlebih dahulu. Memerlukan log masuk.</small></span></label>
+      <label class="opt"><input type="checkbox" id="splitKolab"><span><b>Benarkan kelas kolaborasi dipecahkan</b><small>Bagi kelas yang diajar oleh dua guru, seorang daripada mereka boleh ditugaskan teach-in di kelas lain, manakala seorang lagi kekal di kelas asal.</small></span></label>
     </div>
     <details class="admins" id="adminBox">
       <summary>Senarai pentadbir (<span id="adminCount">0</span> dipilih) — tandakan guru yang merupakan pentadbir</summary>
@@ -727,6 +729,8 @@
       adm: +document.querySelector('input[name=adm]:checked').value,
       noConsec: $('noConsec').checked,
       noAdjacent: $('noAdjacent').checked,
+      weekFair: $('weekFair').checked,
+      splitKolab: $('splitKolab').checked,
       flexMax: +$('flexMax').value
     };
   }
@@ -736,10 +740,12 @@
     var a = document.querySelector('input[name=adm][value="' + s.adm + '"]'); if (a) a.checked = true;
     if (typeof s.noConsec === 'boolean') $('noConsec').checked = s.noConsec;
     if (typeof s.noAdjacent === 'boolean') $('noAdjacent').checked = s.noAdjacent;
+    if (typeof s.weekFair === 'boolean') $('weekFair').checked = s.weekFair;
+    if (typeof s.splitKolab === 'boolean') $('splitKolab').checked = s.splitKolab;
     if (s.flexMax != null) $('flexMax').value = String(s.flexMax);
   }
   $('setCard').addEventListener('change', function(ev){
-    if (ev.target.name === 'adm' || ['noConsec','noAdjacent','flexMax','tier4','tier5','tier6','tier7'].indexOf(ev.target.id) >= 0){ lsSet(LS_SET, getSettings()); hideResults(); }
+    if (ev.target.name === 'adm' || ['noConsec','noAdjacent','weekFair','splitKolab','flexMax','tier4','tier5','tier6','tier7'].indexOf(ev.target.id) >= 0){ lsSet(LS_SET, getSettings()); hideResults(); }
     if (ev.target.name === 'adm' && ev.target.value !== '0' && !admins.size){ $('adminBox').open = true; toast('Tandakan guru yang merupakan pentadbir dahulu.'); }
   });
 
@@ -819,6 +825,7 @@
       if (!best.c.length){ best.n.done = true; continue; }
       var pick = best.c[0].name;
       best.n.relief = pick; best.n.done = true; st.relief[pick].push(best.n.i);
+      best.n.releasedFrom = best.c[0].released ? D.tmap[pick][best.n.i].class : '';
     }
     needs.forEach(function(n){ delete n.done; markAdded(n); });
     needs.sort(function(a, b){ return a.i - b.i || a.class.localeCompare(b.class); });
@@ -868,10 +875,31 @@
     return (j >= 0 && !D.slots[j].brk && teaching(name, j)) || (k < D.slots.length && !D.slots[k].brk && teaching(name, k));
   }
   // strict=true: ikut tetapan. strict=false: semua guru lapang (untuk tukar manual).
+  // Bilangan teach-in setiap guru pada hari lain dalam minggu yang sama (daripada Rekod Mingguan).
+  var WEEKCNT = {}, WEEKDAYS = 0;
+  function weekCount(t){ return WEEKCNT[t] || 0; }
+  // Kelas kolaborasi boleh dipecahkan: guru t boleh dilepaskan pada slot i jika semua rakan kolaborasinya hadir
+  // dan tiada seorang pun daripada mereka telah dilepaskan.
+  function coTeachers(t, i){
+    var x = D.tmap[t] && D.tmap[t][i]; if (!x || x.mentor) return null;
+    var ce = D.cmap[x.class] && D.cmap[x.class][i];
+    if (!ce || ce.teacher.indexOf('/') < 0) return null;
+    var list = ce.teacher.split('/').map(function(v){ return v.trim(); });
+    return list.indexOf(t) >= 0 ? list : null;
+  }
+  function canRelease(t, i, st){
+    if (!st.set.splitKolab) return false;
+    var list = coTeachers(t, i); if (!list) return false;
+    return list.every(function(o){ return o === t || (!absentAt(o, i) && !(st.relief[o] && st.relief[o].indexOf(i) >= 0)); });
+  }
   function candidates(need, st, strict){
     var out = [], i = need.i, set = st.set;
     teachers.forEach(function(t){
-      if (absentAt(t, i) || busy(t, i, st)) return;
+      if (absentAt(t, i)) return;
+      var released = false;
+      if (busy(t, i, st)){
+        if (teaching(t, i) && st.relief[t].indexOf(i) < 0 && canRelease(t, i, st)) released = true; else return;
+      }
       var blk = blockedAt(t, i);
       var isFlex = flex.has(t), isAdm = !isFlex && admins.has(t), L = load(t, st), rl = st.relief[t].length, run = runWith(t, i, st);
       var reason = blk ? (window.GANTI_SEE_SEKATAN ? 'sekatan: ' + (blk.reason || 'admin') : 'tidak tersedia') : '';
@@ -891,10 +919,11 @@
       if (!reason && !isFlex && set.noAdjacent && nextToOwnClass(t, i)) reason = 'bersambung kelas sendiri';
       if (strict && reason) return;
       var knows = Object.keys(TT.classTeachers[need.class] || {}).indexOf(t) >= 0;
-      out.push({ name: t, load: L, relief: rl, adm: isAdm, flex: isFlex, knows: knows, reason: reason });
+      out.push({ name: t, load: L, relief: rl, adm: isAdm, flex: isFlex, knows: knows, reason: reason, released: released,
+        week: set.weekFair ? weekCount(t) : 0 });
     });
     out.sort(function(a, b){
-      return (a.reason ? 1 : 0) - (b.reason ? 1 : 0) || (b.flex - a.flex) || a.load - b.load || a.relief - b.relief ||
+      return (a.reason ? 1 : 0) - (b.reason ? 1 : 0) || (b.flex - a.flex) || (a.week - b.week) || (a.released - b.released) || a.load - b.load || a.relief - b.relief ||
         (b.knows - a.knows) || (a.adm - b.adm) || a.name.localeCompare(b.name);
     });
     return out;
@@ -912,7 +941,8 @@
     var prog = needs.filter(function(n){ return n.program; }).length;
     var kol = needs.filter(function(n){ return n.kolab; }).length;
     var unf = needs.length - filled - prog - kol;
-    var setTxt = 'Maks teach-in: ≤4 masa→' + R.set.tier4 + ', 5→' + R.set.tier5 + ', 6→' + R.set.tier6 + ', 7+→' + R.set.tier7 + (R.set.flexMax ? ' • Fleksibel maks ' + R.set.flexMax : ' • Fleksibel tidak dilibatkan') + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '') + (R.set.noAdjacent ? ' • Elak bersambung kelas sendiri' : '');
+    var fairTxt = R.set.weekFair ? (WEEKDAYS ? ' • Keutamaan mingguan (' + WEEKDAYS + ' hari direkod)' : ' • Keutamaan mingguan (tiada rekod lain)') : '';
+    var setTxt = 'Maks teach-in: ≤4 masa→' + R.set.tier4 + ', 5→' + R.set.tier5 + ', 6→' + R.set.tier6 + ', 7+→' + R.set.tier7 + (R.set.flexMax ? ' • Fleksibel maks ' + R.set.flexMax : ' • Fleksibel tidak dilibatkan') + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '') + (R.set.noAdjacent ? ' • Elak bersambung kelas sendiri' : '') + fairTxt + (R.set.splitKolab ? ' • Kolaborasi boleh dipecahkan' : '');
     $('gridSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + setTxt + ' • ' + TT.label;
     $('slipSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + absents.length + ' guru tidak hadir • ' + setTxt;
     $('printTitle').textContent = 'Jadual Guru Ganti — ' + R.day + ', ' + fmtDate(R.date);
@@ -1006,9 +1036,12 @@
         var c = candidates(n, tmp, false);
         cell = '<select data-k="' + k + '"><option value="">— TIADA GURU GANTI —</option>' + c.map(function(x){
           return '<option value="' + esc(x.name) + '"' + (x.name === n.relief ? ' selected' : '') + '>' + esc(x.name) +
-            ' (' + x.load + ' masa' + (x.flex ? ', fleksibel' : x.adm ? ', pentadbir' : '') + (x.reason ? ' — ' + esc(x.reason) : '') + ')</option>';
+            ' (' + x.load + ' masa' + (x.flex ? ', fleksibel' : x.adm ? ', pentadbir' : '') +
+            (R.set.weekFair ? ', ' + x.week + ' teach-in minggu ini' : '') + (x.released ? ', dilepaskan dari kolaborasi' : '') +
+            (x.reason ? ' — ' + esc(x.reason) : '') + ')</option>';
         }).join('') + '</select>';
       }
+      if (n.releasedFrom) note += ' <span class="tag">guru ganti dilepaskan dari kolaborasi ' + esc(n.releasedFrom) + '</span>';
       if (n.added) note += ' <span class="tag add">TAMBAHAN</span>' + (n.prevRelief ? ' <span class="tag">asal: ' + esc(shortName(n.prevRelief)) + ' (tidak hadir)</span>' : '');
       h += '<tr class="' + (n.program ? 'prog' : n.kolab ? 'kolr' : (n.relief ? (n.added ? 'addr' : '') : 'unfilled')) + '"><td><b>' + s.start + '–' + s.end + '</b></td><td><b>' + esc(n.class) + '</b></td><td>' + esc(n.subject) +
         '</td><td>' + esc(n.absent.join(', ')) + note + '</td><td>' + cell + '</td></tr>';
@@ -1020,6 +1053,7 @@
     var n = R.needs[+k], st = R.st;
     if (n.relief) st.relief[n.relief] = st.relief[n.relief].filter(function(i){ return i !== n.i; });
     n.relief = ev.target.value || null;
+    n.releasedFrom = n.relief && teaching(n.relief, n.i) ? D.tmap[n.relief][n.i].class : '';
     if (n.relief) st.relief[n.relief].push(n.i);
     markAdded(n);
     renderResults(true);
@@ -1342,7 +1376,20 @@
     if (!absents.length){ toast('Tambah sekurang-kurangnya seorang guru tidak hadir.'); return; }
     if (!$('preparedBy').value){ toast('Pilih guru yang menyediakan jadual teach-in.'); $('preparedBy').focus(); return; }
     if (absents.some(function(a){ return !a.full && mins(a.to) <= mins(a.from); })){ toast('Semak masa tidak hadir: masa tamat mesti selepas masa mula.'); return; }
-    generate();
+    var A = window.GantiAuth, btn = $('genBtn');
+    WEEKCNT = {}; WEEKDAYS = 0;
+    if (!$('weekFair').checked){ generate(); return; }
+    if (!A || !A.user()){ toast('Log masuk untuk menggunakan keutamaan mingguan. Jadual dijana tanpanya.'); generate(); return; }
+    var date = $('dateIn').value, dow = new Date(date + 'T00:00:00Z').getUTCDay();
+    var dates = [1, 2, 3, 4, 5].map(function(k){ return addDays(date, k - dow); }).filter(function(d){ return d !== date; });
+    btn.disabled = true;
+    A.loadRecords(dates).then(function(recs){
+      Object.keys(recs).forEach(function(d){
+        WEEKDAYS++;
+        (recs[d].items || []).forEach(function(it){ if (it.kind === 'ganti' && it.relief) WEEKCNT[it.relief] = (WEEKCNT[it.relief] || 0) + 1; });
+      });
+    }).catch(function(e){ toast('Rekod mingguan tidak dapat dibaca (' + (e.code || e.message) + '). Jadual dijana tanpanya.'); })
+      .then(function(){ btn.disabled = false; generate(); });
   });
 
   window.GantiUI = {
