@@ -59,7 +59,7 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 
 - Relief-teacher generator. Reads the timetable via `KehadiranData.loadTimetable()` (kehadiran-data.js) — no copy of the jadual.
 - Inputs: date, absent teachers (full day or a time range), optional programs (time range + classes; those class slots need no relief),
-  settings (load cap <4/≤5/≤6/≤7 masa — `cap` value 3/5/6/7, admins 0/1/2 masa, avoid 4+ consecutive masa). 1 masa = 30-min slot.
+  settings (load cap <4/≤5/≤6/≤7 masa — `cap` value 3/5/6/7, admins 0/1/2 masa, avoid 3+ consecutive masa). 1 masa = 30-min slot.
 - Cap rule: a teacher may take another relief slot while their day total (timetable + relief already given) is ≤ cap.
 - Max relief per ordinary teacher per day (`maxRelief`, default 2).
 - Flexible teachers (Guru Pemulihan + Guru Bimbingan & Kaunseling, default list `DEFAULT_FLEX`, kept in localStorage `ganti_fleksibel`):
