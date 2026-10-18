@@ -286,8 +286,8 @@
     <div class="chips" id="progClasses"></div>
     <label class="lbl" style="margin-top:14px">Guru yang sepatutnya mengajar kelas terlibat</label>
     <div class="opts">
-      <label class="opt"><input type="radio" name="progFree" value="0" checked><span><b>Turut bertugas bersama program</b><small>Guru mengiringi kelas ke program — tidak dipanggil untuk teach-in.</small></span></label>
-      <label class="opt"><input type="radio" name="progFree" value="1"><span><b>Dibebaskan untuk membantu teach-in</b><small>Kelas diurus oleh program — guru boleh dipanggil menggantikan kelas lain pada masa itu.</small></span></label>
+      <label class="opt"><input type="radio" name="progFree" value="0" checked><span><b>Guru turut bertugas bersama program</b><small>Guru mengiringi kelas sepanjang program dan tidak akan ditugaskan untuk teach-in.</small></span></label>
+      <label class="opt"><input type="radio" name="progFree" value="1"><span><b>Guru dibebaskan untuk tugas teach-in</b><small>Kelas diuruskan oleh pihak program; guru boleh ditugaskan menggantikan kelas lain dalam tempoh tersebut.</small></span></label>
     </div>
     <div style="margin-top:12px"><button class="btn primary" id="addProgBtn" type="button">+ Daftar Program</button></div>
     <div class="list" id="progList"></div>
@@ -298,30 +298,31 @@
     <div class="card-head">
       <div>
         <h2><span class="step">3</span>Tetapan pemilihan guru ganti</h2>
-        <p>1 masa = 1 petak = 30 minit. Masa dikira daripada jadual hari itu termasuk masa ganti yang sudah diberi.</p>
+        <p>1 masa bersamaan 1 petak (30 minit). Beban waktu mengajar dikira berdasarkan jadual waktu hari tersebut, termasuk masa teach-in yang telah diberikan.</p>
       </div>
     </div>
     <div class="opts">
-      <div class="opt-group">Had masa guru</div>
-      <label class="opt"><input type="radio" name="cap" value="5" checked><span><b>Guru yang 5 masa dan ke bawah sahaja</b><small>Lalai</small></span></label>
-      <label class="opt"><input type="radio" name="cap" value="6"><span><b>Guru yang 6 masa dan ke bawah sahaja</b></span></label>
-      <label class="opt"><input type="radio" name="cap" value="7"><span><b>Guru yang 7 masa dan ke bawah sahaja</b></span></label>
-      <div class="opt-group">Had masa ganti</div>
-      <div class="opt num-opt"><span><b>Maksimum masa ganti seorang guru sehari</b><small>Untuk guru biasa. Pentadbir dan guru fleksibel ada had sendiri.</small></span>
+      <div class="opt-group">Had beban waktu mengajar guru</div>
+      <label class="opt"><input type="radio" name="cap" value="3"><span><b>Guru yang mempunyai kurang daripada 4 masa mengajar sehari</b><small>Pilihan paling ketat — hanya guru yang paling lapang dipertimbangkan.</small></span></label>
+      <label class="opt"><input type="radio" name="cap" value="5" checked><span><b>Guru yang mempunyai tidak melebihi 5 masa mengajar sehari</b><small>Tetapan lalai.</small></span></label>
+      <label class="opt"><input type="radio" name="cap" value="6"><span><b>Guru yang mempunyai tidak melebihi 6 masa mengajar sehari</b></span></label>
+      <label class="opt"><input type="radio" name="cap" value="7"><span><b>Guru yang mempunyai tidak melebihi 7 masa mengajar sehari</b></span></label>
+      <div class="opt-group">Had masa teach-in</div>
+      <div class="opt num-opt"><span><b>Bilangan maksimum masa teach-in bagi seorang guru sehari</b><small>Terpakai kepada guru biasa. Pentadbir dan guru fleksibel tertakluk kepada had masing-masing.</small></span>
         <select id="maxRelief"><option value="1">1 masa</option><option value="2" selected>2 masa</option><option value="3">3 masa</option><option value="4">4 masa</option><option value="5">5 masa</option></select></div>
       <div class="opt-group">Guru fleksibel (Pemulihan / Bimbingan &amp; Kaunseling)</div>
-      <div class="opt num-opt"><span><b>Maksimum masa ganti guru fleksibel sehari</b><small>Guru fleksibel diutamakan dahulu dan tidak tertakluk kepada had masa guru atau had berturut-turut.</small></span>
+      <div class="opt num-opt"><span><b>Bilangan maksimum masa teach-in bagi guru fleksibel sehari</b><small>Guru fleksibel diberi keutamaan dan tidak tertakluk kepada had beban waktu mengajar atau had masa berturut-turut.</small></span>
         <select id="flexMax"><option value="1">1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option><option value="4">4 masa</option><option value="5">5 masa</option><option value="6" selected>6 masa</option><option value="7">7 masa</option><option value="8">8 masa</option><option value="10">10 masa</option></select></div>
       <details class="admins flex-box">
         <summary>Senarai guru fleksibel (<span id="flexCount">0</span> dipilih)</summary>
         <div class="admin-list" id="flexList"></div>
       </details>
       <div class="opt-group">Pentadbir</div>
-      <label class="opt"><input type="radio" name="adm" value="0" checked><span><b>Jangan libatkan pentadbir</b></span></label>
-      <label class="opt"><input type="radio" name="adm" value="1"><span><b>Libatkan pentadbir sekali (beri 1 masa)</b></span></label>
-      <label class="opt"><input type="radio" name="adm" value="2"><span><b>Libatkan pentadbir sekali (beri 2 masa)</b></span></label>
+      <label class="opt"><input type="radio" name="adm" value="0" checked><span><b>Pentadbir tidak dilibatkan dalam tugas teach-in</b></span></label>
+      <label class="opt"><input type="radio" name="adm" value="1"><span><b>Pentadbir dilibatkan — maksimum 1 masa sehari</b></span></label>
+      <label class="opt"><input type="radio" name="adm" value="2"><span><b>Pentadbir dilibatkan — maksimum 2 masa sehari</b></span></label>
       <div class="opt-group">Lain-lain</div>
-      <label class="opt"><input type="checkbox" id="noConsec" checked><span><b>Jangan sampai guru mengajar 4–5 masa berturut-turut</b><small>Masa ganti tidak diberi jika ia menjadikan guru mengajar 4 masa atau lebih berturut-turut (rehat memutuskan rantaian).</small></span></label>
+      <label class="opt"><input type="checkbox" id="noConsec" checked><span><b>Elakkan guru mengajar 4 masa atau lebih secara berturut-turut</b><small>Tugas teach-in tidak akan diberikan sekiranya ia menyebabkan guru mengajar 4 masa atau lebih tanpa rehat. Waktu rehat dikira sebagai pemisah.</small></span></label>
     </div>
     <details class="admins" id="adminBox">
       <summary>Senarai pentadbir (<span id="adminCount">0</span> dipilih) — tandakan guru yang merupakan pentadbir</summary>
@@ -789,7 +790,7 @@
     var prog = needs.filter(function(n){ return n.program; }).length;
     var kol = needs.filter(function(n){ return n.kolab; }).length;
     var unf = needs.length - filled - prog - kol;
-    var noun = { 5:'≤5', 6:'≤6', 7:'≤7' }[R.set.cap];
+    var noun = { 3:'<4', 5:'≤5', 6:'≤6', 7:'≤7' }[R.set.cap];
     var setTxt = 'Had ' + noun + ' masa • Maks ' + R.set.maxRelief + ' ganti/guru • Fleksibel maks ' + R.set.flexMax + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 4+ masa berturut' : '');
     $('gridSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + setTxt + ' • ' + TT.label;
     $('slipSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + absents.length + ' guru tidak hadir • ' + setTxt;
