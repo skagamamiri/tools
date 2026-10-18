@@ -323,6 +323,7 @@
       <label class="opt"><input type="radio" name="adm" value="2"><span><b>Pentadbir dilibatkan — maksimum 2 masa sehari</b></span></label>
       <div class="opt-group">Lain-lain</div>
       <label class="opt"><input type="checkbox" id="noConsec" checked><span><b>Elakkan guru mengajar 3 masa atau lebih secara berturut-turut</b><small>Tugas teach-in tidak akan diberikan sekiranya ia menyebabkan guru mengajar 3 masa atau lebih tanpa rehat. Waktu rehat dikira sebagai pemisah.</small></span></label>
+      <label class="opt"><input type="checkbox" id="noAdjacent" checked><span><b>Elakkan teach-in bersambung dengan kelas asal guru</b><small>Tugas teach-in tidak akan diberikan pada masa sejurus sebelum atau selepas kelas guru itu sendiri. Waktu rehat dikira sebagai pemisah.</small></span></label>
     </div>
     <details class="admins" id="adminBox">
       <summary>Senarai pentadbir (<span id="adminCount">0</span> dipilih) — tandakan guru yang merupakan pentadbir</summary>
@@ -648,6 +649,7 @@
       cap: +document.querySelector('input[name=cap]:checked').value,
       adm: +document.querySelector('input[name=adm]:checked').value,
       noConsec: $('noConsec').checked,
+      noAdjacent: $('noAdjacent').checked,
       maxRelief: +$('maxRelief').value,
       flexMax: +$('flexMax').value
     };
@@ -657,11 +659,12 @@
     var c = document.querySelector('input[name=cap][value="' + s.cap + '"]'); if (c) c.checked = true;
     var a = document.querySelector('input[name=adm][value="' + s.adm + '"]'); if (a) a.checked = true;
     if (typeof s.noConsec === 'boolean') $('noConsec').checked = s.noConsec;
+    if (typeof s.noAdjacent === 'boolean') $('noAdjacent').checked = s.noAdjacent;
     if (s.maxRelief) $('maxRelief').value = String(s.maxRelief);
     if (s.flexMax) $('flexMax').value = String(s.flexMax);
   }
   $('setCard').addEventListener('change', function(ev){
-    if (ev.target.name === 'cap' || ev.target.name === 'adm' || ['noConsec','maxRelief','flexMax'].indexOf(ev.target.id) >= 0){ lsSet(LS_SET, getSettings()); hideResults(); }
+    if (ev.target.name === 'cap' || ev.target.name === 'adm' || ['noConsec','noAdjacent','maxRelief','flexMax'].indexOf(ev.target.id) >= 0){ lsSet(LS_SET, getSettings()); hideResults(); }
     if (ev.target.name === 'adm' && ev.target.value !== '0' && !admins.size){ $('adminBox').open = true; toast('Tandakan guru yang merupakan pentadbir dahulu.'); }
   });
 
@@ -748,6 +751,11 @@
     for (j = i + 1; j < D.slots.length && !D.slots[j].brk && busy(name, j, st); j++) n++;
     return n;
   }
+  // Adakah slot i bersebelahan (tanpa rehat di antara) dengan kelas asal guru dalam jadual?
+  function nextToOwnClass(name, i){
+    var j = i - 1, k = i + 1;
+    return (j >= 0 && !D.slots[j].brk && teaching(name, j)) || (k < D.slots.length && !D.slots[k].brk && teaching(name, k));
+  }
   // strict=true: ikut tetapan. strict=false: semua guru lapang (untuk tukar manual).
   function candidates(need, st, strict){
     var out = [], i = need.i, set = st.set;
@@ -767,6 +775,7 @@
       } else if (L > set.cap) reason = 'melebihi ' + set.cap + ' masa';
       else if (rl >= set.maxRelief) reason = 'sudah ' + rl + ' masa ganti';
       if (!reason && !isFlex && set.noConsec && run >= 3) reason = run + ' masa berturut';
+      if (!reason && !isFlex && set.noAdjacent && nextToOwnClass(t, i)) reason = 'bersambung kelas sendiri';
       if (strict && reason) return;
       var knows = Object.keys(TT.classTeachers[need.class] || {}).indexOf(t) >= 0;
       out.push({ name: t, load: L, relief: rl, adm: isAdm, flex: isFlex, knows: knows, reason: reason });
@@ -791,7 +800,7 @@
     var kol = needs.filter(function(n){ return n.kolab; }).length;
     var unf = needs.length - filled - prog - kol;
     var noun = { 3:'<4', 5:'≤5', 6:'≤6', 7:'≤7' }[R.set.cap];
-    var setTxt = 'Had ' + noun + ' masa • Maks ' + R.set.maxRelief + ' ganti/guru • Fleksibel maks ' + R.set.flexMax + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '');
+    var setTxt = 'Had ' + noun + ' masa • Maks ' + R.set.maxRelief + ' ganti/guru • Fleksibel maks ' + R.set.flexMax + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '') + (R.set.noAdjacent ? ' • Elak bersambung kelas sendiri' : '');
     $('gridSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + setTxt + ' • ' + TT.label;
     $('slipSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + absents.length + ' guru tidak hadir • ' + setTxt;
     $('printTitle').textContent = 'Jadual Guru Ganti — ' + R.day + ', ' + fmtDate(R.date);
