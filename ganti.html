@@ -277,7 +277,7 @@
   <section class="card no-print hidden jana-only" id="blockCard">
     <div class="card-head">
       <div>
-        <h2><span class="step adm">A</span>Sekatan teach-in <span class="tag amber">Admin / Penyelaras</span></h2>
+        <h2><span class="step adm">A</span>Sekatan teach-in <span class="tag amber">Admin sahaja</span></h2>
         <p>Guru tidak akan dipilih untuk teach-in pada masa yang ditetapkan. Terpakai kepada semua yang menjana jadual.</p>
       </div>
     </div>
@@ -874,7 +874,7 @@
       if (absentAt(t, i) || busy(t, i, st)) return;
       var blk = blockedAt(t, i);
       var isFlex = flex.has(t), isAdm = !isFlex && admins.has(t), L = load(t, st), rl = st.relief[t].length, run = runWith(t, i, st);
-      var reason = blk ? 'sekatan: ' + (blk.reason || 'admin') : '';
+      var reason = blk ? (window.GANTI_SEE_SEKATAN ? 'sekatan: ' + (blk.reason || 'admin') : 'tidak tersedia') : '';
       if (reason){
         // disekat oleh admin pada masa ini
       } else if (isFlex){
@@ -982,7 +982,7 @@
         var fp = x && freedAt(t, i);
         if (fp){ h += '<td class="c cov" title="Dibebaskan: ' + esc(fp.name) + '">' + esc(x.class) + '<small>PROG</small></td>'; return; }
         if (x){ h += '<td class="c t">' + esc(x.class) + '<small>' + esc(x.subject) + '</small></td>'; return; }
-        var bk = !absentAt(t, i) && blockedAt(t, i);
+        var bk = window.GANTI_SEE_SEKATAN && !absentAt(t, i) && blockedAt(t, i);
         h += '<td class="c' + (absentAt(t, i) ? ' off' : bk ? ' blk' : '') + '"' + (bk ? ' title="Sekatan: ' + esc(bk.reason || '') + '"' : '') + '>' + (bk ? '<small>SEKAT</small>' : '') + '</td>';
       });
       h += '<td class="sum">' + orig + '</td><td class="sum' + (rl ? ' hl' : '') + '">' + (rl || '–') + '</td><td class="sum">' + (isAbs ? '–' : orig + rl) + '</td></tr>';
@@ -1461,15 +1461,15 @@
     window.GANTI_SEKATAN = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => a.teacher.localeCompare(b.teacher) || String(a.from).localeCompare(String(b.from)));
     window.GantiUI && window.GantiUI.changed();
-    if (isAdmin) renderBlocks();
+    if (isRealAdmin) renderBlocks();
     return window.GANTI_SEKATAN.length;
   }
 
   onAuthStateChanged(auth, async u => {
-    isAdmin = false; isRealAdmin = false; window.GANTI_SEKATAN = []; $("blockCard").classList.add("hidden"); $("prCard").classList.add("hidden"); $("coordCard").classList.add("hidden");
+    isAdmin = false; isRealAdmin = false; window.GANTI_SEKATAN = []; window.GANTI_SEE_SEKATAN = false; $("blockCard").classList.add("hidden"); $("prCard").classList.add("hidden"); $("coordCard").classList.add("hidden");
     if (window.GANTI_PRAKTIKUM.length) { window.GANTI_PRAKTIKUM = []; window.GantiUI?.ready?.then(() => window.GantiUI.praktikumChanged()); }
     window.GantiUI?.ready?.then(() => window.GantiUI.authChanged());
-    if (!u) { window.ICTHeader?.clearUser(); msg("Log masuk dengan akaun DELIMa supaya <b>sekatan teach-in</b> yang ditetapkan admin turut diambil kira.", true); return; }
+    if (!u) { window.ICTHeader?.clearUser(); msg("Log masuk dengan akaun DELIMa supaya tetapan sekolah (guru praktikum dan lain-lain) turut diambil kira, dan rekod boleh disimpan.", true); return; }
     try {
       const snap = await getDoc(doc(db, "teachers", String(u.email || "").toLowerCase().trim()));
       if (!snap.exists() || snap.data().active !== true) { msg("Akaun ini bukan guru aktif — sekatan teach-in tidak dimuatkan.", true); return; }
@@ -1479,11 +1479,13 @@
       window.ICTHeader?.setUser(t.displayName || u.displayName || u.email,
         isRealAdmin ? "ADMIN" : t.penyelarasTeachIn === true ? "PENYELARAS TEACH-IN" : t.role === "pentadbir" ? "PENTADBIR" : "GURU");
       if (isRealAdmin) { $("coordCard").classList.remove("hidden"); loadCoordinators(); }
-      if (isAdmin) { await window.GantiUI.ready; initForm(); initPrForm(); $("blockCard").classList.remove("hidden"); $("prCard").classList.remove("hidden"); }
+      window.GANTI_SEE_SEKATAN = isRealAdmin;   // sekatan teach-in: admin sahaja boleh melihat & mengurus
+      if (isRealAdmin) { await window.GantiUI.ready; initForm(); $("blockCard").classList.remove("hidden"); }
+      if (isAdmin) { await window.GantiUI.ready; initPrForm(); $("prCard").classList.remove("hidden"); }
       await window.GantiUI.ready;
       try { await loadPraktikum(); } catch (e) { console.warn("gantiPraktikum", e); if (isAdmin) $("prList").innerHTML = '<div class="empty" style="color:var(--red)">Senarai guru praktikum tidak dapat dibaca (' + esc(e.code || e.message) + '). Semak peraturan Firestore gantiPraktikum.</div>'; }
       const n = await loadBlocks();
-      msg(`Log masuk sebagai <b>${esc(t.displayName || u.email)}</b> • ${n} sekatan teach-in diambil kira.`, false);
+      msg(`Log masuk sebagai <b>${esc(t.displayName || u.email)}</b>` + (isRealAdmin ? ` • ${n} sekatan teach-in diambil kira.` : ` • tetapan sekolah diambil kira.`), false);
     } catch (e) {
       console.error(e);
       msg("Sekatan teach-in tidak dapat dimuatkan (" + esc(e.code || e.message) + ").", false);

@@ -13,7 +13,7 @@
     // ==========================================
     match /gantiSekatan/{id} {
       allow read: if isActiveTeacher();
-      allow create, update, delete: if isGantiAdmin();
+      allow create, update, delete: if isAdmin();   // Admin sahaja (bukan Penyelaras)
     }
 
     // ==========================================
