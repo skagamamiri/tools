@@ -94,6 +94,9 @@
   table.g.wk td.tot{font-weight:800;font-size:13px;min-width:56px}
   table.g.wk td.tot.hl{color:var(--green-dark)}
   table.g.wk tr.none td.tn{color:#94a3b8}
+  .rng{display:inline-flex;align-items:center;gap:6px;padding:3px;border-radius:12px;background:#f1f5f9}
+  .rng select{min-height:36px;padding:5px 8px}
+  .rng-del{border:0;background:#fee2e2;color:var(--red);font-weight:800;border-radius:8px;width:26px;height:26px;cursor:pointer;font-size:15px;line-height:1}
   .upd-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
   .upd-row .meta{color:var(--muted);font-size:12px}
   .upd-banner{margin-top:12px;padding:12px 14px;border-radius:14px;background:#fffbeb;border:1px solid #fcd34d;color:#78350f;font-size:13px;line-height:1.5;display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
@@ -589,12 +592,15 @@
     badge.textContent = day + (D.slots.length ? ' • ' + D.slots[0].start + '–' + D.slots[D.slots.length - 1].end : '');
     badge.classList.toggle('warn', !D.slots.length);
     if (!D.slots.length) badge.textContent = day + ' • tiada jadual';
-    absents.forEach(function(a){ if (!a.full) clampRange(a); });
+    absents.forEach(function(a){ if (!a.full){ clampRange(a); (a.extra || []).forEach(clampRange); } });
     programs.forEach(clampRange);
     fillTimeSel($('progFrom'), $('progFrom').value, false);
     fillTimeSel($('progTo'), $('progTo').value, true);
     renderAbs(); renderProgs(); hideResults();
   }
+  // Julat masa tidak hadir: a.from/a.to (julat pertama) + a.extra [{from,to}] (julat tambahan).
+  function rangesOf(a){ return [{ from: a.from, to: a.to }].concat(a.extra || []); }
+  function rangeTxt(a){ return rangesOf(a).map(function(r){ return fmtT(r.from) + '-' + fmtT(r.to); }).join(', '); }
   function clampRange(o){
     var b = bounds(); if (!b.length) return;
     if (b.indexOf(o.from) < 0 || o.from === b[b.length-1]) o.from = b[0];
@@ -617,7 +623,10 @@
         '<div class="meta">' + teachCount(a.name) + ' masa mengajar pada hari ini</div></div>' +
         '<div class="seg"><button type="button" data-full="1" class="' + (a.full ? 'on' : '') + '">Seharian</button>' +
         '<button type="button" data-full="0" class="' + (a.full ? '' : 'on') + '">Beberapa masa</button></div>' +
-        (a.full ? '' : '<select data-k="from"></select><span class="meta">hingga</span><select data-k="to"></select>') +
+        (a.full ? '' : '<span class="rng"><select data-k="from"></select><span class="meta">hingga</span><select data-k="to"></select></span>' +
+          (a.extra || []).map(function(r, x){ return '<span class="rng" data-x="' + x + '"><select data-xk="from"></select><span class="meta">hingga</span><select data-xk="to"></select>' +
+            '<button type="button" class="rng-del" data-xdel="' + x + '" title="Buang julat ini">×</button></span>'; }).join('') +
+          '<button type="button" class="btn ghost small" data-addrng="1">+ Tambah masa</button>') +
         '<input data-k="reason" list="sebabList" placeholder="Sebab (cth. MC)" value="' + esc(a.reason || '') + '" style="width:150px">' +
         '<button class="btn danger" type="button" data-del="1">Buang</button></div>';
     }).join('');
@@ -625,16 +634,29 @@
       var a = absents[+row.dataset.i];
       var f = row.querySelector('[data-k=from]'), t = row.querySelector('[data-k=to]');
       if (f){ fillTimeSel(f, a.from, false); fillTimeSel(t, a.to, true); a.from = f.value; a.to = t.value; }
+      Array.prototype.forEach.call(row.querySelectorAll('.rng[data-x]'), function(sp){
+        var r = a.extra[+sp.dataset.x], xf = sp.querySelector('[data-xk=from]'), xt = sp.querySelector('[data-xk=to]');
+        fillTimeSel(xf, r.from, false); fillTimeSel(xt, r.to, true); r.from = xf.value; r.to = xt.value;
+      });
     });
   }
   $('absList').addEventListener('click', function(ev){
     var row = ev.target.closest('.item'); if (!row) return;
     var a = absents[+row.dataset.i];
     if (ev.target.dataset.del){ absents.splice(+row.dataset.i, 1); renderAbs(); hideResults(); return; }
+    if (ev.target.dataset.addrng){
+      // Julat baharu bermula selepas julat terakhir (jika boleh).
+      var b = bounds(), last = rangesOf(a).slice(-1)[0], k = b.indexOf(last.to);
+      var from = k >= 0 && k < b.length - 1 ? last.to : b[0], to = b[Math.min(b.indexOf(from) + 2, b.length - 1)];
+      (a.extra = a.extra || []).push({ from: from, to: to }); renderAbs(); hideResults(); return;
+    }
+    if (ev.target.dataset.xdel != null){ a.extra.splice(+ev.target.dataset.xdel, 1); renderAbs(); hideResults(); return; }
     if (ev.target.dataset.full != null){ a.full = ev.target.dataset.full === '1'; if (!a.full) clampRange(a); renderAbs(); hideResults(); }
   });
   $('absList').addEventListener('change', function(ev){
-    var row = ev.target.closest('.item'); if (!row || !ev.target.dataset.k) return;
+    var row = ev.target.closest('.item'); if (!row) return;
+    if (ev.target.dataset.xk){ absents[+row.dataset.i].extra[+ev.target.closest('.rng').dataset.x][ev.target.dataset.xk] = ev.target.value; hideResults(); return; }
+    if (!ev.target.dataset.k) return;
     absents[+row.dataset.i][ev.target.dataset.k] = ev.target.value;
     if (ev.target.dataset.k === 'reason' && R) renderResults(true); else hideResults();
   });
@@ -754,7 +776,7 @@
     var s = D.slots[i];
     return absents.some(function(a){
       if (a.name !== name) return false;
-      return a.full || (s.m >= mins(a.from) && s.m < mins(a.to));
+      return a.full || rangesOf(a).some(function(r){ return s.m >= mins(r.from) && s.m < mins(r.to); });
     });
   }
   function programFor(cls, i){
@@ -973,7 +995,7 @@
           '</td><td class="k">' + esc(n.class + ' ' + subjLabel(n.subject)) + '</td></tr>';
       });
       if (!rows.length) rows.push('<tr><td colspan="3" class="m">Tiada kelas perlu diganti</td></tr>');
-      var why = (a.reason || '').toUpperCase() + (a.full ? '' : (a.reason ? ' ' : '') + '(' + fmtT(a.from) + '-' + fmtT(a.to) + ')');
+      var why = (a.reason || '').toUpperCase() + (a.full ? '' : (a.reason ? ' ' : '') + '(' + rangeTxt(a) + ')');
       return '<div class="slip"><table class="slip-t">' +
         '<tr><th colspan="3" class="ttl">TEACH-IN SK AGAMA (MIS) MIRI</th></tr>' +
         '<tr><th class="lab">NAMA GURU</th><td colspan="2">' + esc(a.name.toUpperCase()) + '</td></tr>' +
@@ -1114,7 +1136,7 @@
         return [reliefLabel(n).t, fmtT(sl.start) + '-' + fmtT(sl.end), n.class + ' ' + subjLabel(n.subject)];
       });
       if (!rows.length) rows.push([{ content: 'Tiada kelas perlu diganti', colSpan: 3, styles: { halign: 'center' } }]);
-      var why = (a.reason || '').toUpperCase() + (a.full ? '' : (a.reason ? ' ' : '') + '(' + fmtT(a.from) + '-' + fmtT(a.to) + ')');
+      var why = (a.reason || '').toUpperCase() + (a.full ? '' : (a.reason ? ' ' : '') + '(' + rangeTxt(a) + ')');
       var body = [
         [{ content: 'TEACH-IN SK AGAMA (MIS) MIRI', colSpan: 3, styles: { fontStyle: 'bold', halign: 'center', fontSize: 11 } }],
         [lab('NAMA GURU'), { content: a.name.toUpperCase(), colSpan: 2, styles: { halign: 'left' } }],
@@ -1186,7 +1208,8 @@
       BASE = { rec: rec, map: map };
       absents = (rec.absents || []).filter(function(a){ return teachers.indexOf(a.name) >= 0; }).map(function(a){
         var b = bounds();
-        return { name: a.name, full: !!a.full, from: a.full ? b[0] : a.from, to: a.full ? b[b.length - 1] : a.to, reason: a.reason || '', base: true };
+        return { name: a.name, full: !!a.full, from: a.full ? b[0] : a.from, to: a.full ? b[b.length - 1] : a.to, reason: a.reason || '', base: true,
+          extra: a.full ? [] : (a.extra || []).map(function(r){ return { from: r.from, to: r.to }; }) };
       });
       programs = (rec.programs || []).map(function(p){ return { name: p.name, from: p.from, to: p.to, classes: p.classes || [], free: !!p.free }; });
       if (rec.preparedBy && teachers.indexOf(rec.preparedBy) >= 0) $('preparedBy').value = rec.preparedBy;
@@ -1209,7 +1232,8 @@
       preparedBy: $('preparedBy').value,
       revision: BASE ? (BASE.rec.revision || 1) + 1 : 1,
       programs: programs.map(function(p){ return { name: p.name, from: p.from, to: p.to, classes: p.classes.slice(), free: !!p.free }; }),
-      absents: absents.map(function(a){ return { name: a.name, reason: a.reason || '', full: !!a.full, from: a.full ? '' : a.from, to: a.full ? '' : a.to }; }),
+      absents: absents.map(function(a){ return { name: a.name, reason: a.reason || '', full: !!a.full, from: a.full ? '' : a.from, to: a.full ? '' : a.to,
+        extra: a.full ? [] : (a.extra || []).map(function(r){ return { from: r.from, to: r.to }; }) }; }),
       items: R.needs.map(function(n){
         var sl = D.slots[n.i];
         return { start: sl.start, end: sl.end, class: n.class, subject: n.subject, absent: n.absent.slice(),
@@ -1276,7 +1300,7 @@
       var r = recs[d]; if (!r) return; saved++;
       (r.absents || []).forEach(function(a){
         if (!M[a.name]) M[a.name] = dates.map(function(){ return { abs: null, items: [] }; });
-        M[a.name][k].abs = (a.reason || 'TH').toUpperCase() + (a.full ? '' : ' (' + fmtT(a.from) + '-' + fmtT(a.to) + ')');
+        M[a.name][k].abs = (a.reason || 'TH').toUpperCase() + (a.full ? '' : ' (' + rangeTxt(a) + ')');
         absDays++;
       });
       (r.items || []).forEach(function(it){
@@ -1339,7 +1363,7 @@
       var fresh = absents.filter(function(a){ return !a.base; });
       if (fresh.length){
         lines.push('', '*Guru tidak hadir (tambahan):*');
-        fresh.forEach(function(a){ lines.push('• ' + a.name.toUpperCase() + (a.reason ? ' — ' + a.reason.toUpperCase() : '') + (a.full ? '' : ' (' + fmtT(a.from) + '-' + fmtT(a.to) + ')')); });
+        fresh.forEach(function(a){ lines.push('• ' + a.name.toUpperCase() + (a.reason ? ' — ' + a.reason.toUpperCase() : '') + (a.full ? '' : ' (' + rangeTxt(a) + ')')); });
       }
       var adds = R.needs.filter(function(n){ return n.added; });
       lines.push('', '*Tugasan teach-in tambahan:*');
@@ -1353,7 +1377,7 @@
       return copyText(lines.join('\n'));
     }
     absents.forEach(function(a){
-      lines.push('', '*' + a.name.toUpperCase() + '*' + (a.reason ? ' — ' + a.reason.toUpperCase() : '') + (a.full ? '' : ' (' + fmtT(a.from) + '-' + fmtT(a.to) + ')'));
+      lines.push('', '*' + a.name.toUpperCase() + '*' + (a.reason ? ' — ' + a.reason.toUpperCase() : '') + (a.full ? '' : ' (' + rangeTxt(a) + ')'));
       var mine = R.needs.filter(function(n){ return n.absent.indexOf(a.name) >= 0; });
       if (!mine.length) lines.push('Tiada kelas perlu diganti');
       mine.forEach(function(n){
@@ -1375,7 +1399,7 @@
     if (!D.slots.length){ toast('Tiada jadual pada hari ini.'); return; }
     if (!absents.length){ toast('Tambah sekurang-kurangnya seorang guru tidak hadir.'); return; }
     if (!$('preparedBy').value){ toast('Pilih guru yang menyediakan jadual teach-in.'); $('preparedBy').focus(); return; }
-    if (absents.some(function(a){ return !a.full && mins(a.to) <= mins(a.from); })){ toast('Semak masa tidak hadir: masa tamat mesti selepas masa mula.'); return; }
+    if (absents.some(function(a){ return !a.full && rangesOf(a).some(function(r){ return mins(r.to) <= mins(r.from); }); })){ toast('Semak masa tidak hadir: masa tamat mesti selepas masa mula.'); return; }
     var A = window.GantiAuth, btn = $('genBtn');
     WEEKCNT = {}; WEEKDAYS = 0;
     if (!$('weekFair').checked){ generate(); return; }
