@@ -59,11 +59,10 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 
 - Relief-teacher generator. Reads the timetable via `KehadiranData.loadTimetable()` (kehadiran-data.js) — no copy of the jadual.
 - Inputs: date, absent teachers (full day or a time range), optional programs (time range + classes; those class slots need no relief),
-  settings (load cap <4/≤5/≤6/≤7 masa — `cap` value 3/5/6/7, admins 0/1/2 masa, avoid 3+ consecutive masa `noConsec`, avoid relief directly before/after the teacher's own class `noAdjacent` — break separates; flex teachers exempt from both). 1 masa = 30-min slot.
-- Cap rule: a teacher may take another relief slot while their day total (timetable + relief already given) is ≤ cap.
-- Max relief per ordinary teacher per day (`maxRelief`, default 2).
+  settings (tiered max relief per day by the teacher's own timetable load that day — `tier4` ≤4 masa (default 1), `tier5` (1), `tier6` (0), `tier7` 7+ (0); admins 0/1/2 masa, avoid 3+ consecutive masa `noConsec`, avoid relief directly before/after the teacher's own class `noAdjacent` — break separates; flex teachers exempt from both). 1 masa = 30-min slot.
+- Tier rule (`tierMax`): ordinary teacher's relief count that day < tier limit for their original load (excludes freed program slots). The old `cap` radio and `maxRelief` were replaced by these tiers.
 - Flexible teachers (Guru Pemulihan + Guru Bimbingan & Kaunseling, default list `DEFAULT_FLEX`, kept in localStorage `ganti_fleksibel`):
-  picked first, exempt from the load cap and the consecutive rule, own daily max (`flexMax`, default 6).
+  picked first, exempt from the tier limits and the consecutive rule, own daily max (`flexMax`, default 6).
 - `EXTRA_TEACHERS` adds teachers with no timetable entries (Ku Muhammad Nadjri bin Ku Nasir, Guru B&K).
 - Co-taught class slot ("A / B" in the class timetable): if the partner is present, no relief — shown as KOLABORASI with the partner's name.
 - Program option per program: teachers of the program's classes either stay with the program (default) or are released (`free`) —

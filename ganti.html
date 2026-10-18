@@ -61,6 +61,7 @@
   .opt b{font-size:14px}
   .opt small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
   .num-opt{cursor:default;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .tier-note{margin:0 0 2px;color:var(--muted);font-size:12px}
   .num-opt select{min-height:38px;padding:6px 10px}
   details.flex-box{margin:0 0 4px}
   details.flex-box summary{margin-top:2px}
@@ -351,18 +352,20 @@
     <div class="card-head">
       <div>
         <h2><span class="step">3</span>Tetapan pemilihan guru ganti</h2>
-        <p>1 masa bersamaan 1 petak (30 minit). Beban waktu mengajar dikira berdasarkan jadual waktu hari tersebut, termasuk masa teach-in yang telah diberikan.</p>
+        <p>1 masa bersamaan 1 petak (30 minit).</p>
       </div>
     </div>
     <div class="opts">
-      <div class="opt-group">Had beban waktu mengajar guru</div>
-      <label class="opt"><input type="radio" name="cap" value="3"><span><b>Guru yang mempunyai kurang daripada 4 masa mengajar sehari</b><small>Pilihan paling ketat — hanya guru yang paling lapang dipertimbangkan.</small></span></label>
-      <label class="opt"><input type="radio" name="cap" value="5" checked><span><b>Guru yang mempunyai tidak melebihi 5 masa mengajar sehari</b><small>Tetapan lalai.</small></span></label>
-      <label class="opt"><input type="radio" name="cap" value="6"><span><b>Guru yang mempunyai tidak melebihi 6 masa mengajar sehari</b></span></label>
-      <label class="opt"><input type="radio" name="cap" value="7"><span><b>Guru yang mempunyai tidak melebihi 7 masa mengajar sehari</b></span></label>
-      <div class="opt-group">Had masa teach-in</div>
-      <div class="opt num-opt"><span><b>Bilangan maksimum masa teach-in bagi seorang guru sehari</b><small>Terpakai kepada guru biasa. Pentadbir dan guru fleksibel tertakluk kepada had masing-masing.</small></span>
-        <select id="maxRelief"><option value="1">1 masa</option><option value="2" selected>2 masa</option><option value="3">3 masa</option><option value="4">4 masa</option><option value="5">5 masa</option></select></div>
+      <div class="opt-group">Had teach-in mengikut beban waktu mengajar guru</div>
+      <p class="tier-note">Bilangan maksimum masa teach-in sehari bagi seorang guru ditentukan oleh jumlah masa mengajar guru itu dalam jadual pada hari tersebut.</p>
+      <div class="opt num-opt"><span><b>Guru yang mempunyai 4 masa mengajar dan ke bawah</b><small>Tetapan lalai: maksimum 1 masa.</small></span>
+        <select id="tier4"><option value="0">0 masa (tiada teach-in)</option><option value="1" selected>1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option></select></div>
+      <div class="opt num-opt"><span><b>Guru yang mempunyai 5 masa mengajar</b><small>Tetapan lalai: maksimum 1 masa.</small></span>
+        <select id="tier5"><option value="0">0 masa (tiada teach-in)</option><option value="1" selected>1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option></select></div>
+      <div class="opt num-opt"><span><b>Guru yang mempunyai 6 masa mengajar</b><small>Tetapan lalai: 0 masa (tidak diberikan teach-in).</small></span>
+        <select id="tier6"><option value="0" selected>0 masa (tiada teach-in)</option><option value="1">1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option></select></div>
+      <div class="opt num-opt"><span><b>Guru yang mempunyai 7 masa mengajar dan ke atas</b><small>Tetapan lalai: 0 masa (tidak diberikan teach-in).</small></span>
+        <select id="tier7"><option value="0" selected>0 masa (tiada teach-in)</option><option value="1">1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option></select></div>
       <div class="opt-group">Guru fleksibel (Pemulihan / Bimbingan &amp; Kaunseling)</div>
       <div class="opt num-opt"><span><b>Bilangan maksimum masa teach-in bagi guru fleksibel sehari</b><small>Guru fleksibel diberi keutamaan dan tidak tertakluk kepada had beban waktu mengajar atau had masa berturut-turut.</small></span>
         <select id="flexMax"><option value="0">0 masa (tidak dilibatkan)</option><option value="1">1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option><option value="4">4 masa</option><option value="5">5 masa</option><option value="6" selected>6 masa</option><option value="7">7 masa</option><option value="8">8 masa</option><option value="10">10 masa</option></select></div>
@@ -720,25 +723,23 @@
   });
   function getSettings(){
     return {
-      cap: +document.querySelector('input[name=cap]:checked').value,
+      tier4: +$('tier4').value, tier5: +$('tier5').value, tier6: +$('tier6').value, tier7: +$('tier7').value,
       adm: +document.querySelector('input[name=adm]:checked').value,
       noConsec: $('noConsec').checked,
       noAdjacent: $('noAdjacent').checked,
-      maxRelief: +$('maxRelief').value,
       flexMax: +$('flexMax').value
     };
   }
   function restoreSettings(){
     var s = lsGet(LS_SET, null); if (!s) return;
-    var c = document.querySelector('input[name=cap][value="' + s.cap + '"]'); if (c) c.checked = true;
+    ['tier4', 'tier5', 'tier6', 'tier7'].forEach(function(k){ if (s[k] != null) $(k).value = String(s[k]); });
     var a = document.querySelector('input[name=adm][value="' + s.adm + '"]'); if (a) a.checked = true;
     if (typeof s.noConsec === 'boolean') $('noConsec').checked = s.noConsec;
     if (typeof s.noAdjacent === 'boolean') $('noAdjacent').checked = s.noAdjacent;
-    if (s.maxRelief) $('maxRelief').value = String(s.maxRelief);
     if (s.flexMax != null) $('flexMax').value = String(s.flexMax);
   }
   $('setCard').addEventListener('change', function(ev){
-    if (ev.target.name === 'cap' || ev.target.name === 'adm' || ['noConsec','noAdjacent','maxRelief','flexMax'].indexOf(ev.target.id) >= 0){ lsSet(LS_SET, getSettings()); hideResults(); }
+    if (ev.target.name === 'adm' || ['noConsec','noAdjacent','flexMax','tier4','tier5','tier6','tier7'].indexOf(ev.target.id) >= 0){ lsSet(LS_SET, getSettings()); hideResults(); }
     if (ev.target.name === 'adm' && ev.target.value !== '0' && !admins.size){ $('adminBox').open = true; toast('Tandakan guru yang merupakan pentadbir dahulu.'); }
   });
 
@@ -859,6 +860,8 @@
     for (j = i + 1; j < D.slots.length && !D.slots[j].brk && busy(name, j, st); j++) n++;
     return n;
   }
+  // Had teach-in sehari mengikut jumlah masa mengajar asal guru pada hari itu.
+  function tierMax(set, orig){ return orig <= 4 ? set.tier4 : orig === 5 ? set.tier5 : orig === 6 ? set.tier6 : set.tier7; }
   // Adakah slot i bersebelahan (tanpa rehat di antara) dengan kelas asal guru dalam jadual?
   function nextToOwnClass(name, i){
     var j = i - 1, k = i + 1;
@@ -880,8 +883,10 @@
       } else if (isAdm){
         if (set.adm === 0) reason = 'pentadbir';
         else if (rl >= set.adm) reason = 'had pentadbir';
-      } else if (L > set.cap) reason = 'melebihi ' + set.cap + ' masa';
-      else if (rl >= set.maxRelief) reason = 'sudah ' + rl + ' masa ganti';
+      } else {
+        var orig = L - rl, mx = tierMax(set, orig);
+        if (rl >= mx) reason = mx ? 'guru ' + orig + ' masa — had ' + mx + ' teach-in' : 'guru ' + orig + ' masa — tiada teach-in';
+      }
       if (!reason && !isFlex && set.noConsec && run >= 3) reason = run + ' masa berturut';
       if (!reason && !isFlex && set.noAdjacent && nextToOwnClass(t, i)) reason = 'bersambung kelas sendiri';
       if (strict && reason) return;
@@ -907,8 +912,7 @@
     var prog = needs.filter(function(n){ return n.program; }).length;
     var kol = needs.filter(function(n){ return n.kolab; }).length;
     var unf = needs.length - filled - prog - kol;
-    var noun = { 3:'<4', 5:'≤5', 6:'≤6', 7:'≤7' }[R.set.cap];
-    var setTxt = 'Had ' + noun + ' masa • Maks ' + R.set.maxRelief + ' ganti/guru' + (R.set.flexMax ? ' • Fleksibel maks ' + R.set.flexMax : ' • Fleksibel tidak dilibatkan') + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '') + (R.set.noAdjacent ? ' • Elak bersambung kelas sendiri' : '');
+    var setTxt = 'Maks teach-in: ≤4 masa→' + R.set.tier4 + ', 5→' + R.set.tier5 + ', 6→' + R.set.tier6 + ', 7+→' + R.set.tier7 + (R.set.flexMax ? ' • Fleksibel maks ' + R.set.flexMax : ' • Fleksibel tidak dilibatkan') + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '') + (R.set.noAdjacent ? ' • Elak bersambung kelas sendiri' : '');
     $('gridSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + setTxt + ' • ' + TT.label;
     $('slipSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + absents.length + ' guru tidak hadir • ' + setTxt;
     $('printTitle').textContent = 'Jadual Guru Ganti — ' + R.day + ', ' + fmtDate(R.date);
