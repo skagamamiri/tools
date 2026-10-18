@@ -402,6 +402,7 @@
       <div class="opt-group">Lain-lain</div>
       <label class="opt"><input type="checkbox" id="noConsec" checked><span><b>Elakkan guru mengajar 3 masa atau lebih secara berturut-turut</b><small>Tugas teach-in tidak akan diberikan sekiranya ia menyebabkan guru mengajar 3 masa atau lebih tanpa rehat. Waktu rehat dikira sebagai pemisah.</small></span></label>
       <label class="opt"><input type="checkbox" id="noAdjacent" checked><span><b>Elakkan teach-in bersambung dengan kelas asal guru</b><small>Tugas teach-in tidak akan diberikan pada masa sejurus sebelum atau selepas kelas guru itu sendiri. Waktu rehat dikira sebagai pemisah.</small></span></label>
+      <label class="opt"><input type="checkbox" id="noReliefRun" checked><span><b>Elakkan guru diberikan teach-in secara berturut-turut</b><small>Seorang guru tidak akan diberikan dua masa teach-in yang bersambung (cth. 7.00–7.30 dan 7.30–8.00), walaupun di kelas yang sama. Waktu rehat dikira sebagai pemisah.</small></span></label>
       <label class="opt"><input type="checkbox" id="weekFair" checked><span><b>Utamakan guru yang belum diberikan teach-in pada minggu tersebut</b><small>Sistem membaca Rekod Mingguan (hari lain dalam minggu yang sama) dan memilih guru yang paling sedikit teach-in terlebih dahulu. Memerlukan log masuk.</small></span></label>
       <label class="opt"><input type="checkbox" id="splitKolab"><span><b>Benarkan kelas kolaborasi dipecahkan</b><small>Bagi kelas yang diajar oleh dua guru, seorang daripada mereka boleh ditugaskan teach-in di kelas lain, manakala seorang lagi kekal di kelas asal.</small></span></label>
     </div>
@@ -802,6 +803,7 @@
       adm: +document.querySelector('input[name=adm]:checked').value,
       noConsec: $('noConsec').checked,
       noAdjacent: $('noAdjacent').checked,
+      noReliefRun: $('noReliefRun').checked,
       weekFair: $('weekFair').checked,
       splitKolab: $('splitKolab').checked,
       flexMax: +$('flexMax').value
@@ -813,12 +815,13 @@
     var a = document.querySelector('input[name=adm][value="' + s.adm + '"]'); if (a) a.checked = true;
     if (typeof s.noConsec === 'boolean') $('noConsec').checked = s.noConsec;
     if (typeof s.noAdjacent === 'boolean') $('noAdjacent').checked = s.noAdjacent;
+    if (typeof s.noReliefRun === 'boolean') $('noReliefRun').checked = s.noReliefRun;
     if (typeof s.weekFair === 'boolean') $('weekFair').checked = s.weekFair;
     if (typeof s.splitKolab === 'boolean') $('splitKolab').checked = s.splitKolab;
     if (s.flexMax != null) $('flexMax').value = String(s.flexMax);
   }
   $('setCard').addEventListener('change', function(ev){
-    if (ev.target.name === 'adm' || ['noConsec','noAdjacent','weekFair','splitKolab','flexMax','tier4','tier5','tier6','tier7'].indexOf(ev.target.id) >= 0){ lsSet(LS_SET, getSettings()); hideResults(); }
+    if (ev.target.name === 'adm' || ['noConsec','noAdjacent','noReliefRun','weekFair','splitKolab','flexMax','tier4','tier5','tier6','tier7'].indexOf(ev.target.id) >= 0){ lsSet(LS_SET, getSettings()); hideResults(); }
     if (ev.target.name === 'adm' && ev.target.value !== '0' && !admins.size){ $('adminBox').open = true; toast('Tandakan guru yang merupakan pentadbir dahulu.'); }
   });
 
@@ -942,6 +945,11 @@
   }
   // Had teach-in sehari mengikut jumlah masa mengajar asal guru pada hari itu.
   function tierMax(set, orig){ return orig <= 4 ? set.tier4 : orig === 5 ? set.tier5 : orig === 6 ? set.tier6 : set.tier7; }
+  // Adakah guru sudah diberi teach-in pada slot sejurus sebelum/selepas i (tanpa rehat di antara)?
+  function nextToOwnRelief(name, i, st){
+    var r = st.relief[name] || [], j = i - 1, k = i + 1;
+    return (j >= 0 && !D.slots[j].brk && r.indexOf(j) >= 0) || (k < D.slots.length && !D.slots[k].brk && r.indexOf(k) >= 0);
+  }
   // Adakah slot i bersebelahan (tanpa rehat di antara) dengan kelas asal guru dalam jadual?
   function nextToOwnClass(name, i){
     var j = i - 1, k = i + 1;
@@ -991,6 +999,7 @@
       }
       if (!reason && !isFlex && set.noConsec && run >= 3) reason = run + ' masa berturut';
       if (!reason && !isFlex && set.noAdjacent && nextToOwnClass(t, i)) reason = 'bersambung kelas sendiri';
+      if (!reason && !isFlex && set.noReliefRun && nextToOwnRelief(t, i, st)) reason = 'teach-in berturut-turut';
       if (strict && reason) return;
       var knows = Object.keys(TT.classTeachers[need.class] || {}).indexOf(t) >= 0;
       out.push({ name: t, load: L, relief: rl, adm: isAdm, flex: isFlex, knows: knows, reason: reason, released: released,
@@ -1016,7 +1025,7 @@
     var kol = needs.filter(function(n){ return n.kolab; }).length;
     var unf = needs.length - filled - prog - kol;
     var fairTxt = R.set.weekFair ? (WEEKDAYS ? ' • Keutamaan mingguan (' + WEEKDAYS + ' hari direkod)' : ' • Keutamaan mingguan (tiada rekod lain)') : '';
-    var setTxt = 'Maks teach-in: ≤4 masa→' + R.set.tier4 + ', 5→' + R.set.tier5 + ', 6→' + R.set.tier6 + ', 7+→' + R.set.tier7 + (R.set.flexMax ? ' • Fleksibel maks ' + R.set.flexMax : ' • Fleksibel tidak dilibatkan') + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '') + (R.set.noAdjacent ? ' • Elak bersambung kelas sendiri' : '') + fairTxt + (R.set.splitKolab ? ' • Kolaborasi boleh dipecahkan' : '');
+    var setTxt = 'Maks teach-in: ≤4 masa→' + R.set.tier4 + ', 5→' + R.set.tier5 + ', 6→' + R.set.tier6 + ', 7+→' + R.set.tier7 + (R.set.flexMax ? ' • Fleksibel maks ' + R.set.flexMax : ' • Fleksibel tidak dilibatkan') + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '') + (R.set.noAdjacent ? ' • Elak bersambung kelas sendiri' : '') + (R.set.noReliefRun ? ' • Elak teach-in berturut' : '') + fairTxt + (R.set.splitKolab ? ' • Kolaborasi boleh dipecahkan' : '');
     $('gridSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + setTxt + ' • ' + TT.label;
     $('slipSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + absents.length + ' guru tidak hadir • ' + setTxt;
     $('printTitle').textContent = 'Jadual Guru Ganti — ' + R.day + ', ' + fmtDate(R.date);
