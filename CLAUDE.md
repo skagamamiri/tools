@@ -83,6 +83,12 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   sekolah-8965-cm1@moe-dl.edu.my was blocked for outside callers even with "Who has access: Anyone" (fetch failed with a
   CORS error, browser showed "You need access"). If redeploying, check the /exec URL answers a plain GET with
   {"ok":true,...} from the ganti.html origin.
+- "Simpan Rekod" also writes the day's structured record to Firestore `gantiRekod/<YYYY-MM-DD>` (date, day, week, preparedBy,
+  absents[], items[{start,end,class,subject,absent[],relief,kind ganti|program|kolab|tiada,note}], savedBy, savedAt); re-saving overwrites.
+- Tabs: "Jana Teach-In" (generator, `.jana-only`) and "Rekod Mingguan" (`.minggu-only`, body class `tab-minggu`, remembered in
+  localStorage `ganti_tab`). Rekod Mingguan: pick a school week, loads gantiRekod for Mon–Fri, grid of all teachers × 5 days
+  (relief count + classes, absence reason, grey = day not saved) + weekly total; sort by name/total; prints A4 landscape.
+  Rules block for gantiRekod is in `firestore-rules-ganti.txt` (must be added in the Console).
 - School week comes from erph.html (`const WEEKS=[...].map` and `CUTI`), fetched and parsed — keep that shape intact.
 
 ## e-Kokurikulum (ekokurikulum.html)

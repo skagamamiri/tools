@@ -10,3 +10,15 @@
       // Hanya Admin boleh menambah atau memadam sekatan.
       allow create, update, delete: if isAdmin();
     }
+
+    // ==========================================
+    // GURU GANTI — REKOD HARIAN TEACH-IN (tab Rekod Mingguan)
+    // Dokumen gantiRekod/<YYYY-MM-DD>, ditulis apabila "Simpan Rekod" ditekan.
+    // ==========================================
+    match /gantiRekod/{date} {
+      allow read: if isActiveTeacher();
+      allow create, update: if isActiveTeacher()
+        && request.resource.data.savedBy == request.auth.token.email
+        && request.resource.data.date == date;
+      allow delete: if isAdmin();
+    }

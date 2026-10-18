@@ -76,6 +76,23 @@
   .login-strip{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 16px;font-size:13px;color:#475569}
   .login-strip b{color:var(--ink)}
   .step.adm{background:#d97706}
+  .tabs{display:flex;gap:6px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:5px;width:max-content;max-width:100%;overflow-x:auto}
+  .tab{border:0;background:transparent;padding:10px 18px;border-radius:12px;font:inherit;font-weight:800;font-size:14px;color:#475569;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--navy);color:#fff}
+  body.tab-minggu .jana-only{display:none!important}
+  body:not(.tab-minggu) .minggu-only{display:none!important}
+  .wk-msg{font-size:13px;color:#475569;margin:0 0 10px}
+  .wk-msg.err{color:var(--red);font-weight:700}
+  table.g.wk td.c{min-width:118px;height:34px;white-space:normal;padding:2px 4px;line-height:1.15}
+  table.g.wk td.c b{font-size:13px}
+  table.g.wk td.c small{display:block;font-size:9.5px;font-weight:600}
+  table.g.wk td.r{outline-offset:-2px}
+  table.g.wk td.abs{text-decoration:none}
+  table.g.wk td.nr{background:#f1f5f9}
+  table.g.wk th.nr{background:#64748b}
+  table.g.wk td.tot{font-weight:800;font-size:13px;min-width:56px}
+  table.g.wk td.tot.hl{color:var(--green-dark)}
+  table.g.wk tr.none td.tn{color:#94a3b8}
   .generate-bar{display:flex;justify-content:center;padding:4px 0}
 
   /* Keputusan */
@@ -166,6 +183,11 @@
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     #listCard{break-before:page}
     body.print-slip #gridCard,body.print-slip #listCard{display:none!important}
+    body.tab-minggu .print-title{display:flex}
+    table.g.wk td.c{min-width:0;height:auto;font-size:7.5px;padding:1px 2px}
+    table.g.wk td.c b{font-size:8px}
+    table.g.wk td.c small{display:inline;font-size:6.5px;margin-left:3px}
+    table.g.wk td.tot{font-size:8px;min-width:0}
     body.print-grid #slipCard{display:none!important}
     .slips{display:block}
     .slip{margin:0 0 7mm}
@@ -197,8 +219,13 @@
     <button class="btn ghost small hidden" id="loginBtn" type="button">Log masuk Google</button>
   </section>
 
+  <nav class="tabs no-print" id="tabs">
+    <button type="button" class="tab on" data-tab="jana">Jana Teach-In</button>
+    <button type="button" class="tab" data-tab="minggu">Rekod Mingguan</button>
+  </nav>
+
   <!-- ADMIN SAHAJA: sekatan teach-in -->
-  <section class="card no-print hidden" id="blockCard">
+  <section class="card no-print hidden jana-only" id="blockCard">
     <div class="card-head">
       <div>
         <h2><span class="step adm">A</span>Sekatan teach-in <span class="tag amber">Admin sahaja</span></h2>
@@ -222,7 +249,7 @@
   </section>
 
   <!-- 1. Tarikh & guru tidak hadir -->
-  <section class="card no-print hidden" id="absCard">
+  <section class="card no-print hidden jana-only" id="absCard">
     <div class="card-head">
       <div>
         <h2><span class="step">1</span>Guru tidak hadir</h2>
@@ -240,7 +267,7 @@
   </section>
 
   <!-- 2. Program -->
-  <section class="card no-print hidden" id="progCard">
+  <section class="card no-print hidden jana-only" id="progCard">
     <div class="card-head">
       <div>
         <h2><span class="step">2</span>Daftar program <span class="tag">jika ada</span></h2>
@@ -267,7 +294,7 @@
   </section>
 
   <!-- 3. Tetapan -->
-  <section class="card no-print hidden" id="setCard">
+  <section class="card no-print hidden jana-only" id="setCard">
     <div class="card-head">
       <div>
         <h2><span class="step">3</span>Tetapan pemilihan guru ganti</h2>
@@ -302,18 +329,18 @@
     </details>
   </section>
 
-  <section class="card no-print hidden" id="byCard">
+  <section class="card no-print hidden jana-only" id="byCard">
     <div class="row">
       <div class="grow"><label class="lbl" for="preparedBy">Jadual teach-in disediakan oleh</label><select id="preparedBy"></select></div>
     </div>
   </section>
 
-  <div class="generate-bar no-print hidden" id="genBar">
+  <div class="generate-bar no-print hidden jana-only" id="genBar">
     <button class="btn primary big" id="genBtn" type="button">⚡ Jana Guru Ganti</button>
   </div>
 
   <!-- Keputusan: slip teach-in (format borang sekolah) -->
-  <section class="card hidden" id="slipCard">
+  <section class="card hidden jana-only" id="slipCard">
     <div class="card-head no-print">
       <div>
         <h2>Jadual Teach-In</h2>
@@ -333,7 +360,7 @@
   </section>
 
   <!-- Keputusan: grid -->
-  <section class="card hidden" id="gridCard">
+  <section class="card hidden jana-only" id="gridCard">
     <div class="card-head no-print">
       <div>
         <h2>Paparan grid semua guru</h2>
@@ -357,7 +384,7 @@
   </section>
 
   <!-- Keputusan: senarai -->
-  <section class="card hidden" id="listCard">
+  <section class="card hidden jana-only" id="listCard">
     <div class="card-head">
       <div>
         <h2>Senarai masa ganti</h2>
@@ -365,6 +392,32 @@
       </div>
     </div>
     <div style="overflow:auto"><table class="rl" id="relList"></table></div>
+  </section>
+
+  <!-- TAB: Rekod Mingguan -->
+  <section class="card minggu-only" id="weekCard">
+    <div class="card-head no-print">
+      <div>
+        <h2>Rekod Teach-In Mingguan</h2>
+        <p style="margin-left:0">Dibina daripada rekod harian yang disimpan melalui butang <b>Simpan Rekod</b>. Perlu log masuk.</p>
+      </div>
+      <div class="tools">
+        <select id="wkSel"></select>
+        <select id="wkSort"><option value="nama">Susun: Nama</option><option value="jumlah">Susun: Jumlah teach-in</option></select>
+        <button class="btn ghost" id="wkReload" type="button">Muat semula</button>
+        <button class="btn primary" id="wkPrint" type="button">Cetak</button>
+      </div>
+    </div>
+    <div class="print-title"><b id="wkTitle">Rekod Teach-In Mingguan</b><small id="wkSub"></small></div>
+    <div class="stats no-print" id="wkStats"></div>
+    <div class="wk-msg no-print" id="wkMsg"></div>
+    <div class="grid-wrap"><table class="g wk" id="wkGrid"></table></div>
+    <div class="legend">
+      <span><i style="background:#d7f5e6;outline:2px solid var(--green);outline-offset:-2px"></i>Teach-in (bilangan masa &amp; kelas)</span>
+      <span><i style="background:#fdecee"></i>Tidak hadir (sebab)</span>
+      <span><i style="background:#f1f5f9"></i>Tiada rekod disimpan untuk hari itu</span>
+      <span>Jumlah = bilangan masa teach-in (30 minit) dalam minggu</span>
+    </div>
   </section>
 </main>
 
@@ -942,11 +995,133 @@
       return fetch(TEACHIN_DRIVE_URL, { method: 'POST', body: JSON.stringify({ idToken: res[2], week: week, fileName: fileName, pdfBase64: b64 }) });
     }).then(function(r){ return r.json(); }).then(function(j){
       if (!j.ok) throw new Error(j.error || 'Gagal menyimpan.');
-      saveMsg('✔ Rekod disimpan: <b>TEACH IN / ' + esc(j.week) + ' / ' + esc(j.name) + '</b> — <a href="' + esc(j.url) + '" target="_blank" rel="noopener">Buka PDF</a> • <a href="' + esc(j.folderUrl) + '" target="_blank" rel="noopener">Buka folder</a>', 'ok');
+      var done = '✔ Rekod disimpan: <b>TEACH IN / ' + esc(j.week) + ' / ' + esc(j.name) + '</b> — <a href="' + esc(j.url) + '" target="_blank" rel="noopener">Buka PDF</a> • <a href="' + esc(j.folderUrl) + '" target="_blank" rel="noopener">Buka folder</a>';
+      saveMsg(done + '<br>Mengemas kini rekod mingguan…', 'ok');
+      return A.saveRecord(recordData(week)).then(function(){
+        saveMsg(done + '<br>✔ Rekod mingguan dikemas kini.', 'ok');
+        wkCache = {};
+      }, function(e){
+        saveMsg(done + '<br>⚠ Rekod mingguan tidak dikemas kini: ' + esc(e.code || e.message || e) + ' (semak peraturan Firestore gantiRekod).', 'err');
+      });
     }).catch(function(e){
       saveMsg('Gagal menyimpan rekod: ' + esc(e.message || e), 'err');
     }).then(function(){ btn.disabled = false; });
   });
+
+  /* ---------- Rekod data harian (Firestore gantiRekod) ---------- */
+  function recordData(weekLabel){
+    return {
+      date: R.date, day: R.day, week: weekLabel || '',
+      preparedBy: $('preparedBy').value,
+      absents: absents.map(function(a){ return { name: a.name, reason: a.reason || '', full: !!a.full, from: a.full ? '' : a.from, to: a.full ? '' : a.to }; }),
+      items: R.needs.map(function(n){
+        var sl = D.slots[n.i];
+        return { start: sl.start, end: sl.end, class: n.class, subject: n.subject, absent: n.absent.slice(),
+          relief: n.relief || '', kind: n.program ? 'program' : n.kolab ? 'kolab' : n.relief ? 'ganti' : 'tiada',
+          note: n.program ? n.program.name : n.kolab ? n.partners.join(', ') : '' };
+      })
+    };
+  }
+
+  /* ---------- Tab Rekod Mingguan ---------- */
+  var wkCache = {}, wkWeeks = null;
+  var WDAYS = ['ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT'];
+  function addDays(d, n){ var x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); }
+  function setTab(t){
+    document.body.classList.toggle('tab-minggu', t === 'minggu');
+    Array.prototype.forEach.call(document.querySelectorAll('#tabs .tab'), function(b){ b.classList.toggle('on', b.dataset.tab === t); });
+    lsSet('ganti_tab', t);
+    if (t === 'minggu') initWeekTab();
+  }
+  $('tabs').addEventListener('click', function(ev){ var b = ev.target.closest('.tab'); if (b) setTab(b.dataset.tab); });
+
+  function wkMsg(t, err){ var el = $('wkMsg'); el.innerHTML = t || ''; el.className = 'wk-msg no-print' + (err ? ' err' : ''); }
+  function initWeekTab(){
+    if (wkWeeks){ loadWeekView(); return; }
+    loadWeeks().then(function(W){
+      wkWeeks = W.weeks;
+      // Minggu semasa = minggu yang hari Isninnya sudah tiba (Ahad masih dikira minggu lepas).
+      var today = KD.dateKey(), cur = W.weeks[0];
+      var started = W.weeks.filter(function(w){ return addDays(w.date, 1) <= today; });
+      if (started.length) cur = started[started.length - 1];
+      $('wkSel').innerHTML = (started.length ? started : [cur]).slice().reverse().map(function(w){
+        return '<option value="' + w.code + '"' + (w.code === cur.code ? ' selected' : '') + '>Minggu ' + w.code.replace(/^M/, '') + ' (' + fmtDate(addDays(w.date, 1)) + ' – ' + fmtDate(addDays(w.date, 5)) + ')</option>';
+      }).join('');
+      loadWeekView();
+    }).catch(function(e){ wkMsg('Senarai minggu tidak dapat dibaca: ' + esc(e.message), true); });
+  }
+  $('wkSel').addEventListener('change', loadWeekView);
+  $('wkSort').addEventListener('change', function(){ if (wkCache.cur) renderWeek(wkCache.cur); });
+  $('wkReload').addEventListener('click', function(){ wkCache = {}; loadWeekView(); });
+  $('wkPrint').addEventListener('click', function(){ doPrint('grid'); });
+
+  function loadWeekView(){
+    var code = $('wkSel').value; if (!code || !wkWeeks) return;
+    var w = wkWeeks.find(function(x){ return x.code === code; });
+    var dates = WDAYS.map(function(_, k){ return addDays(w.date, k + 1); });
+    var A = window.GantiAuth;
+    if (!A || !A.user()){ $('wkGrid').innerHTML = ''; $('wkStats').innerHTML = ''; wkMsg('Sila <b>log masuk</b> dengan akaun DELIMa (bahagian atas halaman) untuk melihat rekod mingguan.', true); return; }
+    if (wkCache[code]){ renderWeek(wkCache[code]); return; }
+    wkMsg('Memuatkan rekod Minggu ' + code.replace(/^M/, '') + '…');
+    A.loadRecords(dates).then(function(recs){
+      var data = { code: code, dates: dates, recs: recs };
+      wkCache[code] = data; renderWeek(data);
+    }).catch(function(e){ wkMsg('Rekod tidak dapat dimuatkan: ' + esc(e.code || e.message) + ' (semak peraturan Firestore gantiRekod).', true); });
+  }
+
+  function renderWeek(data){
+    wkCache.cur = data;
+    var recs = data.recs, dates = data.dates;
+    // per guru per hari: { abs: sebab|null, items: [] }
+    var M = {};
+    teachers.forEach(function(t){ M[t] = dates.map(function(){ return { abs: null, items: [] }; }); });
+    var saved = 0, totalSlots = 0, absDays = 0;
+    dates.forEach(function(d, k){
+      var r = recs[d]; if (!r) return; saved++;
+      (r.absents || []).forEach(function(a){
+        if (!M[a.name]) M[a.name] = dates.map(function(){ return { abs: null, items: [] }; });
+        M[a.name][k].abs = (a.reason || 'TH').toUpperCase() + (a.full ? '' : ' (' + fmtT(a.from) + '-' + fmtT(a.to) + ')');
+        absDays++;
+      });
+      (r.items || []).forEach(function(it){
+        if (it.kind !== 'ganti' || !it.relief) return;
+        if (!M[it.relief]) M[it.relief] = dates.map(function(){ return { abs: null, items: [] }; });
+        M[it.relief][k].items.push(it); totalSlots++;
+      });
+    });
+    var names = Object.keys(M);
+    var tot = {}; names.forEach(function(n){ tot[n] = M[n].reduce(function(s, c){ return s + c.items.length; }, 0); });
+    names.sort(function(a, b){ return ($('wkSort').value === 'jumlah' ? tot[b] - tot[a] : 0) || a.localeCompare(b); });
+    var involved = names.filter(function(n){ return tot[n] > 0; }).length;
+
+    var wl = 'Minggu ' + data.code.replace(/^M/, '') + ' (' + fmtDate(dates[0]) + ' – ' + fmtDate(dates[4]) + ')';
+    $('wkTitle').textContent = 'Rekod Teach-In Mingguan — ' + wl;
+    $('wkSub').textContent = saved + '/5 hari direkod • ' + totalSlots + ' masa teach-in • ' + involved + ' guru terlibat • ' + absDays + ' guru-hari tidak hadir';
+    $('wkStats').innerHTML = stat('', saved + '/5', 'Hari direkod') + stat('ok', totalSlots, 'Masa teach-in') +
+      stat('', involved, 'Guru terlibat') + stat('bad', absDays, 'Guru-hari tidak hadir');
+    wkMsg(saved ? '' : 'Belum ada rekod disimpan untuk minggu ini. Rekod dicipta apabila <b>Simpan Rekod</b> ditekan pada tab Jana Teach-In.');
+
+    var h = '<thead><tr><th class="tn">Guru</th>' + dates.map(function(d, k){
+      return '<th class="' + (recs[d] ? '' : 'nr') + '">' + WDAYS[k] + '<br>' + fmtDate(d) + (recs[d] ? '' : '<br><i>tiada rekod</i>') + '</th>';
+    }).join('') + '<th>Jumlah</th></tr></thead><tbody>';
+    names.forEach(function(n){
+      h += '<tr class="' + (tot[n] ? '' : 'none') + '"><td class="tn" title="' + esc(n) + '">' + esc(n) + '</td>';
+      M[n].forEach(function(c, k){
+        if (!recs[dates[k]]){ h += '<td class="c nr"></td>'; return; }
+        var parts = [];
+        if (c.abs) parts.push('<small>' + esc(c.abs) + '</small>');
+        if (c.items.length){
+          var tip = c.items.map(function(it){ return fmtT(it.start) + '-' + fmtT(it.end) + ' ' + it.class + ' ' + subjLabel(it.subject) + ' (ganti ' + it.absent.join(', ') + ')'; }).join('\n');
+          var cls = c.items.map(function(it){ return it.class; }).filter(function(v, i, a){ return a.indexOf(v) === i; });
+          parts.push('<b>' + c.items.length + '</b><small>' + esc(cls.join(', ')) + '</small>');
+          h += '<td class="c r" title="' + esc(tip) + '">' + parts.join('') + '</td>'; return;
+        }
+        h += '<td class="c' + (c.abs ? ' abs' : '') + '">' + parts.join('') + '</td>';
+      });
+      h += '<td class="sum tot' + (tot[n] ? ' hl' : '') + '">' + (tot[n] || '–') + '</td></tr>';
+    });
+    $('wkGrid').innerHTML = h + '</tbody>';
+  }
 
   /* ---------- Salin & cetak ---------- */
   function doPrint(mode){
@@ -992,8 +1167,10 @@
     ready: null,
     teachers: function(){ return teachers.slice(); },
     changed: function(){ hideResults(); },
+    authChanged: function(){ wkCache = {}; if (document.body.classList.contains('tab-minggu')) initWeekTab(); },
     // Diagnostik: jana PDF slip / kod minggu tanpa memuat naik.
     pdf: function(){ return loadPdfLib().then(buildPdf); },
+    record: function(){ return R ? recordData('') : null; },
     weekFor: function(date){ return loadWeeks().then(function(W){ return schoolWeek(W, date); }); }
   };
 
@@ -1019,6 +1196,7 @@
     $('dateIn').value = defaultDate();
     $('dateIn').addEventListener('change', onDate);
     restoreSettings(); renderAdmins(); renderFlex(); renderPreparedBy(); renderProgClasses(); onDate();
+    if (lsGet('ganti_tab', 'jana') === 'minggu') setTab('minggu');
     return teachers;
   }).catch(function(e){
     $('loadingCard').innerHTML = '<div class="empty" style="color:var(--red)">' + esc(e.message) + '</div>';
@@ -1030,7 +1208,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence }
     from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, collection, getDocs, addDoc, deleteDoc, serverTimestamp }
+  import { getFirestore, doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
   const app = initializeApp({
@@ -1050,7 +1228,19 @@
   window.GANTI_SEKATAN = [];
   let isAdmin = false;
   // Untuk butang "Simpan Rekod": token log masuk dihantar ke Apps Script untuk pengesahan guru.
-  window.GantiAuth = { user: () => auth.currentUser, token: () => auth.currentUser ? auth.currentUser.getIdToken() : Promise.resolve(null) };
+  window.GantiAuth = {
+    user: () => auth.currentUser,
+    token: () => auth.currentUser ? auth.currentUser.getIdToken() : Promise.resolve(null),
+    // Rekod harian teach-in: dokumen gantiRekod/<YYYY-MM-DD> (ditimpa jika disimpan semula pada hari yang sama).
+    saveRecord: data => setDoc(doc(db, "gantiRekod", data.date), {
+      ...data, savedBy: String(auth.currentUser.email || "").toLowerCase(), savedAt: serverTimestamp()
+    }),
+    loadRecords: async dates => {
+      const out = {};
+      await Promise.all(dates.map(async d => { const s = await getDoc(doc(db, "gantiRekod", d)); if (s.exists()) out[d] = s.data(); }));
+      return out;
+    }
+  };
 
   function msg(html, showBtn) { $("loginMsg").innerHTML = html; $("loginBtn").classList.toggle("hidden", !showBtn); }
 
@@ -1070,6 +1260,7 @@
 
   onAuthStateChanged(auth, async u => {
     isAdmin = false; window.GANTI_SEKATAN = []; $("blockCard").classList.add("hidden");
+    window.GantiUI?.ready?.then(() => window.GantiUI.authChanged());
     if (!u) { window.ICTHeader?.clearUser(); msg("Log masuk dengan akaun DELIMa supaya <b>sekatan teach-in</b> yang ditetapkan admin turut diambil kira.", true); return; }
     try {
       const snap = await getDoc(doc(db, "teachers", String(u.email || "").toLowerCase().trim()));
