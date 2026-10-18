@@ -155,6 +155,7 @@
   table.g td.abs.cov{background:#f3edff;color:#6d28d9}
   table.g td.abs.kol{background:#fef3c7;color:#92400e;text-decoration:none}
   table.g td.off{background:repeating-linear-gradient(45deg,#fff,#fff 4px,#fdf0f2 4px,#fdf0f2 8px)}
+  table.g td.hold{background:repeating-linear-gradient(45deg,#fff,#fff 4px,#e0f2fe 4px,#e0f2fe 8px);color:#0369a1}
   table.g td.cov{background:#f3edff;color:#6d28d9}
   table.g td.blk{background:repeating-linear-gradient(45deg,#fff,#fff 4px,#fff4d6 4px,#fff4d6 8px);color:#b45309}
   table.g td.r{background:#d7f5e6;color:#065f46;outline:2px solid var(--green);outline-offset:-2px}
@@ -323,6 +324,24 @@
     <datalist id="sebabList"><option>MC</option><option>CRK</option><option>CUTI</option><option>KURSUS</option><option>UPDLP</option><option>MESYUARAT</option><option>URUSAN RASMI</option><option>PROGRAM LUAR</option></datalist>
   </section>
 
+  <!-- 1b. Permintaan sementara: guru hadir tetapi tidak boleh diberi teach-in pada masa tertentu -->
+  <section class="card no-print hidden jana-only" id="holdCard">
+    <div class="card-head">
+      <div>
+        <h2><span class="step">✋</span>Permohonan tidak diberikan teach-in <span class="tag">sementara</span></h2>
+        <p>Guru yang hadir tetapi memohon supaya tidak diberikan teach-in pada masa tertentu hari ini (cth. urusan kerja). Terpakai untuk tarikh ini sahaja.</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="grow"><label class="lbl" for="holdTeacher">Guru</label><select id="holdTeacher"></select></div>
+      <div><label class="lbl" for="holdFrom">Dari</label><select id="holdFrom"></select></div>
+      <div><label class="lbl" for="holdTo">Hingga</label><select id="holdTo"></select></div>
+      <div class="grow"><label class="lbl" for="holdReason">Sebab (pilihan)</label><input id="holdReason" placeholder="cth. Menyiapkan laporan"></div>
+      <div><button class="btn primary" id="holdAddBtn" type="button">+ Tambah</button></div>
+    </div>
+    <div class="list" id="holdList"></div>
+  </section>
+
   <!-- 2. Program -->
   <section class="card no-print hidden jana-only" id="progCard">
     <div class="card-head">
@@ -438,6 +457,7 @@
       <span><i style="background:#fdecee"></i>Kelas guru tidak hadir</span>
       <span><i style="background:#f3edff"></i>Diganti program</span>
       <span><i style="background:#fef3c7"></i>Kolaborasi (pasangan hadir)</span>
+      <span><i style="background:repeating-linear-gradient(45deg,#fff,#fff 3px,#e0f2fe 3px,#e0f2fe 6px)"></i>Memohon tidak diberi teach-in</span>
       <span><i style="background:#fef3c7;outline:2px solid #d97706;outline-offset:-2px"></i>Teach-in tambahan (kemas kini)</span>
       <span><i style="background:repeating-linear-gradient(45deg,#fff,#fff 3px,#fff4d6 3px,#fff4d6 6px)"></i>Sekatan teach-in</span>
       <span><i style="background:repeating-linear-gradient(45deg,#fff,#fff 3px,#fdf0f2 3px,#fdf0f2 6px)"></i>Tidak hadir (tiada kelas)</span>
@@ -520,6 +540,7 @@
   var flex = new Set(lsGet(LS_FLEX, DEFAULT_FLEX));
   var absents = [];           // { name, full, from, to }
   var programs = [];          // { name, from, to, classes:[] }
+  var holds = [];             // permohonan sementara: { name, from, to, reason } (tarikh semasa sahaja)
   var BASE = null;            // mod kemas kini: { rec, map: {'<kelas>@<HH:MM>': item} }
   var D = null;               // model hari: { day, slots:[{start,end,brk}], tmap, cmap }
   var R = null;               // keputusan terakhir
@@ -594,6 +615,10 @@
     if (!D.slots.length) badge.textContent = day + ' • tiada jadual';
     absents.forEach(function(a){ if (!a.full){ clampRange(a); (a.extra || []).forEach(clampRange); } });
     programs.forEach(clampRange);
+    holds.forEach(clampRange);
+    fillTimeSel($('holdFrom'), $('holdFrom').value, false);
+    fillTimeSel($('holdTo'), $('holdTo').value, true);
+    renderHolds();
     fillTimeSel($('progFrom'), $('progFrom').value, false);
     fillTimeSel($('progTo'), $('progTo').value, true);
     renderAbs(); renderProgs(); hideResults();
@@ -671,6 +696,32 @@
     renderAbs(); hideResults();
   });
   $('teacherSel').addEventListener('change', function(){ if (this.value) $('addAbsBtn').click(); });
+
+  /* ---------- UI: permohonan sementara ---------- */
+  function holdAt(name, i){
+    var m = D.slots[i].m;
+    return holds.find(function(h){ return h.name === name && m >= mins(h.from) && m < mins(h.to); }) || null;
+  }
+  function renderHolds(){
+    var cur = $('holdTeacher').value;
+    $('holdTeacher').innerHTML = '<option value="">— Pilih guru —</option>' + teachers.map(function(n){ return '<option' + (n === cur ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('');
+    $('holdList').innerHTML = holds.map(function(h, i){
+      return '<div class="item"><div class="name">' + esc(h.name) + '<div class="meta">Tidak diberikan teach-in ' + fmtT(h.from) + '–' + fmtT(h.to) + (h.reason ? ' • ' + esc(h.reason) : '') + '</div></div>' +
+        '<button class="btn danger" type="button" data-hdel="' + i + '">Buang</button></div>';
+    }).join('');
+  }
+  $('holdAddBtn').addEventListener('click', function(){
+    var n = $('holdTeacher').value, from = $('holdFrom').value, to = $('holdTo').value;
+    if (!n){ toast('Pilih guru dahulu.'); return; }
+    if (mins(to) <= mins(from)){ toast('Masa tamat mesti selepas masa mula.'); return; }
+    holds.push({ name: n, from: from, to: to, reason: $('holdReason').value.trim() });
+    $('holdReason').value = ''; $('holdTeacher').value = '';
+    renderHolds(); hideResults();
+  });
+  $('holdList').addEventListener('click', function(ev){
+    if (ev.target.dataset.hdel == null) return;
+    holds.splice(+ev.target.dataset.hdel, 1); renderHolds(); hideResults();
+  });
 
   /* ---------- UI: program ---------- */
   function renderProgClasses(){
@@ -922,9 +973,10 @@
       if (busy(t, i, st)){
         if (teaching(t, i) && st.relief[t].indexOf(i) < 0 && canRelease(t, i, st)) released = true; else return;
       }
-      var blk = blockedAt(t, i);
+      var blk = blockedAt(t, i), hold = holdAt(t, i);
       var isFlex = flex.has(t), isAdm = !isFlex && admins.has(t), L = load(t, st), rl = st.relief[t].length, run = runWith(t, i, st);
-      var reason = blk ? (window.GANTI_SEE_SEKATAN ? 'sekatan: ' + (blk.reason || 'admin') : 'tidak tersedia') : '';
+      var reason = blk ? (window.GANTI_SEE_SEKATAN ? 'sekatan: ' + (blk.reason || 'admin') : 'tidak tersedia')
+        : hold ? 'memohon tidak diberi teach-in' + (hold.reason ? ': ' + hold.reason : '') : '';
       if (reason){
         // disekat oleh admin pada masa ini
       } else if (isFlex){
@@ -1034,6 +1086,8 @@
         var fp = x && freedAt(t, i);
         if (fp){ h += '<td class="c cov" title="Dibebaskan: ' + esc(fp.name) + '">' + esc(x.class) + '<small>PROG</small></td>'; return; }
         if (x){ h += '<td class="c t">' + esc(x.class) + '<small>' + esc(x.subject) + '</small></td>'; return; }
+        var hd = !absentAt(t, i) && holdAt(t, i);
+        if (hd){ h += '<td class="c hold" title="Memohon tidak diberi teach-in' + (hd.reason ? ': ' + esc(hd.reason) : '') + '"><small>MOHON</small></td>'; return; }
         var bk = window.GANTI_SEE_SEKATAN && !absentAt(t, i) && blockedAt(t, i);
         h += '<td class="c' + (absentAt(t, i) ? ' off' : bk ? ' blk' : '') + '"' + (bk ? ' title="Sekatan: ' + esc(bk.reason || '') + '"' : '') + '>' + (bk ? '<small>SEKAT</small>' : '') + '</td>';
       });
@@ -1211,6 +1265,8 @@
         return { name: a.name, full: !!a.full, from: a.full ? b[0] : a.from, to: a.full ? b[b.length - 1] : a.to, reason: a.reason || '', base: true,
           extra: a.full ? [] : (a.extra || []).map(function(r){ return { from: r.from, to: r.to }; }) };
       });
+      holds = (rec.holds || []).filter(function(h){ return teachers.indexOf(h.name) >= 0; }).map(function(h){ return { name: h.name, from: h.from, to: h.to, reason: h.reason || '' }; });
+      renderHolds();
       programs = (rec.programs || []).map(function(p){ return { name: p.name, from: p.from, to: p.to, classes: p.classes || [], free: !!p.free }; });
       if (rec.preparedBy && teachers.indexOf(rec.preparedBy) >= 0) $('preparedBy').value = rec.preparedBy;
       renderAbs(); renderProgs(); hideResults();
@@ -1232,6 +1288,7 @@
       preparedBy: $('preparedBy').value,
       revision: BASE ? (BASE.rec.revision || 1) + 1 : 1,
       programs: programs.map(function(p){ return { name: p.name, from: p.from, to: p.to, classes: p.classes.slice(), free: !!p.free }; }),
+      holds: holds.map(function(h){ return { name: h.name, from: h.from, to: h.to, reason: h.reason || '' }; }),
       absents: absents.map(function(a){ return { name: a.name, reason: a.reason || '', full: !!a.full, from: a.full ? '' : a.from, to: a.full ? '' : a.to,
         extra: a.full ? [] : (a.extra || []).map(function(r){ return { from: r.from, to: r.to }; }) }; }),
       items: R.needs.map(function(n){
@@ -1460,9 +1517,13 @@
     admins = new Set(Array.from(admins).filter(function(n){ return teachers.indexOf(n) >= 0; }));
     flex = new Set(Array.from(flex).filter(function(n){ return teachers.indexOf(n) >= 0; }));
     $('loadingCard').classList.add('hidden');
-    ['absCard','progCard','setCard','byCard','genBar'].forEach(function(id){ $(id).classList.remove('hidden'); });
+    ['absCard','holdCard','progCard','setCard','byCard','genBar'].forEach(function(id){ $(id).classList.remove('hidden'); });
     $('dateIn').value = defaultDate();
-    $('dateIn').addEventListener('change', function(){ if (BASE) exitUpdate(true); onDate(); });
+    $('dateIn').addEventListener('change', function(){
+      if (BASE) exitUpdate(true);
+      if (holds.length){ holds = []; toast('Permohonan tidak diberikan teach-in dikosongkan kerana tarikh ditukar.'); }
+      onDate();
+    });
     restoreSettings(); renderAdmins(); renderFlex(); renderPreparedBy(); renderProgClasses(); onDate();
     if (lsGet('ganti_tab', 'jana') === 'minggu') setTab('minggu');
     return teachers;

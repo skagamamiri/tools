@@ -71,6 +71,9 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 - Co-taught class slot ("A / B" in the class timetable): if the partner is present, no relief — shown as KOLABORASI with the partner's name.
 - Program option per program: teachers of the program's classes either stay with the program (default) or are released (`free`) —
   released teachers are not busy in those slots and can be given relief.
+- "Permohonan tidak diberikan teach-in" (card `holdCard`, everyone): temporary per-date holds `holds[{name,from,to,reason}]` — teacher
+  is present but not given relief in that window (`holdAt`; grid cell MOHON). Cleared when the date changes; saved in records
+  (`holds`) and restored in update mode.
 - Optional Google sign-in on the page (Firebase, same pattern as kehadiran.html). Signed-in active teachers load `gantiSekatan`
   (admin-set "teacher may not be given teach-in": teacher, `day` SEMUA/ISNIN…/"" or `date` YYYY-MM-DD, from, to, reason) and
   the generator skips those slots. Only role `admin` sees the "Sekatan teach-in" card (add/delete). Rules block (`firestore-rules-ganti.txt`) is live in the Console.
