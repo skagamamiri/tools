@@ -71,6 +71,11 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 - Optional Google sign-in on the page (Firebase, same pattern as kehadiran.html). Signed-in active teachers load `gantiSekatan`
   (admin-set "teacher may not be given teach-in": teacher, `day` SEMUA/ISNIN…/"" or `date` YYYY-MM-DD, from, to, reason) and
   the generator skips those slots. Only role `admin` sees the "Sekatan teach-in" card (add/delete). Rules block (`firestore-rules-ganti.txt`) is live in the Console.
+- Guru praktikum (admin-only card "Guru praktikum"; Firestore `gantiPraktikum`: name, mentor, classes[{class,subject}], from, to):
+  for active dates, buildDay moves the mentor's matching class+subject slots to the trainee (`tmap[trainee][i].mentor`), so the
+  mentor is free then and the trainee is an ordinary relief candidate. Trainee absent → mentor takes the class back automatically
+  (`byMentor`, shown "(GURU ASAL)"); if the mentor is also absent, normal relief. Loaded for any signed-in active teacher; trainee
+  names are appended to `teachers`. Grid tag (PR). Rules block in `firestore-rules-ganti.txt` (must be added in the Console).
 - Admin (pentadbir) list is ticked in the page and kept in localStorage (`ganti_pentadbir`); default `DEFAULT_ADMINS` (Fauzia, Helmi, Mohamad Nazimi, Sapri); settings in `ganti_tetapan`. Nothing is saved to Firestore.
 - Output: "Teach-In" slips in the school's form layout (one per absent teacher: Nama/Tarikh/Hari/Sebab + Nama Guru/Masa/Kelas-MP,
   no blank padding rows; "Disediakan oleh" (preparer, required, remembered in localStorage `ganti_disediakan`) printed after the last slip;

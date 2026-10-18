@@ -22,3 +22,11 @@
         && request.resource.data.date == date;
       allow delete: if isAdmin();
     }
+
+    // ==========================================
+    // GURU GANTI — GURU PRAKTIKUM (admin sahaja mengurus)
+    // ==========================================
+    match /gantiPraktikum/{id} {
+      allow read: if isActiveTeacher();
+      allow create, update, delete: if isAdmin();
+    }

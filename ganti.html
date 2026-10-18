@@ -158,6 +158,9 @@
   table.g td.sum{font-size:10.5px;padding:0 6px;font-weight:700;color:#475569}
   table.g td.sum.hl{color:var(--green-dark)}
   table.g tr.is-adm td.tn::after{content:" (P)";color:var(--amber);font-weight:800}
+  table.g tr.is-pr td.tn::after{content:" (PR)";color:#0e7490;font-weight:800}
+  .chip.pr:has(input:checked){background:#ecfeff;border-color:#67e8f9;color:#155e75}
+  .chip.pr input{accent-color:#0e7490}
   table.g tr.is-flex td.tn::after{content:" (F)";color:var(--blue);font-weight:800}
   .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:#475569;margin:10px 0 0}
   .legend i{display:inline-block;width:14px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px;border:1px solid #0001}
@@ -232,6 +235,28 @@
     <button type="button" class="tab on" data-tab="jana">Jana Teach-In</button>
     <button type="button" class="tab" data-tab="minggu">Rekod Mingguan</button>
   </nav>
+
+  <!-- ADMIN SAHAJA: guru praktikum -->
+  <section class="card no-print hidden jana-only" id="prCard">
+    <div class="card-head">
+      <div>
+        <h2><span class="step adm">P</span>Guru praktikum <span class="tag amber">Admin sahaja</span></h2>
+        <p>Guru praktikum mengambil alih kelas tertentu daripada guru asal dan boleh diberikan teach-in. Jika guru praktikum tidak hadir, kelas tersebut diambil alih semula oleh guru asal.</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="grow"><label class="lbl" for="prName">Nama guru praktikum</label><input id="prName" placeholder="cth. Nur Aina binti Ahmad"></div>
+      <div><label class="lbl" for="prFrom">Tarikh mula</label><input type="date" id="prFrom"></div>
+      <div><label class="lbl" for="prTo">Tarikh tamat</label><input type="date" id="prTo"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="grow"><label class="lbl" for="prMentor">Guru asal (kelas diambil alih daripada guru ini)</label><select id="prMentor"></select></div>
+    </div>
+    <label class="lbl" style="margin-top:12px">Kelas / mata pelajaran yang diambil alih</label>
+    <div class="chips" id="prClasses"><span class="meta">Pilih guru asal dahulu.</span></div>
+    <div style="margin-top:12px"><button class="btn primary" id="prAddBtn" type="button">+ Simpan Guru Praktikum</button></div>
+    <div class="list" id="prList"></div>
+  </section>
 
   <!-- ADMIN SAHAJA: sekatan teach-in -->
   <section class="card no-print hidden jana-only" id="blockCard">
@@ -396,6 +421,7 @@
       <span><i style="background:repeating-linear-gradient(45deg,#fff,#fff 3px,#fdf0f2 3px,#fdf0f2 6px)"></i>Tidak hadir (tiada kelas)</span>
       <span><b style="color:var(--amber)">(P)</b> Pentadbir</span>
       <span><b style="color:var(--blue)">(F)</b> Guru fleksibel</span>
+      <span><b style="color:#0e7490">(PR)</b> Guru praktikum</span>
       <span><b>Asal / Ganti / Jumlah</b> dalam masa (30 minit)</span>
     </div>
   </section>
@@ -497,6 +523,17 @@
       });
     });
     EXTRA_TEACHERS.forEach(function(n){ if (!tmap[n]) tmap[n] = new Array(slots.length).fill(null); });
+    // Guru praktikum aktif: slot kelas yang diambil alih dipindahkan daripada guru asal kepada guru praktikum.
+    var mentorOf = {};
+    activePraktikum().forEach(function(p){
+      var row = tmap[p.name] = tmap[p.name] || new Array(slots.length).fill(null);
+      var mrow = tmap[p.mentor]; if (!mrow) return;
+      mentorOf[p.name] = p.mentor;
+      var take = {}; (p.classes || []).forEach(function(c){ take[c.class + '|' + c.subject] = 1; });
+      mrow.forEach(function(x, i){
+        if (x && take[x.class + '|' + x.subject]){ row[i] = { class: x.class, subject: x.subject, mentor: p.mentor }; mrow[i] = null; }
+      });
+    });
     data.classes.forEach(function(c){
       var row = cmap[c.code] = new Array(slots.length).fill(null);
       c.entries.forEach(function(e){
@@ -506,8 +543,13 @@
     });
     // Slot yang ada guru mengajar bukan rehat walaupun tiada data kelas.
     Object.keys(tmap).forEach(function(n){ tmap[n].forEach(function(x, i){ if (x) slots[i].brk = false; }); });
-    return { day: day, slots: slots, tmap: tmap, cmap: cmap, lo: lo };
+    return { day: day, slots: slots, tmap: tmap, cmap: cmap, lo: lo, mentorOf: mentorOf };
   }
+  function activePraktikum(){
+    var date = ($('dateIn') && $('dateIn').value) || KD.dateKey();
+    return (window.GANTI_PRAKTIKUM || []).filter(function(p){ return (!p.from || p.from <= date) && (!p.to || date <= p.to); });
+  }
+  function isTrainee(n){ return !!(D && D.mentorOf && D.mentorOf[n]); }
 
   function slotIndex(t){ return Math.round((mins(t) - D.lo) / 30); }
   function bounds(){ // senarai sempadan masa untuk dropdown
@@ -730,7 +772,18 @@
         if (!n.program && b && b.kind === 'program' && !programs.length) n.program = { name: b.note || 'PROGRAM' };
       });
     }
-    var open = needs.filter(function(n){ return !n.program && !n.kolab; });
+    // Guru praktikum tidak hadir: guru asal mengambil alih semula kelasnya (jika guru asal hadir).
+    needs.forEach(function(n){
+      if (n.program) return;
+      var x = null;
+      n.absent.some(function(a){ var y = D.tmap[a] && D.tmap[a][n.i]; if (y && y.mentor){ x = y; return true; } });
+      if (!x) return;
+      n.partners = n.partners.filter(function(p){ return p !== x.mentor; });
+      if (!absentAt(x.mentor, n.i) && st.relief[x.mentor] && st.relief[x.mentor].indexOf(n.i) < 0){
+        n.relief = x.mentor; n.byMentor = true; n.kolab = false; st.relief[x.mentor].push(n.i);
+      }
+    });
+    var open = needs.filter(function(n){ return !n.program && !n.kolab && !n.byMentor; });
     if (BASE){
       open.forEach(function(n){
         var r = n.baseRelief;
@@ -861,7 +914,7 @@
   function reliefLabel(n){
     if (n.program) return { t: n.program.name.toUpperCase(), c: '' };
     if (n.kolab) return { t: 'KOLABORASI – ' + n.partners.map(upShort).join(', '), c: 'kol' };
-    if (n.relief) return { t: upShort(n.relief), c: '' };
+    if (n.relief) return { t: upShort(n.relief) + (n.byMentor ? ' (GURU ASAL)' : ''), c: '' };
     return { t: 'TIADA GURU', c: 'none' };
   }
   function renderSlips(){
@@ -897,7 +950,7 @@
     }).join('') + '<th>Asal</th><th>Ganti</th><th>Jum</th></tr></thead><tbody>';
     order.forEach(function(t){
       var isAbs = absSet.has(t), orig = (D.tmap[t] || []).filter(Boolean).length, rl = st.relief[t].length;
-      h += '<tr class="' + (isAbs ? 'is-abs ' : '') + (flex.has(t) ? 'is-flex ' : admins.has(t) ? 'is-adm' : '') + '"><td class="tn" title="' + esc(t) + '">' + esc(t) + '</td>';
+      h += '<tr class="' + (isAbs ? 'is-abs ' : '') + (flex.has(t) ? 'is-flex ' : admins.has(t) ? 'is-adm' : isTrainee(t) ? 'is-pr' : '') + '"><td class="tn" title="' + esc(t) + '">' + esc(t) + '</td>';
       D.slots.forEach(function(s, i){
         if (s.brk){ h += '<td class="brk"></td>'; return; }
         var x = D.tmap[t] && D.tmap[t][i], r = rmap[t + '@' + i];
@@ -928,6 +981,7 @@
       var cell;
       if (n.program) cell = '<span class="tag purple">PROGRAM</span> ' + esc(n.program.name);
       else if (n.kolab) cell = '<span class="tag amber">KOLABORASI</span> maklumkan ' + esc(n.partners.join(', '));
+      else if (n.byMentor) cell = '<span class="tag">GURU ASAL</span> ' + esc(n.relief) + ' mengambil alih semula kelas guru praktikum';
       else {
         var tmp = { relief: {}, set: R.set };
         Object.keys(R.st.relief).forEach(function(t){ tmp.relief[t] = R.st.relief[t].filter(function(i){ return !(t === n.relief && i === n.i); }); });
@@ -1108,7 +1162,7 @@
         var sl = D.slots[n.i];
         return { start: sl.start, end: sl.end, class: n.class, subject: n.subject, absent: n.absent.slice(),
           relief: n.relief || '', kind: n.program ? 'program' : n.kolab ? 'kolab' : n.relief ? 'ganti' : 'tiada',
-          note: n.program ? n.program.name : n.kolab ? n.partners.join(', ') : '', added: !!n.added };
+          note: n.program ? n.program.name : n.kolab ? n.partners.join(', ') : n.byMentor ? 'guru asal' : '', added: !!n.added };
       })
     };
   }
@@ -1277,6 +1331,21 @@
     ready: null,
     teachers: function(){ return teachers.slice(); },
     changed: function(){ hideResults(); },
+    // Senarai kelas+subjek seorang guru (untuk borang guru praktikum).
+    mentorClasses: function(name){
+      var t = TT.data.teachers.find(function(x){ return x.name === name; }); if (!t) return [];
+      var agg = {};
+      t.entries.forEach(function(e){ var k = e.class + '|' + e.subject; agg[k] = (agg[k] || 0) + (mins(e.end) - mins(e.start)) / 30; });
+      return Object.keys(agg).sort().map(function(k){ var p = k.split('|'); return { class: p[0], subject: p[1], masa: agg[k] }; });
+    },
+    timetableTeachers: function(){ return TT.data.teachers.map(function(t){ return t.name; }).sort(function(a, b){ return a.localeCompare(b); }); },
+    praktikumChanged: function(){
+      (window.GANTI_PRAKTIKUM || []).forEach(function(p){ if (teachers.indexOf(p.name) < 0) teachers.push(p.name); });
+      teachers.sort(function(a, b){ return a.localeCompare(b); });
+      var by = $('preparedBy').value;
+      renderAdmins(); renderFlex(); renderPreparedBy(); if (by) $('preparedBy').value = by;
+      onDate();
+    },
     authChanged: function(){ wkCache = {}; if (document.body.classList.contains('tab-minggu')) initWeekTab(); },
     // Diagnostik: jana PDF slip / kod minggu tanpa memuat naik.
     pdf: function(){ return loadPdfLib().then(buildPdf); },
@@ -1359,6 +1428,15 @@
     catch (e) { msg("Gagal log masuk: " + esc(e.message), true); }
   });
 
+  window.GANTI_PRAKTIKUM = [];
+  async function loadPraktikum() {
+    const snap = await getDocs(collection(db, "gantiPraktikum"));
+    window.GANTI_PRAKTIKUM = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name));
+    window.GantiUI && window.GantiUI.praktikumChanged();
+    if (isAdmin) renderPraktikum();
+    return window.GANTI_PRAKTIKUM.length;
+  }
+
   async function loadBlocks() {
     const snap = await getDocs(collection(db, COL));
     window.GANTI_SEKATAN = snap.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -1369,7 +1447,8 @@
   }
 
   onAuthStateChanged(auth, async u => {
-    isAdmin = false; window.GANTI_SEKATAN = []; $("blockCard").classList.add("hidden");
+    isAdmin = false; window.GANTI_SEKATAN = []; $("blockCard").classList.add("hidden"); $("prCard").classList.add("hidden");
+    if (window.GANTI_PRAKTIKUM.length) { window.GANTI_PRAKTIKUM = []; window.GantiUI?.ready?.then(() => window.GantiUI.praktikumChanged()); }
     window.GantiUI?.ready?.then(() => window.GantiUI.authChanged());
     if (!u) { window.ICTHeader?.clearUser(); msg("Log masuk dengan akaun DELIMa supaya <b>sekatan teach-in</b> yang ditetapkan admin turut diambil kira.", true); return; }
     try {
@@ -1378,7 +1457,9 @@
       const t = snap.data();
       isAdmin = t.role === "admin";
       window.ICTHeader?.setUser(t.displayName || u.displayName || u.email, isAdmin ? "ADMIN" : t.role === "pentadbir" ? "PENTADBIR" : "GURU");
-      if (isAdmin) { await window.GantiUI.ready; initForm(); $("blockCard").classList.remove("hidden"); }
+      if (isAdmin) { await window.GantiUI.ready; initForm(); initPrForm(); $("blockCard").classList.remove("hidden"); $("prCard").classList.remove("hidden"); }
+      await window.GantiUI.ready;
+      try { await loadPraktikum(); } catch (e) { console.warn("gantiPraktikum", e); if (isAdmin) $("prList").innerHTML = '<div class="empty" style="color:var(--red)">Senarai guru praktikum tidak dapat dibaca (' + esc(e.code || e.message) + '). Semak peraturan Firestore gantiPraktikum.</div>'; }
       const n = await loadBlocks();
       msg(`Log masuk sebagai <b>${esc(t.displayName || u.email)}</b> • ${n} sekatan teach-in diambil kira.`, false);
     } catch (e) {
@@ -1419,6 +1500,47 @@
     catch (e) { alert("Gagal menyimpan: " + (e.code || e.message) + "\nPastikan peraturan Firestore untuk gantiSekatan sudah ditambah."); }
     finally { $("blkAddBtn").disabled = false; }
   }
+  /* ---------- Borang admin: guru praktikum ---------- */
+  let prReady = false;
+  function initPrForm() {
+    if (prReady) return; prReady = true;
+    $("prMentor").innerHTML = '<option value="">— Pilih guru asal —</option>' + window.GantiUI.timetableTeachers().map(n => `<option>${esc(n)}</option>`).join("");
+    $("prMentor").addEventListener("change", () => {
+      const list = window.GantiUI.mentorClasses($("prMentor").value);
+      $("prClasses").innerHTML = list.length ? list.map(c => `<label class="chip pr"><input type="checkbox" value="${esc(c.class)}|${esc(c.subject)}">${esc(c.class)} ${esc(c.subject)} <span class="meta">(${c.masa} masa/minggu)</span></label>`).join("")
+        : '<span class="meta">Guru ini tiada kelas dalam jadual.</span>';
+    });
+    $("prAddBtn").addEventListener("click", async () => {
+      const name = $("prName").value.trim().replace(/\s+/g, " "), mentor = $("prMentor").value;
+      const classes = [...$("prClasses").querySelectorAll("input:checked")].map(x => { const [c, s] = x.value.split("|"); return { class: c, subject: s }; });
+      const from = $("prFrom").value, to = $("prTo").value;
+      if (!name) return alert("Isikan nama guru praktikum.");
+      if (window.GantiUI.timetableTeachers().includes(name)) return alert("Nama ini sudah ada dalam jadual guru.");
+      if (!mentor) return alert("Pilih guru asal.");
+      if (!classes.length) return alert("Pilih sekurang-kurangnya satu kelas yang diambil alih.");
+      if (from && to && to < from) return alert("Tarikh tamat mesti selepas tarikh mula.");
+      $("prAddBtn").disabled = true;
+      try {
+        await addDoc(collection(db, "gantiPraktikum"), { name, mentor, classes, from, to, createdBy: auth.currentUser.email, createdAt: serverTimestamp() });
+        $("prName").value = ""; [...$("prClasses").querySelectorAll("input")].forEach(x => x.checked = false);
+        await loadPraktikum();
+      } catch (e) { alert("Gagal menyimpan: " + (e.code || e.message) + "\nPastikan peraturan Firestore untuk gantiPraktikum sudah ditambah."); }
+      finally { $("prAddBtn").disabled = false; }
+    });
+    $("prList").addEventListener("click", async ev => {
+      const id = ev.target.dataset.prdel; if (!id) return;
+      if (!confirm("Padam guru praktikum ini?")) return;
+      try { await deleteDoc(doc(db, "gantiPraktikum", id)); await loadPraktikum(); } catch (e) { alert("Gagal memadam: " + (e.code || e.message)); }
+    });
+  }
+  function renderPraktikum() {
+    const list = window.GANTI_PRAKTIKUM;
+    $("prList").innerHTML = list.length ? list.map(p => `<div class="item"><div class="name">${esc(p.name)} <span class="base-tag" style="background:#ecfeff;color:#155e75">PRAKTIKUM</span>
+        <div class="meta">Guru asal: ${esc(p.mentor)} • ${(p.classes || []).map(c => esc(c.class + " " + c.subject)).join(", ")} • ${p.from ? fmtD(p.from) : "—"} hingga ${p.to ? fmtD(p.to) : "—"}</div></div>
+        <button class="btn danger" type="button" data-prdel="${esc(p.id)}">Padam</button></div>`).join("")
+      : '<div class="empty">Tiada guru praktikum didaftarkan.</div>';
+  }
+
   function renderBlocks() {
     const list = window.GANTI_SEKATAN;
     $("blkList").innerHTML = list.length ? list.map(b => `<div class="item"><div class="name">${esc(b.teacher)}
