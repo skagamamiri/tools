@@ -451,7 +451,9 @@
   var TT = null;              // { data, label }
   var teachers = [];          // nama guru (ikut susunan jadual)
   var classCodes = [];
-  var admins = new Set(lsGet(LS_ADMIN, []));
+  // Pentadbir lalai (boleh diubah dalam "Senarai pentadbir"; pilihan disimpan dalam pelayar).
+  var DEFAULT_ADMINS = ['Fauzia binti Etayi Kandi Hassan', 'Helmi bin Tambi', 'Mohamad Nazimi bin Abdul Rahman', 'Sapri bin Paee'];
+  var admins = new Set(lsGet(LS_ADMIN, DEFAULT_ADMINS));
   var flex = new Set(lsGet(LS_FLEX, DEFAULT_FLEX));
   var absents = [];           // { name, full, from, to }
   var programs = [];          // { name, from, to, classes:[] }

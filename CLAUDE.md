@@ -71,7 +71,7 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 - Optional Google sign-in on the page (Firebase, same pattern as kehadiran.html). Signed-in active teachers load `gantiSekatan`
   (admin-set "teacher may not be given teach-in": teacher, `day` SEMUA/ISNIN…/"" or `date` YYYY-MM-DD, from, to, reason) and
   the generator skips those slots. Only role `admin` sees the "Sekatan teach-in" card (add/delete). Rules block (`firestore-rules-ganti.txt`) is live in the Console.
-- Admin (pentadbir) list is ticked in the page and kept in localStorage (`ganti_pentadbir`); settings in `ganti_tetapan`. Nothing is saved to Firestore.
+- Admin (pentadbir) list is ticked in the page and kept in localStorage (`ganti_pentadbir`); default `DEFAULT_ADMINS` (Fauzia, Helmi, Mohamad Nazimi, Sapri); settings in `ganti_tetapan`. Nothing is saved to Firestore.
 - Output: "Teach-In" slips in the school's form layout (one per absent teacher: Nama/Tarikh/Hari/Sebab + Nama Guru/Masa/Kelas-MP,
   no blank padding rows; "Disediakan oleh" (preparer, required, remembered in localStorage `ganti_disediakan`) printed after the last slip;
   printed A4 portrait, 3 per page), plus a one-page grid of all teachers (A4 landscape), editable relief list, WhatsApp text copy.
