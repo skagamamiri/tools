@@ -74,6 +74,10 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 - "Permohonan tidak diberikan teach-in" (card `holdCard`, everyone): temporary per-date holds `holds[{name,from,to,reason}]` — teacher
   is present but not given relief in that window (`holdAt`; grid cell MOHON). Cleared when the date changes; saved in records
   (`holds`) and restored in update mode.
+- "Jual beli masa" (card `swapCard`, everyone, per-date): `swaps[{owner,taker,from,to,ownerFree}]` — buildDay moves the owner's slots in
+  the window to the taker (`tmap[taker][i].swapFrom`, grid ⇄ purple) if the taker is free. Owner is held from relief in that window
+  unless `ownerFree` (via `holdAt`). Taker absent → normal relief for that class; owner absent → no need. Cleared on date change;
+  saved in records (`swaps`) and restored in update mode.
 - Optional Google sign-in on the page (Firebase, same pattern as kehadiran.html). Signed-in active teachers load `gantiSekatan`
   (admin-set "teacher may not be given teach-in": teacher, `day` SEMUA/ISNIN…/"" or `date` YYYY-MM-DD, from, to, reason) and
   the generator skips those slots. Only role `admin` sees the "Sekatan teach-in" card (add/delete). Rules block (`firestore-rules-ganti.txt`) is live in the Console.

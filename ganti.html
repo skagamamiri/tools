@@ -155,6 +155,7 @@
   table.g td.abs.cov{background:#f3edff;color:#6d28d9}
   table.g td.abs.kol{background:#fef3c7;color:#92400e;text-decoration:none}
   table.g td.off{background:repeating-linear-gradient(45deg,#fff,#fff 4px,#fdf0f2 4px,#fdf0f2 8px)}
+  table.g td.t.jb{background:#ede9fe;color:#5b21b6}
   table.g td.hold{background:repeating-linear-gradient(45deg,#fff,#fff 4px,#e0f2fe 4px,#e0f2fe 8px);color:#0369a1}
   table.g td.cov{background:#f3edff;color:#6d28d9}
   table.g td.blk{background:repeating-linear-gradient(45deg,#fff,#fff 4px,#fff4d6 4px,#fff4d6 8px);color:#b45309}
@@ -342,6 +343,25 @@
     <div class="list" id="holdList"></div>
   </section>
 
+  <!-- 1c. Jual beli masa: kelas seorang guru diambil alih oleh guru lain (persetujuan bersama) -->
+  <section class="card no-print hidden jana-only" id="swapCard">
+    <div class="card-head">
+      <div>
+        <h2><span class="step">⇄</span>Jual beli masa <span class="tag">tarikh ini sahaja</span></h2>
+        <p>Kelas guru asal pada masa tertentu diambil alih oleh guru lain atas persetujuan bersama. Sistem akan menganggap guru pengganti yang mengajar kelas tersebut.</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="grow"><label class="lbl" for="swOwner">Guru asal (kelas dijual)</label><select id="swOwner"></select></div>
+      <div><label class="lbl" for="swFrom">Dari</label><select id="swFrom"></select></div>
+      <div><label class="lbl" for="swTo">Hingga</label><select id="swTo"></select></div>
+      <div class="grow"><label class="lbl" for="swTaker">Guru yang mengambil alih (membeli)</label><select id="swTaker"></select></div>
+    </div>
+    <label class="opt" style="margin-top:10px"><input type="checkbox" id="swOwnerFree"><span><b>Guru asal boleh diberikan teach-in pada masa tersebut</b><small>Jika tidak ditanda, guru asal tidak akan diberikan teach-in dalam masa yang dijual.</small></span></label>
+    <div style="margin-top:10px"><button class="btn primary" id="swAddBtn" type="button">+ Tambah Jual Beli</button></div>
+    <div class="list" id="swList"></div>
+  </section>
+
   <!-- 2. Program -->
   <section class="card no-print hidden jana-only" id="progCard">
     <div class="card-head">
@@ -459,6 +479,7 @@
       <span><i style="background:#f3edff"></i>Diganti program</span>
       <span><i style="background:#fef3c7"></i>Kolaborasi (pasangan hadir)</span>
       <span><i style="background:repeating-linear-gradient(45deg,#fff,#fff 3px,#e0f2fe 3px,#e0f2fe 6px)"></i>Memohon tidak diberi teach-in</span>
+      <span><i style="background:#ede9fe"></i>Kelas jual beli ⇄</span>
       <span><i style="background:#fef3c7;outline:2px solid #d97706;outline-offset:-2px"></i>Teach-in tambahan (kemas kini)</span>
       <span><i style="background:repeating-linear-gradient(45deg,#fff,#fff 3px,#fff4d6 3px,#fff4d6 6px)"></i>Sekatan teach-in</span>
       <span><i style="background:repeating-linear-gradient(45deg,#fff,#fff 3px,#fdf0f2 3px,#fdf0f2 6px)"></i>Tidak hadir (tiada kelas)</span>
@@ -541,6 +562,7 @@
   var flex = new Set(lsGet(LS_FLEX, DEFAULT_FLEX));
   var absents = [];           // { name, full, from, to }
   var programs = [];          // { name, from, to, classes:[] }
+  var swaps = [];             // jual beli masa: { owner, taker, from, to, ownerFree } (tarikh semasa sahaja)
   var holds = [];             // permohonan sementara: { name, from, to, reason } (tarikh semasa sahaja)
   var BASE = null;            // mod kemas kini: { rec, map: {'<kelas>@<HH:MM>': item} }
   var D = null;               // model hari: { day, slots:[{start,end,brk}], tmap, cmap }
@@ -577,6 +599,16 @@
       mrow.forEach(function(x, i){
         if (x && take[x.class + '|' + x.subject]){ row[i] = { class: x.class, subject: x.subject, mentor: p.mentor }; mrow[i] = null; }
       });
+    });
+    // Jual beli masa: pindahkan slot guru asal dalam julat kepada guru yang mengambil alih.
+    swaps.forEach(function(w){
+      var orow = tmap[w.owner], trow = tmap[w.taker] = tmap[w.taker] || new Array(slots.length).fill(null);
+      if (!orow) return;
+      for (var i = 0; i < slots.length; i++){
+        var m = slots[i].m, x = orow[i];
+        if (!x || m < mins(w.from) || m >= mins(w.to) || trow[i]) continue;
+        trow[i] = { class: x.class, subject: x.subject, swapFrom: w.owner }; orow[i] = null;
+      }
     });
     data.classes.forEach(function(c){
       var row = cmap[c.code] = new Array(slots.length).fill(null);
@@ -617,6 +649,9 @@
     absents.forEach(function(a){ if (!a.full){ clampRange(a); (a.extra || []).forEach(clampRange); } });
     programs.forEach(clampRange);
     holds.forEach(clampRange);
+    fillTimeSel($('swFrom'), $('swFrom').value, false);
+    fillTimeSel($('swTo'), $('swTo').value, true);
+    renderSwaps();
     fillTimeSel($('holdFrom'), $('holdFrom').value, false);
     fillTimeSel($('holdTo'), $('holdTo').value, true);
     renderHolds();
@@ -701,8 +736,58 @@
   /* ---------- UI: permohonan sementara ---------- */
   function holdAt(name, i){
     var m = D.slots[i].m;
-    return holds.find(function(h){ return h.name === name && m >= mins(h.from) && m < mins(h.to); }) || null;
+    var h = holds.find(function(h){ return h.name === name && m >= mins(h.from) && m < mins(h.to); });
+    if (h) return h;
+    var w = swaps.find(function(w){ return w.owner === name && !w.ownerFree && m >= mins(w.from) && m < mins(w.to); });
+    return w ? { name: name, from: w.from, to: w.to, reason: 'jual beli masa dengan ' + shortName(w.taker) } : null;
   }
+
+  /* ---------- UI: jual beli masa ---------- */
+  function fillSel(id, cur){
+    $(id).innerHTML = '<option value="">— Pilih guru —</option>' + teachers.map(function(n){ return '<option' + (n === cur ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('');
+  }
+  function swapClasses(w){
+    // Kelas yang dipindahkan (dibaca daripada D yang sudah dibina).
+    var out = [];
+    D.slots.forEach(function(sl, i){
+      var x = D.tmap[w.taker] && D.tmap[w.taker][i];
+      if (x && x.swapFrom === w.owner && sl.m >= mins(w.from) && sl.m < mins(w.to)){
+        var last = out[out.length - 1], lbl = x.class + ' ' + subjLabel(x.subject);
+        if (last && last.lbl === lbl && last.end === sl.start) last.end = sl.end; else out.push({ lbl: lbl, start: sl.start, end: sl.end });
+      }
+    });
+    return out;
+  }
+  function renderSwaps(){
+    fillSel('swOwner', $('swOwner').value); fillSel('swTaker', $('swTaker').value);
+    $('swList').innerHTML = swaps.map(function(w, i){
+      var cl = swapClasses(w);
+      return '<div class="item"><div class="name">' + esc(w.owner) + ' → ' + esc(w.taker) +
+        '<div class="meta">' + fmtT(w.from) + '–' + fmtT(w.to) + ' • ' + (cl.length ? esc(cl.map(function(c){ return c.lbl + ' (' + fmtT(c.start) + '-' + fmtT(c.end) + ')'; }).join(', ')) : '<span style="color:var(--red)">tiada kelas dipindahkan</span>') +
+        (w.ownerFree ? ' • guru asal boleh diberi teach-in' : ' • guru asal tidak diberi teach-in') + '</div></div>' +
+        '<button class="btn danger" type="button" data-swdel="' + i + '">Buang</button></div>';
+    }).join('');
+  }
+  $('swAddBtn').addEventListener('click', function(){
+    var owner = $('swOwner').value, taker = $('swTaker').value, from = $('swFrom').value, to = $('swTo').value;
+    if (!owner || !taker){ toast('Pilih guru asal dan guru yang mengambil alih.'); return; }
+    if (owner === taker){ toast('Guru asal dan guru pengganti mesti berbeza.'); return; }
+    if (mins(to) <= mins(from)){ toast('Masa tamat mesti selepas masa mula.'); return; }
+    var own = 0, clash = [];
+    D.slots.forEach(function(sl, i){
+      if (sl.m < mins(from) || sl.m >= mins(to)) return;
+      if (D.tmap[owner] && D.tmap[owner][i]){ own++; if (D.tmap[taker] && D.tmap[taker][i]) clash.push(sl.start); }
+    });
+    if (!own){ toast(owner + ' tiada kelas dalam masa ' + fmtT(from) + '–' + fmtT(to) + '.'); return; }
+    if (clash.length){ toast(taker + ' juga mengajar pada ' + clash.map(fmtT).join(', ') + '. Pilih masa lain.'); return; }
+    swaps.push({ owner: owner, taker: taker, from: from, to: to, ownerFree: $('swOwnerFree').checked });
+    $('swOwner').value = ''; $('swTaker').value = ''; $('swOwnerFree').checked = false;
+    onDate();
+  });
+  $('swList').addEventListener('click', function(ev){
+    if (ev.target.dataset.swdel == null) return;
+    swaps.splice(+ev.target.dataset.swdel, 1); onDate();
+  });
   function renderHolds(){
     var cur = $('holdTeacher').value;
     $('holdTeacher').innerHTML = '<option value="">— Pilih guru —</option>' + teachers.map(function(n){ return '<option' + (n === cur ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('');
@@ -1094,7 +1179,7 @@
         }
         var fp = x && freedAt(t, i);
         if (fp){ h += '<td class="c cov" title="Dibebaskan: ' + esc(fp.name) + '">' + esc(x.class) + '<small>PROG</small></td>'; return; }
-        if (x){ h += '<td class="c t">' + esc(x.class) + '<small>' + esc(x.subject) + '</small></td>'; return; }
+        if (x){ h += '<td class="c t' + (x.swapFrom ? ' jb' : '') + '"' + (x.swapFrom ? ' title="Jual beli: kelas ' + esc(x.swapFrom) + '"' : '') + '>' + esc(x.class) + '<small>' + esc(x.subject) + (x.swapFrom ? ' ⇄' : '') + '</small></td>'; return; }
         var hd = !absentAt(t, i) && holdAt(t, i);
         if (hd){ h += '<td class="c hold" title="Memohon tidak diberi teach-in' + (hd.reason ? ': ' + esc(hd.reason) : '') + '"><small>MOHON</small></td>'; return; }
         var bk = window.GANTI_SEE_SEKATAN && !absentAt(t, i) && blockedAt(t, i);
@@ -1276,9 +1361,11 @@
       });
       holds = (rec.holds || []).filter(function(h){ return teachers.indexOf(h.name) >= 0; }).map(function(h){ return { name: h.name, from: h.from, to: h.to, reason: h.reason || '' }; });
       renderHolds();
+      swaps = (rec.swaps || []).filter(function(w){ return teachers.indexOf(w.owner) >= 0 && teachers.indexOf(w.taker) >= 0; })
+        .map(function(w){ return { owner: w.owner, taker: w.taker, from: w.from, to: w.to, ownerFree: !!w.ownerFree }; });
       programs = (rec.programs || []).map(function(p){ return { name: p.name, from: p.from, to: p.to, classes: p.classes || [], free: !!p.free }; });
       if (rec.preparedBy && teachers.indexOf(rec.preparedBy) >= 0) $('preparedBy').value = rec.preparedBy;
-      renderAbs(); renderProgs(); hideResults();
+      onDate();
       var n = (rec.items || []).filter(function(it){ return it.kind === 'ganti'; }).length;
       $('updBanner').innerHTML = '<div><b>Mod kemas kini — ' + esc(rec.day || '') + ', ' + fmtDate(date) + '.</b> Jadual yang telah disimpan dimuatkan (' +
         (rec.absents || []).length + ' guru tidak hadir, ' + n + ' masa teach-in). Semua tugasan sedia ada <b>dikekalkan</b>.<br>' +
@@ -1298,6 +1385,7 @@
       revision: BASE ? (BASE.rec.revision || 1) + 1 : 1,
       programs: programs.map(function(p){ return { name: p.name, from: p.from, to: p.to, classes: p.classes.slice(), free: !!p.free }; }),
       holds: holds.map(function(h){ return { name: h.name, from: h.from, to: h.to, reason: h.reason || '' }; }),
+      swaps: swaps.map(function(w){ return { owner: w.owner, taker: w.taker, from: w.from, to: w.to, ownerFree: !!w.ownerFree }; }),
       absents: absents.map(function(a){ return { name: a.name, reason: a.reason || '', full: !!a.full, from: a.full ? '' : a.from, to: a.full ? '' : a.to,
         extra: a.full ? [] : (a.extra || []).map(function(r){ return { from: r.from, to: r.to }; }) }; }),
       items: R.needs.map(function(n){
@@ -1526,11 +1614,11 @@
     admins = new Set(Array.from(admins).filter(function(n){ return teachers.indexOf(n) >= 0; }));
     flex = new Set(Array.from(flex).filter(function(n){ return teachers.indexOf(n) >= 0; }));
     $('loadingCard').classList.add('hidden');
-    ['absCard','holdCard','progCard','setCard','byCard','genBar'].forEach(function(id){ $(id).classList.remove('hidden'); });
+    ['absCard','holdCard','swapCard','progCard','setCard','byCard','genBar'].forEach(function(id){ $(id).classList.remove('hidden'); });
     $('dateIn').value = defaultDate();
     $('dateIn').addEventListener('change', function(){
       if (BASE) exitUpdate(true);
-      if (holds.length){ holds = []; toast('Permohonan tidak diberikan teach-in dikosongkan kerana tarikh ditukar.'); }
+      if (holds.length || swaps.length){ holds = []; swaps = []; toast('Permohonan dan jual beli masa dikosongkan kerana tarikh ditukar.'); }
       onDate();
     });
     restoreSettings(); renderAdmins(); renderFlex(); renderPreparedBy(); renderProgClasses(); onDate();
