@@ -76,6 +76,9 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   mentor is free then and the trainee is an ordinary relief candidate. Trainee absent → mentor takes the class back automatically
   (`byMentor`, shown "(GURU ASAL)"); if the mentor is also absent, normal relief. Loaded for any signed-in active teacher; trainee
   names are appended to `teachers`. Grid tag (PR). Rules block in `firestore-rules-ganti.txt` (must be added in the Console).
+- Penyelaras Teach-In: teachers/<email>.penyelarasTeachIn == true gives admin access inside ganti.html only (Sekatan + Guru praktikum
+  cards; header shows "PENYELARAS TEACH-IN"). Only role admin sees the "Penyelaras Teach-In" card that ticks this field (updateDoc on
+  teachers). Rules use isGantiAdmin() = isAdmin() || penyelarasTeachIn (see `firestore-rules-ganti.txt`). Cikgu Haslinda is the coordinator.
 - Admin (pentadbir) list is ticked in the page and kept in localStorage (`ganti_pentadbir`); default `DEFAULT_ADMINS` (Fauzia, Helmi, Mohamad Nazimi, Sapri); settings in `ganti_tetapan`. Nothing is saved to Firestore.
 - Output: "Teach-In" slips in the school's form layout (one per absent teacher: Nama/Tarikh/Hari/Sebab + Nama Guru/Masa/Kelas-MP,
   no blank padding rows; "Disediakan oleh" (preparer, required, remembered in localStorage `ganti_disediakan`) printed after the last slip;

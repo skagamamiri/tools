@@ -236,11 +236,25 @@
     <button type="button" class="tab" data-tab="minggu">Rekod Mingguan</button>
   </nav>
 
+  <!-- ADMIN SEBENAR SAHAJA: lantik Penyelaras Teach-In -->
+  <section class="card no-print hidden jana-only" id="coordCard">
+    <div class="card-head">
+      <div>
+        <h2><span class="step adm">★</span>Penyelaras Teach-In <span class="tag amber">Admin sahaja</span></h2>
+        <p>Penyelaras Teach-In mendapat akses admin bagi Guru Ganti sahaja (sekatan teach-in dan guru praktikum). Akses lain dalam ICT HUB tidak berubah.</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="grow"><input id="coordSearch" placeholder="Cari nama guru…"></div>
+    </div>
+    <div class="admin-list" id="coordList" style="margin-top:10px"><div class="empty">Memuatkan senarai guru…</div></div>
+  </section>
+
   <!-- ADMIN SAHAJA: guru praktikum -->
   <section class="card no-print hidden jana-only" id="prCard">
     <div class="card-head">
       <div>
-        <h2><span class="step adm">P</span>Guru praktikum <span class="tag amber">Admin sahaja</span></h2>
+        <h2><span class="step adm">P</span>Guru praktikum <span class="tag amber">Admin / Penyelaras</span></h2>
         <p>Guru praktikum mengambil alih kelas tertentu daripada guru asal dan boleh diberikan teach-in. Jika guru praktikum tidak hadir, kelas tersebut diambil alih semula oleh guru asal.</p>
       </div>
     </div>
@@ -262,7 +276,7 @@
   <section class="card no-print hidden jana-only" id="blockCard">
     <div class="card-head">
       <div>
-        <h2><span class="step adm">A</span>Sekatan teach-in <span class="tag amber">Admin sahaja</span></h2>
+        <h2><span class="step adm">A</span>Sekatan teach-in <span class="tag amber">Admin / Penyelaras</span></h2>
         <p>Guru tidak akan dipilih untuk teach-in pada masa yang ditetapkan. Terpakai kepada semua yang menjana jadual.</p>
       </div>
     </div>
@@ -1387,7 +1401,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence }
     from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, serverTimestamp }
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc, deleteDoc, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
   const app = initializeApp({
@@ -1405,7 +1419,8 @@
   const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const fmtD = d => { const [y, m, dd] = d.split("-"); return `${dd}.${m}.${y}`; };
   window.GANTI_SEKATAN = [];
-  let isAdmin = false;
+  let isAdmin = false;      // boleh mengurus tetapan teach-in: role admin ATAU Penyelaras Teach-In
+  let isRealAdmin = false;  // role admin sebenar (hanya ini boleh melantik Penyelaras Teach-In)
   // Untuk butang "Simpan Rekod": token log masuk dihantar ke Apps Script untuk pengesahan guru.
   window.GantiAuth = {
     user: () => auth.currentUser,
@@ -1447,7 +1462,7 @@
   }
 
   onAuthStateChanged(auth, async u => {
-    isAdmin = false; window.GANTI_SEKATAN = []; $("blockCard").classList.add("hidden"); $("prCard").classList.add("hidden");
+    isAdmin = false; isRealAdmin = false; window.GANTI_SEKATAN = []; $("blockCard").classList.add("hidden"); $("prCard").classList.add("hidden"); $("coordCard").classList.add("hidden");
     if (window.GANTI_PRAKTIKUM.length) { window.GANTI_PRAKTIKUM = []; window.GantiUI?.ready?.then(() => window.GantiUI.praktikumChanged()); }
     window.GantiUI?.ready?.then(() => window.GantiUI.authChanged());
     if (!u) { window.ICTHeader?.clearUser(); msg("Log masuk dengan akaun DELIMa supaya <b>sekatan teach-in</b> yang ditetapkan admin turut diambil kira.", true); return; }
@@ -1455,8 +1470,11 @@
       const snap = await getDoc(doc(db, "teachers", String(u.email || "").toLowerCase().trim()));
       if (!snap.exists() || snap.data().active !== true) { msg("Akaun ini bukan guru aktif — sekatan teach-in tidak dimuatkan.", true); return; }
       const t = snap.data();
-      isAdmin = t.role === "admin";
-      window.ICTHeader?.setUser(t.displayName || u.displayName || u.email, isAdmin ? "ADMIN" : t.role === "pentadbir" ? "PENTADBIR" : "GURU");
+      isRealAdmin = t.role === "admin";
+      isAdmin = isRealAdmin || t.penyelarasTeachIn === true;
+      window.ICTHeader?.setUser(t.displayName || u.displayName || u.email,
+        isRealAdmin ? "ADMIN" : t.penyelarasTeachIn === true ? "PENYELARAS TEACH-IN" : t.role === "pentadbir" ? "PENTADBIR" : "GURU");
+      if (isRealAdmin) { $("coordCard").classList.remove("hidden"); loadCoordinators(); }
       if (isAdmin) { await window.GantiUI.ready; initForm(); initPrForm(); $("blockCard").classList.remove("hidden"); $("prCard").classList.remove("hidden"); }
       await window.GantiUI.ready;
       try { await loadPraktikum(); } catch (e) { console.warn("gantiPraktikum", e); if (isAdmin) $("prList").innerHTML = '<div class="empty" style="color:var(--red)">Senarai guru praktikum tidak dapat dibaca (' + esc(e.code || e.message) + '). Semak peraturan Firestore gantiPraktikum.</div>'; }
@@ -1500,6 +1518,33 @@
     catch (e) { alert("Gagal menyimpan: " + (e.code || e.message) + "\nPastikan peraturan Firestore untuk gantiSekatan sudah ditambah."); }
     finally { $("blkAddBtn").disabled = false; }
   }
+  /* ---------- Admin: lantik Penyelaras Teach-In (medan penyelarasTeachIn dalam teachers/<email>) ---------- */
+  let coordWired = false;
+  async function loadCoordinators() {
+    const box = $("coordList");
+    try {
+      const snap = await getDocs(collection(db, "teachers"));
+      const rows = snap.docs.map(d => ({ email: d.id, ...d.data() })).filter(t => t.active !== false && t.role !== "admin")
+        .sort((a, b) => String(a.displayName || a.email).localeCompare(String(b.displayName || b.email)));
+      box.innerHTML = rows.map(t => `<label data-s="${esc(String(t.displayName || "").toLowerCase() + " " + t.email)}"><input type="checkbox" value="${esc(t.email)}"${t.penyelarasTeachIn === true ? " checked" : ""}>${esc(t.displayName || t.email)}</label>`).join("")
+        || '<div class="empty">Tiada guru.</div>';
+      if (!coordWired) {
+        coordWired = true;
+        $("coordSearch").addEventListener("input", () => {
+          const q = $("coordSearch").value.toLowerCase().trim();
+          [...box.querySelectorAll("label")].forEach(l => l.style.display = !q || l.dataset.s.includes(q) ? "" : "none");
+        });
+        box.addEventListener("change", async ev => {
+          const cb = ev.target; if (!cb.value) return;
+          cb.disabled = true;
+          try { await updateDoc(doc(db, "teachers", cb.value), { penyelarasTeachIn: cb.checked }); }
+          catch (e) { cb.checked = !cb.checked; alert("Gagal menyimpan: " + (e.code || e.message)); }
+          finally { cb.disabled = false; }
+        });
+      }
+    } catch (e) { box.innerHTML = '<div class="empty" style="color:var(--red)">Senarai guru tidak dapat dibaca (' + esc(e.code || e.message) + ').</div>'; }
+  }
+
   /* ---------- Borang admin: guru praktikum ---------- */
   let prReady = false;
   function initPrForm() {

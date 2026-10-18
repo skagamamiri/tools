@@ -1,32 +1,36 @@
-// Tambah blok ini ke dalam peraturan Firestore penuh (Firebase Console → Firestore → Rules),
-// di dalam `match /databases/{database}/documents { ... }`, sebelah blok kehadiranKelas.
-// Ia menggunakan fungsi sedia ada isActiveTeacher() dan isAdmin().
+// GURU GANTI (ganti.html) — peraturan Firestore.
+// Tambah fungsi isGantiAdmin() selepas fungsi isReviewer() dalam peraturan penuh (Firebase Console → Firestore → Rules),
+// kemudian blok-blok di bawah di dalam `match /databases/{database}/documents { ... }` (gantikan blok Guru Ganti yang lama).
+// Penyelaras Teach-In = guru dengan medan penyelarasTeachIn == true dalam teachers/<email> (dilantik oleh Admin dalam ganti.html).
+
+    function isGantiAdmin() {
+      return isAdmin()
+        || (isActiveTeacher() && get(teacherPath()).data.get('penyelarasTeachIn', false) == true);
+    }
+
     // ==========================================
-    // GURU GANTI — SEKATAN TEACH-IN (ganti.html)
+    // GURU GANTI — SEKATAN TEACH-IN
     // ==========================================
     match /gantiSekatan/{id} {
-      // Semua guru aktif boleh membaca (supaya sekatan terpakai kepada sesiapa yang menjana jadual).
       allow read: if isActiveTeacher();
-      // Hanya Admin boleh menambah atau memadam sekatan.
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isGantiAdmin();
     }
 
     // ==========================================
     // GURU GANTI — REKOD HARIAN TEACH-IN (tab Rekod Mingguan)
-    // Dokumen gantiRekod/<YYYY-MM-DD>, ditulis apabila "Simpan Rekod" ditekan.
     // ==========================================
     match /gantiRekod/{date} {
       allow read: if isActiveTeacher();
       allow create, update: if isActiveTeacher()
         && request.resource.data.savedBy == request.auth.token.email
         && request.resource.data.date == date;
-      allow delete: if isAdmin();
+      allow delete: if isGantiAdmin();
     }
 
     // ==========================================
-    // GURU GANTI — GURU PRAKTIKUM (admin sahaja mengurus)
+    // GURU GANTI — GURU PRAKTIKUM
     // ==========================================
     match /gantiPraktikum/{id} {
       allow read: if isActiveTeacher();
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isGantiAdmin();
     }
