@@ -933,11 +933,15 @@
     for (var k = 0; k < ATTEMPTS; k++){
       var run = attempt(set);
       var filled = run.needs.filter(function(n){ return n.relief || n.program || n.kolab; }).length;
-      var maxLoad = 0, used = 0;
-      Object.keys(run.st.relief).forEach(function(t){ var c = run.st.relief[t].length; if (c){ used++; if (!flex.has(t)) maxLoad = Math.max(maxLoad, c); } });
-      var score = [filled, -maxLoad, used];
-      if (!bestRun || score[0] > bestRun.score[0] || (score[0] === bestRun.score[0] && (score[1] > bestRun.score[1] ||
-          (score[1] === bestRun.score[1] && score[2] > bestRun.score[2])))) bestRun = { run: run, score: score };
+      // Jumlah masa mengajar asal guru biasa yang diberi teach-in — lebih rendah = lebih banyak guru kurang masa digunakan.
+      var maxLoad = 0, used = 0, origSum = 0;
+      Object.keys(run.st.relief).forEach(function(t){
+        var c = run.st.relief[t].length; if (!c) return;
+        used++;
+        if (!flex.has(t)){ maxLoad = Math.max(maxLoad, c); origSum += c * origLoad(t); }
+      });
+      var score = [filled, -maxLoad, -origSum, used];
+      if (!bestRun || better(score, bestRun.score)) bestRun = { run: run, score: score };
     }
     var needs = bestRun.run.needs, st = bestRun.run.st;
     needs.forEach(function(n){ delete n.done; markAdded(n); });
@@ -945,6 +949,8 @@
     R = { needs: needs, st: st, set: set, day: D.day, date: $('dateIn').value };
     renderResults();
   }
+  function better(a, b){ for (var i = 0; i < a.length; i++){ if (a[i] !== b[i]) return a[i] > b[i]; } return false; }
+  function origLoad(t){ var n = 0; (D.tmap[t] || []).forEach(function(x, i){ if (x && !freedAt(t, i)) n++; }); return n; }
   function attempt(set){
     var needs = [], seen = {};
     absents.forEach(function(a){
@@ -1107,11 +1113,12 @@
       if (!reason && set.noReliefRun && nextToOwnRelief(t, i, st)) reason = 'teach-in berturut-turut';
       if (strict && reason) return;
       var knows = Object.keys(TT.classTeachers[need.class] || {}).indexOf(t) >= 0;
-      out.push({ name: t, load: L, relief: rl, adm: isAdm, flex: isFlex, knows: knows, reason: reason, released: released,
+      out.push({ name: t, load: L, orig: L - rl, relief: rl, adm: isAdm, flex: isFlex, knows: knows, reason: reason, released: released,
         week: set.weekFair ? weekCount(t) : 0 });
     });
     out.sort(function(a, b){
-      return (a.reason ? 1 : 0) - (b.reason ? 1 : 0) || (b.flex - a.flex) || (a.week - b.week) || (a.released - b.released) || a.load - b.load || a.relief - b.relief ||
+      // Keutamaan: guru fleksibel → guru yang paling sedikit masa mengajar → paling sedikit teach-in minggu ini → hari ini.
+      return (a.reason ? 1 : 0) - (b.reason ? 1 : 0) || (b.flex - a.flex) || (a.orig - b.orig) || (a.week - b.week) || (a.released - b.released) || a.load - b.load || a.relief - b.relief ||
         (st.rnd ? st.rnd[a.name] - st.rnd[b.name] : 0) || (b.knows - a.knows) || (a.adm - b.adm) || a.name.localeCompare(b.name);
     });
     return out;
