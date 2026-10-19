@@ -422,7 +422,7 @@
       <div class="opt-group">Lain-lain</div>
       <label class="opt"><input type="checkbox" id="noConsec" checked><span><b>Elakkan guru mengajar 3 masa atau lebih secara berturut-turut</b><small>Tugas teach-in tidak akan diberikan sekiranya ia menyebabkan guru mengajar 3 masa atau lebih tanpa rehat. Waktu rehat dikira sebagai pemisah.</small></span></label>
       <label class="opt"><input type="checkbox" id="noAdjacent" checked><span><b>Elakkan teach-in bersambung dengan kelas asal guru</b><small>Tugas teach-in tidak akan diberikan pada masa sejurus sebelum atau selepas kelas guru itu sendiri. Waktu rehat dikira sebagai pemisah.</small></span></label>
-      <label class="opt"><input type="checkbox" id="noReliefRun" checked><span><b>Elakkan guru diberikan teach-in secara berturut-turut</b><small>Seorang guru tidak akan diberikan dua masa teach-in yang bersambung (cth. 7.00–7.30 dan 7.30–8.00), walaupun di kelas yang sama. Waktu rehat dikira sebagai pemisah.</small></span></label>
+      <label class="opt"><input type="checkbox" id="noReliefRun" checked><span><b>Elakkan guru diberikan teach-in secara berturut-turut</b><small>Seorang guru tidak akan diberikan dua masa teach-in yang bersambung (cth. 7.00–7.30 dan 7.30–8.00), walaupun di kelas yang sama. Terpakai juga kepada guru fleksibel. Waktu rehat dikira sebagai pemisah.</small></span></label>
       <label class="opt"><input type="checkbox" id="weekFair" checked><span><b>Utamakan guru yang belum diberikan teach-in pada minggu tersebut</b><small>Sistem membaca Rekod Mingguan (hari lain dalam minggu yang sama) dan memilih guru yang paling sedikit teach-in terlebih dahulu. Memerlukan log masuk.</small></span></label>
       <label class="opt"><input type="checkbox" id="splitKolab"><span><b>Benarkan kelas kolaborasi dipecahkan</b><small>Bagi kelas yang diajar oleh dua guru, seorang daripada mereka boleh ditugaskan teach-in di kelas lain, manakala seorang lagi kekal di kelas asal.</small></span></label>
     </div>
@@ -1084,7 +1084,8 @@
       }
       if (!reason && !isFlex && set.noConsec && run >= 3) reason = run + ' masa berturut';
       if (!reason && !isFlex && set.noAdjacent && nextToOwnClass(t, i)) reason = 'bersambung kelas sendiri';
-      if (!reason && !isFlex && set.noReliefRun && nextToOwnRelief(t, i, st)) reason = 'teach-in berturut-turut';
+      // Terpakai kepada semua guru termasuk guru fleksibel.
+      if (!reason && set.noReliefRun && nextToOwnRelief(t, i, st)) reason = 'teach-in berturut-turut';
       if (strict && reason) return;
       var knows = Object.keys(TT.classTeachers[need.class] || {}).indexOf(t) >= 0;
       out.push({ name: t, load: L, relief: rl, adm: isAdm, flex: isFlex, knows: knows, reason: reason, released: released,
