@@ -925,8 +925,27 @@
     }) || null;
   }
 
+  // Cuba beberapa susunan rawak dan pilih yang terbaik: paling sedikit petak kosong, kemudian paling ramai guru
+  // berkongsi beban (beban paling tinggi seorang guru paling rendah). Setiap kali Jana ditekan, hasil boleh berbeza.
+  var ATTEMPTS = 40;
   function generate(){
-    var set = getSettings();
+    var set = getSettings(), bestRun = null;
+    for (var k = 0; k < ATTEMPTS; k++){
+      var run = attempt(set);
+      var filled = run.needs.filter(function(n){ return n.relief || n.program || n.kolab; }).length;
+      var maxLoad = 0, used = 0;
+      Object.keys(run.st.relief).forEach(function(t){ var c = run.st.relief[t].length; if (c){ used++; if (!flex.has(t)) maxLoad = Math.max(maxLoad, c); } });
+      var score = [filled, -maxLoad, used];
+      if (!bestRun || score[0] > bestRun.score[0] || (score[0] === bestRun.score[0] && (score[1] > bestRun.score[1] ||
+          (score[1] === bestRun.score[1] && score[2] > bestRun.score[2])))) bestRun = { run: run, score: score };
+    }
+    var needs = bestRun.run.needs, st = bestRun.run.st;
+    needs.forEach(function(n){ delete n.done; markAdded(n); });
+    needs.sort(function(a, b){ return a.i - b.i || a.class.localeCompare(b.class); });
+    R = { needs: needs, st: st, set: set, day: D.day, date: $('dateIn').value };
+    renderResults();
+  }
+  function attempt(set){
     var needs = [], seen = {};
     absents.forEach(function(a){
       (D.tmap[a.name] || []).forEach(function(x, i){
@@ -943,7 +962,10 @@
     // Pasangan guru bersama yang turut tidak hadir tidak dikira hadir.
     needs.forEach(function(n){ n.partners = n.partners.filter(function(p){ return n.absent.indexOf(p) < 0; }); });
 
-    var st = { relief: {}, set: set };
+    // Susunan rawak bagi guru/petak yang sama taraf — setiap kali Jana ditekan, susunan baharu dicuba.
+    var rnd = {}; teachers.forEach(function(t){ rnd[t] = Math.random(); });
+    needs.forEach(function(n){ n.rk = Math.random(); });
+    var st = { relief: {}, set: set, rnd: rnd };
     teachers.forEach(function(t){ st.relief[t] = []; });
     needs.forEach(function(n){ n.kolab = !n.program && n.partners.length > 0; });
     // Mod kemas kini: program tanpa definisi (rekod lama) dikekalkan daripada rekod; tugasan asal dikunci.
@@ -980,7 +1002,7 @@
       open.forEach(function(n){
         if (n.relief || n.done) return;
         var c = candidates(n, st, true);
-        if (!best || c.length < best.c.length || (c.length === best.c.length && n.i < best.n.i)) best = { n: n, c: c };
+        if (!best || c.length < best.c.length || (c.length === best.c.length && n.rk < best.n.rk)) best = { n: n, c: c };
       });
       if (!best) break;
       if (!best.c.length){ best.n.done = true; continue; }
@@ -988,10 +1010,7 @@
       best.n.relief = pick; best.n.done = true; st.relief[pick].push(best.n.i);
       best.n.releasedFrom = best.c[0].released ? D.tmap[pick][best.n.i].class : '';
     }
-    needs.forEach(function(n){ delete n.done; markAdded(n); });
-    needs.sort(function(a, b){ return a.i - b.i || a.class.localeCompare(b.class); });
-    R = { needs: needs, st: st, set: set, day: D.day, date: $('dateIn').value };
-    renderResults();
+    return { needs: needs, st: st };
   }
 
   // Tugasan TAMBAHAN = berbeza daripada jadual yang telah disimpan (hanya dalam mod kemas kini).
@@ -1093,7 +1112,7 @@
     });
     out.sort(function(a, b){
       return (a.reason ? 1 : 0) - (b.reason ? 1 : 0) || (b.flex - a.flex) || (a.week - b.week) || (a.released - b.released) || a.load - b.load || a.relief - b.relief ||
-        (b.knows - a.knows) || (a.adm - b.adm) || a.name.localeCompare(b.name);
+        (st.rnd ? st.rnd[a.name] - st.rnd[b.name] : 0) || (b.knows - a.knows) || (a.adm - b.adm) || a.name.localeCompare(b.name);
     });
     return out;
   }
@@ -1202,7 +1221,7 @@
       else if (n.kolab) cell = '<span class="tag amber">KOLABORASI</span> maklumkan ' + esc(n.partners.join(', '));
       else if (n.byMentor) cell = '<span class="tag">GURU ASAL</span> ' + esc(n.relief) + ' mengambil alih semula kelas guru praktikum';
       else {
-        var tmp = { relief: {}, set: R.set };
+        var tmp = { relief: {}, set: R.set, rnd: R.st.rnd };
         Object.keys(R.st.relief).forEach(function(t){ tmp.relief[t] = R.st.relief[t].filter(function(i){ return !(t === n.relief && i === n.i); }); });
         var c = candidates(n, tmp, false);
         cell = '<select data-k="' + k + '"><option value="">— TIADA GURU GANTI —</option>' + c.map(function(x){

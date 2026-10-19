@@ -60,6 +60,8 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 - Relief-teacher generator. Reads the timetable via `KehadiranData.loadTimetable()` (kehadiran-data.js) — no copy of the jadual.
 - Inputs: date, absent teachers (full day or one or more time ranges — `from/to` + `extra[{from,to}]`, helpers `rangesOf`/`rangeTxt`; saved in records too), optional programs (time range + classes; those class slots need no relief),
   settings (tiered max relief per day by the teacher's own timetable load that day — `tier4` ≤4 masa (default 1), `tier5` (1), `tier6` (0), `tier7` 7+ (0); admins 0/1/2 masa, avoid 3+ consecutive masa `noConsec`, avoid relief directly before/after the teacher's own class `noAdjacent`, avoid back-to-back relief slots for the same teacher `noReliefRun` (default on, applies to flex teachers too) — break separates; flex teachers exempt from `noConsec`/`noAdjacent` only). 1 masa = 30-min slot.
+- Jana runs `attempt()` ATTEMPTS (40) times with random tie-breaks (`st.rnd` per teacher, `n.rk` per need) and keeps the best:
+  most slots filled, then lowest max relief per ordinary teacher, then most teachers used. Each click can give a different result.
 - Tier rule (`tierMax`): ordinary teacher's relief count that day < tier limit for their original load (excludes freed program slots). The old `cap` radio and `maxRelief` were replaced by these tiers.
 - `weekFair` (default on, needs sign-in): before Jana, loads gantiRekod for the other weekdays of the same calendar week and counts
   each teacher's `ganti` items (`WEEKCNT`); candidates sort by weekly count right after flex priority (fewest first).
