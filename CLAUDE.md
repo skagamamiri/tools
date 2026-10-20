@@ -61,16 +61,18 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 - Inputs: date, absent teachers (full day or one or more time ranges — `from/to` + `extra[{from,to}]`, helpers `rangesOf`/`rangeTxt`; saved in records too), optional programs (time range + classes; those class slots need no relief),
   settings (tiered max relief per day by the teacher's own timetable load that day — `tier4` ≤4 masa (default 1), `tier5` (1), `tier6` (0), `tier7` 7+ (0); admins 0/1/2 masa, avoid 3+ consecutive masa `noConsec`, avoid relief directly before/after the teacher's own class `noAdjacent`, avoid back-to-back relief slots for the same teacher `noReliefRun` (default on, applies to flex teachers too) — break separates; flex teachers exempt from `noConsec`/`noAdjacent` only). 1 masa = 30-min slot.
 - Jana runs `attempt()` ATTEMPTS (40) times with random tie-breaks (`st.rnd` per teacher, `n.rk` per need) and keeps the best:
-  most slots filled, then lowest max relief per ordinary teacher, then lowest sum of original loads of ordinary relief teachers
-  (prefer low-load teachers), then most teachers used. Each click can give a different result.
-- Candidate order: no-reason first → flex → lowest original load that day (`orig`) → weekly count → released → load → random.
+  most slots filled, then lowest max relief per ordinary teacher, then lowest priority-rank sum
+  (prefer higher-priority groups), then most teachers used. Each click can give a different result.
+- Candidate order (school's priority, `priorityRank`): no-reason first → 1) no teach-in yet this week (`week==0`, when weekFair) →
+  2) ≤4 masa → 3) 5 masa → 4) flex → 5) 6+ masa → 6) pentadbir → 7) released kolab teacher; then orig load, weekly count, relief, random.
+  Attempt score uses Σ rank (+10 if the teacher already has teach-in this week) instead of raw load.
 - Tier rule (`tierMax`): ordinary teacher's relief count that day < tier limit for their original load (excludes freed program slots). The old `cap` radio and `maxRelief` were replaced by these tiers.
 - `weekFair` (default on, needs sign-in): before Jana, loads gantiRekod for the other weekdays of the same calendar week and counts
   each teacher's `ganti` items (`WEEKCNT`); candidates sort by weekly count after original load (fewest first).
 - `splitKolab` (default OFF): in a co-taught slot ("A / B") one teacher may be released for relief elsewhere if all co-teachers are
   present and none already released (`canRelease`); need gets `releasedFrom` (shown in Senarai masa ganti).
 - Flexible teachers (Guru Pemulihan + Guru Bimbingan & Kaunseling, default list `DEFAULT_FLEX`, kept in localStorage `ganti_fleksibel`):
-  picked first, exempt from the tier limits and the consecutive rule, own daily max (`flexMax` 0–4, default 4; saved values above 4 are clamped).
+  priority group 4 (after ≤5-masa teachers), exempt from the tier limits and the consecutive rule, own daily max (`flexMax` 0–4, default 4; saved values above 4 are clamped).
 - `EXTRA_TEACHERS` adds teachers with no timetable entries (Ku Muhammad Nadjri bin Ku Nasir, Guru B&K).
 - Co-taught class slot ("A / B" in the class timetable): if the partner is present, no relief — shown as KOLABORASI with the partner's name.
 - Program option per program: teachers of the program's classes either stay with the program (default) or are released (`free`) —

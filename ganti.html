@@ -934,13 +934,16 @@
       var run = attempt(set);
       var filled = run.needs.filter(function(n){ return n.relief || n.program || n.kolab; }).length;
       // Jumlah masa mengajar asal guru biasa yang diberi teach-in — lebih rendah = lebih banyak guru kurang masa digunakan.
-      var maxLoad = 0, used = 0, origSum = 0;
+      // Skor keutamaan: setiap teach-in diberi nilai kumpulannya (+10 jika guru sudah ada teach-in minggu ini). Lebih rendah = lebih baik.
+      var maxLoad = 0, used = 0, rankSum = 0;
       Object.keys(run.st.relief).forEach(function(t){
         var c = run.st.relief[t].length; if (!c) return;
         used++;
-        if (!flex.has(t)){ maxLoad = Math.max(maxLoad, c); origSum += c * origLoad(t); }
+        if (!flex.has(t)) maxLoad = Math.max(maxLoad, c);
+        rankSum += c * (priorityRank(t, origLoad(t), false) + (set.weekFair && weekCount(t) > 0 ? 10 : 0));
       });
-      var score = [filled, -maxLoad, -origSum, used];
+      run.needs.forEach(function(n){ if (n.releasedFrom) rankSum += 5; });
+      var score = [filled, -maxLoad, -rankSum, used];
       if (!bestRun || better(score, bestRun.score)) bestRun = { run: run, score: score };
     }
     var needs = bestRun.run.needs, st = bestRun.run.st;
@@ -948,6 +951,13 @@
     needs.sort(function(a, b){ return a.i - b.i || a.class.localeCompare(b.class); });
     R = { needs: needs, st: st, set: set, day: D.day, date: $('dateIn').value };
     renderResults();
+  }
+  // Kumpulan keutamaan 2–7 (1 = belum ada teach-in minggu ini, dikendalikan berasingan).
+  function priorityRank(t, orig, released){
+    if (released) return 7;
+    if (flex.has(t)) return 4;
+    if (admins.has(t)) return 6;
+    return orig <= 4 ? 2 : orig === 5 ? 3 : 5;
   }
   function better(a, b){ for (var i = 0; i < a.length; i++){ if (a[i] !== b[i]) return a[i] > b[i]; } return false; }
   function origLoad(t){ var n = 0; (D.tmap[t] || []).forEach(function(x, i){ if (x && !freedAt(t, i)) n++; }); return n; }
@@ -1113,12 +1123,14 @@
       if (!reason && set.noReliefRun && nextToOwnRelief(t, i, st)) reason = 'teach-in berturut-turut';
       if (strict && reason) return;
       var knows = Object.keys(TT.classTeachers[need.class] || {}).indexOf(t) >= 0;
-      out.push({ name: t, load: L, orig: L - rl, relief: rl, adm: isAdm, flex: isFlex, knows: knows, reason: reason, released: released,
+      out.push({ name: t, load: L, orig: L - rl, rank: priorityRank(t, L - rl, released), relief: rl, adm: isAdm, flex: isFlex, knows: knows, reason: reason, released: released,
         week: set.weekFair ? weekCount(t) : 0 });
     });
     out.sort(function(a, b){
-      // Keutamaan: guru fleksibel → guru yang paling sedikit masa mengajar → paling sedikit teach-in minggu ini → hari ini.
-      return (a.reason ? 1 : 0) - (b.reason ? 1 : 0) || (b.flex - a.flex) || (a.orig - b.orig) || (a.week - b.week) || (a.released - b.released) || a.load - b.load || a.relief - b.relief ||
+      // Turutan keutamaan (ditetapkan sekolah): 1) belum ada teach-in minggu ini → 2) ≤4 masa → 3) 5 masa → 4) guru fleksibel
+      // → 5) 6 masa ke atas → 6) pentadbir → 7) guru kolaborasi yang dilepaskan. Dalam kumpulan: masa paling sedikit dahulu.
+      return (a.reason ? 1 : 0) - (b.reason ? 1 : 0) || ((a.week > 0) - (b.week > 0)) || (a.rank - b.rank) || (a.orig - b.orig) ||
+        (a.week - b.week) || a.relief - b.relief ||
         (st.rnd ? st.rnd[a.name] - st.rnd[b.name] : 0) || (b.knows - a.knows) || (a.adm - b.adm) || a.name.localeCompare(b.name);
     });
     return out;
