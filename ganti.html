@@ -410,7 +410,7 @@
         <select id="tier7"><option value="0" selected>0 masa (tiada teach-in)</option><option value="1">1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option></select></div>
       <div class="opt-group">Guru fleksibel (Pemulihan / Bimbingan &amp; Kaunseling)</div>
       <div class="opt num-opt"><span><b>Bilangan maksimum masa teach-in bagi guru fleksibel sehari</b><small>Guru fleksibel diberi keutamaan dan tidak tertakluk kepada had beban waktu mengajar atau had masa berturut-turut.</small></span>
-        <select id="flexMax"><option value="0">0 masa (tidak dilibatkan)</option><option value="1">1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option><option value="4">4 masa</option><option value="5">5 masa</option><option value="6" selected>6 masa</option><option value="7">7 masa</option><option value="8">8 masa</option><option value="10">10 masa</option></select></div>
+        <select id="flexMax"><option value="0">0 masa (tidak dilibatkan)</option><option value="1">1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option><option value="4" selected>4 masa</option></select></div>
       <details class="admins flex-box">
         <summary>Senarai guru fleksibel (<span id="flexCount">0</span> dipilih)</summary>
         <div class="admin-list" id="flexList"></div>
@@ -903,7 +903,7 @@
     if (typeof s.noReliefRun === 'boolean') $('noReliefRun').checked = s.noReliefRun;
     if (typeof s.weekFair === 'boolean') $('weekFair').checked = s.weekFair;
     if (typeof s.splitKolab === 'boolean') $('splitKolab').checked = s.splitKolab;
-    if (s.flexMax != null) $('flexMax').value = String(s.flexMax);
+    if (s.flexMax != null) $('flexMax').value = String(Math.min(4, Math.max(0, +s.flexMax || 0)));   // maksimum 4 masa
   }
   $('setCard').addEventListener('change', function(ev){
     if (ev.target.name === 'adm' || ['noConsec','noAdjacent','noReliefRun','weekFair','splitKolab','flexMax','tier4','tier5','tier6','tier7'].indexOf(ev.target.id) >= 0){ lsSet(LS_SET, getSettings()); hideResults(); }

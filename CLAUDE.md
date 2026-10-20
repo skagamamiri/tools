@@ -70,7 +70,7 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 - `splitKolab` (default OFF): in a co-taught slot ("A / B") one teacher may be released for relief elsewhere if all co-teachers are
   present and none already released (`canRelease`); need gets `releasedFrom` (shown in Senarai masa ganti).
 - Flexible teachers (Guru Pemulihan + Guru Bimbingan & Kaunseling, default list `DEFAULT_FLEX`, kept in localStorage `ganti_fleksibel`):
-  picked first, exempt from the tier limits and the consecutive rule, own daily max (`flexMax`, default 6).
+  picked first, exempt from the tier limits and the consecutive rule, own daily max (`flexMax` 0–4, default 4; saved values above 4 are clamped).
 - `EXTRA_TEACHERS` adds teachers with no timetable entries (Ku Muhammad Nadjri bin Ku Nasir, Guru B&K).
 - Co-taught class slot ("A / B" in the class timetable): if the partner is present, no relief — shown as KOLABORASI with the partner's name.
 - Program option per program: teachers of the program's classes either stay with the program (default) or are released (`free`) —
