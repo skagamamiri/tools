@@ -317,8 +317,10 @@
       <div><button class="btn primary" id="addAbsBtn" type="button">+ Tambah</button></div>
     </div>
     <div class="upd-row">
-      <button class="btn ghost small" id="loadSavedBtn" type="button">↻ Kemas Kini Jadual Yang Telah Disimpan</button>
-      <span class="meta">Untuk guru yang perlu keluar selepas jadual teach-in diedarkan — tugasan sedia ada dikekalkan.</span>
+      <span class="meta" style="font-weight:700;color:var(--ink)">Kemas kini teach-in:</span>
+      <button class="btn ghost small" id="loadSavedBtn" type="button" data-mode="tambah">＋ Tambah Teach-In (kekalkan jadual sedia ada)</button>
+      <button class="btn ghost small" id="redoBtn" type="button" data-mode="semula">⟳ Jana Semula Keseluruhan</button>
+      <span class="meta">Menggunakan jadual yang sedang dipaparkan, atau jadual yang telah disimpan bagi tarikh ini.</span>
     </div>
     <div class="upd-banner hidden" id="updBanner"></div>
     <div class="list" id="absList"></div>
@@ -564,7 +566,8 @@
   var programs = [];          // { name, from, to, classes:[] }
   var swaps = [];             // jual beli masa: { owner, taker, from, to, ownerFree } (tarikh semasa sahaja)
   var holds = [];             // permohonan sementara: { name, from, to, reason } (tarikh semasa sahaja)
-  var BASE = null;            // mod kemas kini: { rec, map: {'<kelas>@<HH:MM>': item} }
+  var BASE = null;            // mod kemas kini: { rec, map: {'<kelas>@<HH:MM>': item}, mode: 'tambah'|'semula', src: 'skrin'|'rekod' }
+  function addTag(){ return BASE && BASE.mode === 'semula' ? 'BERUBAH' : 'TAMBAHAN'; }
   var D = null;               // model hari: { day, slots:[{start,end,brk}], tmap, cmap }
   var R = null;               // keputusan terakhir
 
@@ -1004,7 +1007,7 @@
       }
     });
     var open = needs.filter(function(n){ return !n.program && !n.kolab && !n.byMentor; });
-    if (BASE){
+    if (BASE && BASE.mode === 'tambah'){
       open.forEach(function(n){
         var r = n.baseRelief;
         if (r && st.relief[r] && !absentAt(r, n.i)){ n.relief = r; n.done = true; st.relief[r].push(n.i); }
@@ -1035,6 +1038,8 @@
     var b = BASE.map[n.class + '@' + D.slots[n.i].start];
     var nowKind = n.program ? 'program' : n.kolab ? 'kolab' : n.relief ? 'ganti' : 'tiada';
     n.added = !b || b.kind !== nowKind || (nowKind === 'ganti' && b.relief !== n.relief);
+    // Mod jana semula: catat guru ganti asal jika tugasan bertukar.
+    if (BASE.mode === 'semula') n.prevRelief = n.added && b && b.kind === 'ganti' && b.relief !== n.relief ? b.relief : '';
   }
 
   // Guru yang kelasnya dibawa ke program "dibebaskan" pada slot itu.
@@ -1209,7 +1214,7 @@
       D.slots.forEach(function(s, i){
         if (s.brk){ h += '<td class="brk"></td>'; return; }
         var x = D.tmap[t] && D.tmap[t][i], r = rmap[t + '@' + i];
-        if (r){ h += '<td class="c r' + (r.added ? ' add' : '') + '" title="' + (r.added ? 'TAMBAHAN — ' : '') + 'Ganti ' + esc(r.absent.join(', ')) + '">' + esc(r.class) + '<small>' + esc(r.subject) + '</small></td>'; return; }
+        if (r){ h += '<td class="c r' + (r.added ? ' add' : '') + '" title="' + (r.added ? addTag() + ' — ' : '') + 'Ganti ' + esc(r.absent.join(', ')) + '">' + esc(r.class) + '<small>' + esc(r.subject) + '</small></td>'; return; }
         if (x && absentAt(t, i)){
           var n = nmap[t + '@' + i];
           var cov = n && n.program, kl = n && n.kolab;
@@ -1251,7 +1256,7 @@
         }).join('') + '</select>';
       }
       if (n.releasedFrom) note += ' <span class="tag">guru ganti dilepaskan dari kolaborasi ' + esc(n.releasedFrom) + '</span>';
-      if (n.added) note += ' <span class="tag add">TAMBAHAN</span>' + (n.prevRelief ? ' <span class="tag">asal: ' + esc(shortName(n.prevRelief)) + ' (tidak hadir)</span>' : '');
+      if (n.added) note += ' <span class="tag add">' + addTag() + '</span>' + (n.prevRelief ? ' <span class="tag">asal: ' + esc(shortName(n.prevRelief)) + (absents.some(function(a){ return a.name === n.prevRelief; }) ? ' (tidak hadir)' : '') + '</span>' : '');
       h += '<tr class="' + (n.program ? 'prog' : n.kolab ? 'kolr' : (n.relief ? (n.added ? 'addr' : '') : 'unfilled')) + '"><td><b>' + s.start + '–' + s.end + '</b></td><td><b>' + esc(n.class) + '</b></td><td>' + esc(n.subject) +
         '</td><td>' + esc(n.absent.join(', ')) + note + '</td><td>' + cell + '</td></tr>';
     });
@@ -1382,17 +1387,46 @@
     absents.forEach(function(a){ delete a.base; });
     if (!silent){ renderAbs(); hideResults(); }
   }
-  $('loadSavedBtn').addEventListener('click', function(){
-    var A = window.GantiAuth, date = $('dateIn').value;
-    if (!A || !A.user()){ toast('Sila log masuk dahulu (bahagian atas halaman).'); $('loginStrip').scrollIntoView({ behavior: 'smooth' }); return; }
+  function setBanner(){
+    if (!BASE) return;
+    var rec = BASE.rec, n = (rec.items || []).filter(function(it){ return it.kind === 'ganti'; }).length;
+    var srcTxt = BASE.src === 'skrin' ? 'Jadual yang sedang dipaparkan' : 'Jadual yang telah disimpan';
+    var how = BASE.mode === 'tambah'
+      ? 'Semua tugasan sedia ada <b>dikekalkan</b>. Tambah guru yang perlu keluar (pilih <b>Beberapa masa</b> dan masa keluar), isikan sebab, kemudian tekan <b>Jana</b>. Tugasan baharu ditanda <b>TAMBAHAN</b>.'
+      : 'Semua tugasan teach-in akan <b>disusun semula</b> mengikut senarai guru tidak hadir dan tetapan terkini. Ubah senarai jika perlu, kemudian tekan <b>Jana</b>. Tugasan yang berbeza daripada jadual asal ditanda <b>BERUBAH</b>.';
+    $('updBanner').innerHTML = '<div><b>Mod kemas kini: ' + (BASE.mode === 'tambah' ? 'Tambah teach-in' : 'Jana semula keseluruhan') + ' — ' + esc(rec.day || D.day || '') + ', ' + fmtDate(rec.date || $('dateIn').value) + '.</b> ' +
+      srcTxt + ' dimuatkan (' + (rec.absents || []).length + ' guru tidak hadir, ' + n + ' masa teach-in).<br>' + how + '</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn ghost small" type="button" id="swModeBtn">' + (BASE.mode === 'tambah' ? '⟳ Tukar ke Jana Semula' : '＋ Tukar ke Tambah Teach-In') + '</button>' +
+      '<button class="btn ghost small" type="button" id="exitUpdBtn">Keluar mod kemas kini</button></div>';
+    $('updBanner').className = 'upd-banner';
+    $('exitUpdBtn').onclick = function(){ exitUpdate(false); };
+    $('swModeBtn').onclick = function(){ BASE.mode = BASE.mode === 'tambah' ? 'semula' : 'tambah'; setBanner(); hideResults(); };
+  }
+  function startUpdate(mode, btn){
+    var date = $('dateIn').value;
+    // 1) Jadual yang sedang dipaparkan (belum/sudah disimpan) dijadikan asas.
+    if (R && R.date === date){
+      var snap = recordData('');
+      snap.revision = BASE ? BASE.rec.revision : null;
+      var map = {};
+      snap.items.forEach(function(it){ map[it.class + '@' + it.start] = it; });
+      BASE = { rec: snap, map: map, mode: mode, src: 'skrin' };
+      absents.forEach(function(a){ a.base = true; });
+      renderAbs(); setBanner();
+      toast(mode === 'tambah' ? 'Jadual semasa dikekalkan. Tambah guru tidak hadir, kemudian tekan Jana.' : 'Ubah senarai jika perlu, kemudian tekan Jana untuk menyusun semula.');
+      return;
+    }
+    // 2) Jika tiada di skrin, muatkan jadual yang telah disimpan.
+    var A = window.GantiAuth;
+    if (!A || !A.user()){ toast('Tiada jadual dipaparkan. Log masuk untuk memuatkan jadual yang telah disimpan.'); $('loginStrip').scrollIntoView({ behavior: 'smooth' }); return; }
     if (absents.length && !confirm('Senarai guru tidak hadir sekarang akan diganti dengan jadual yang telah disimpan. Teruskan?')) return;
-    var btn = this; btn.disabled = true;
+    btn.disabled = true;
     A.loadRecords([date]).then(function(recs){
       var rec = recs[date];
-      if (!rec){ toast('Tiada jadual disimpan untuk ' + fmtDate(date) + '. Gunakan Jana seperti biasa.'); return; }
+      if (!rec){ toast('Tiada jadual dipaparkan atau disimpan untuk ' + fmtDate(date) + '. Gunakan Jana seperti biasa.'); return; }
       var map = {};
       (rec.items || []).forEach(function(it){ map[it.class + '@' + it.start] = it; });
-      BASE = { rec: rec, map: map };
+      BASE = { rec: rec, map: map, mode: mode, src: 'rekod' };
       absents = (rec.absents || []).filter(function(a){ return teachers.indexOf(a.name) >= 0; }).map(function(a){
         var b = bounds();
         return { name: a.name, full: !!a.full, from: a.full ? b[0] : a.from, to: a.full ? b[b.length - 1] : a.to, reason: a.reason || '', base: true,
@@ -1405,15 +1439,12 @@
       programs = (rec.programs || []).map(function(p){ return { name: p.name, from: p.from, to: p.to, classes: p.classes || [], free: !!p.free }; });
       if (rec.preparedBy && teachers.indexOf(rec.preparedBy) >= 0) $('preparedBy').value = rec.preparedBy;
       onDate();
-      var n = (rec.items || []).filter(function(it){ return it.kind === 'ganti'; }).length;
-      $('updBanner').innerHTML = '<div><b>Mod kemas kini — ' + esc(rec.day || '') + ', ' + fmtDate(date) + '.</b> Jadual yang telah disimpan dimuatkan (' +
-        (rec.absents || []).length + ' guru tidak hadir, ' + n + ' masa teach-in). Semua tugasan sedia ada <b>dikekalkan</b>.<br>' +
-        'Tambah guru yang perlu keluar (pilih <b>Beberapa masa</b> dan masa keluar), isikan sebab, kemudian tekan <b>Jana</b>. Tugasan baharu ditanda <b>TAMBAHAN</b>.</div>' +
-        '<button class="btn ghost small" type="button" id="exitUpdBtn">Keluar mod kemas kini</button>';
-      $('updBanner').className = 'upd-banner';
-      $('exitUpdBtn').onclick = function(){ exitUpdate(false); };
+      setBanner();
     }).catch(function(e){ toast('Gagal memuatkan jadual: ' + (e.code || e.message)); })
       .then(function(){ btn.disabled = false; });
+  }
+  ['loadSavedBtn', 'redoBtn'].forEach(function(id){
+    $(id).addEventListener('click', function(){ startUpdate(this.dataset.mode, this); });
   });
 
   /* ---------- Rekod data harian (Firestore gantiRekod) ---------- */
@@ -1421,7 +1452,7 @@
     return {
       date: R.date, day: R.day, week: weekLabel || '',
       preparedBy: $('preparedBy').value,
-      revision: BASE ? (BASE.rec.revision || 1) + 1 : 1,
+      revision: BASE ? (BASE.rec.revision == null ? 0 : BASE.rec.revision || 1) + 1 : 1,
       programs: programs.map(function(p){ return { name: p.name, from: p.from, to: p.to, classes: p.classes.slice(), free: !!p.free }; }),
       holds: holds.map(function(h){ return { name: h.name, from: h.from, to: h.to, reason: h.reason || '' }; }),
       swaps: swaps.map(function(w){ return { owner: w.owner, taker: w.taker, from: w.from, to: w.to, ownerFree: !!w.ownerFree }; }),
@@ -1551,7 +1582,10 @@
   $('copyBtn').addEventListener('click', function(){
     if (!R) return;
     var lines = ['*TEACH-IN SK AGAMA (MIS) MIRI*', R.day + ', ' + fmtDate(R.date)];
-    if (BASE){
+    if (BASE && BASE.mode === 'semula'){
+      lines[0] = '*KEMAS KINI TEACH-IN SK AGAMA (MIS) MIRI*';
+      lines.push('_Jadual ini menggantikan jadual teach-in sebelum ini._');
+    } else if (BASE){
       lines[0] = '*KEMAS KINI TEACH-IN SK AGAMA (MIS) MIRI*';
       var fresh = absents.filter(function(a){ return !a.base; });
       if (fresh.length){
@@ -1575,7 +1609,8 @@
       if (!mine.length) lines.push('Tiada kelas perlu diganti');
       mine.forEach(function(n){
         var s = D.slots[n.i];
-        lines.push(fmtT(s.start) + '-' + fmtT(s.end) + ' | ' + n.class + ' ' + subjLabel(n.subject) + ' → ' + reliefLabel(n).t);
+        lines.push(fmtT(s.start) + '-' + fmtT(s.end) + ' | ' + n.class + ' ' + subjLabel(n.subject) + ' → ' + reliefLabel(n).t +
+          (BASE && n.added ? ' _(BERUBAH' + (n.prevRelief ? ', asal: ' + upShort(n.prevRelief) : '') + ')_' : ''));
       });
     });
     if ($('preparedBy').value) lines.push('', 'Disediakan oleh: ' + $('preparedBy').value);

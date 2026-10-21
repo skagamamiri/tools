@@ -109,9 +109,13 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   {"ok":true,...} from the ganti.html origin.
 - "Simpan Rekod" also writes the day's structured record to Firestore `gantiRekod/<YYYY-MM-DD>` (date, day, week, preparedBy,
   absents[], items[{start,end,class,subject,absent[],relief,kind ganti|program|kolab|tiada,note}], savedBy, savedAt); re-saving overwrites.
-- "Kemas Kini Jadual Yang Telah Disimpan" (update mode, `BASE`): loads gantiRekod for the chosen date (absents marked ASAL, programs,
-  preparedBy); on Jana, saved `ganti` assignments are locked unless that relief teacher is now absent (then reassigned, `prevRelief`).
-  Changed/new items get `added` (shown as TAMBAHAN, amber); WhatsApp copy lists only the additions; record `revision` increments.
+- Update mode (`BASE = {rec,map,mode,src}`), two buttons in absCard: "Tambah Teach-In" (`mode:'tambah'`) and "Jana Semula Keseluruhan"
+  (`mode:'semula'`); banner can switch mode. `startUpdate()` uses the on-screen result R as base when it is for the same date
+  (`src:'skrin'`, no sign-in needed), otherwise loads gantiRekod for the date (`src:'rekod'`, absents marked ASAL, programs, holds, swaps, preparedBy).
+  tambah: on Jana, base `ganti` assignments are locked unless that relief teacher is now absent (then reassigned, `prevRelief`);
+  changed/new items get `added` (TAMBAHAN, amber); WhatsApp copy lists only the additions.
+  semula: nothing locked, full re-run; items differing from base get `added` shown as BERUBAH (`addTag()`) with `prevRelief` = old relief;
+  WhatsApp copy is the full list with "menggantikan jadual sebelum ini" and (BERUBAH) marks. Record `revision` increments.
   Records now also store `programs[]` and `revision`. Changing the date leaves update mode. No "kecemasan" wording (user request).
 - Tabs: "Jana Teach-In" (generator, `.jana-only`) and "Rekod Mingguan" (`.minggu-only`, body class `tab-minggu`, remembered in
   localStorage `ganti_tab`). Rekod Mingguan: pick a school week, loads gantiRekod for Mon–Fri, grid of all teachers × 5 days
