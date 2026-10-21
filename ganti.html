@@ -932,7 +932,23 @@
   // berkongsi beban (beban paling tinggi seorang guru paling rendah). Setiap kali Jana ditekan, hasil boleh berbeza.
   var ATTEMPTS = 40;
   function generate(){
-    var set = getSettings(), bestRun = null;
+    var set = getSettings();
+    var bestRun = runBatch(set), total = bestRun.run.needs.length;
+    // Jika masih ada petak tidak terisi, batalkan keutamaan no. 1 (belum ada teach-in minggu ini) dan cuba semula.
+    if (set.weekFair && bestRun.score[0] < total){
+      var set2 = Object.assign({}, set, { weekFair: false, weekDropped: true });
+      var alt = runBatch(set2);
+      if (alt.score[0] > bestRun.score[0]){ bestRun = alt; set = set2; }
+    }
+    var needs = bestRun.run.needs, st = bestRun.run.st;
+    needs.forEach(function(n){ delete n.done; markAdded(n); });
+    needs.sort(function(a, b){ return a.i - b.i || a.class.localeCompare(b.class); });
+    R = { needs: needs, st: st, set: set, day: D.day, date: $('dateIn').value };
+    renderResults();
+    if (set.weekDropped) toast('Keutamaan mingguan dibatalkan supaya semua petak dapat diisi.');
+  }
+  function runBatch(set){
+    var bestRun = null;
     for (var k = 0; k < ATTEMPTS; k++){
       var run = attempt(set);
       var filled = run.needs.filter(function(n){ return n.relief || n.program || n.kolab; }).length;
@@ -949,11 +965,7 @@
       var score = [filled, -maxLoad, -rankSum, used];
       if (!bestRun || better(score, bestRun.score)) bestRun = { run: run, score: score };
     }
-    var needs = bestRun.run.needs, st = bestRun.run.st;
-    needs.forEach(function(n){ delete n.done; markAdded(n); });
-    needs.sort(function(a, b){ return a.i - b.i || a.class.localeCompare(b.class); });
-    R = { needs: needs, st: st, set: set, day: D.day, date: $('dateIn').value };
-    renderResults();
+    return bestRun;
   }
   // Kumpulan keutamaan 2–7 (1 = belum ada teach-in minggu ini, dikendalikan berasingan).
   function priorityRank(t, orig, released){
@@ -1153,7 +1165,7 @@
     var prog = needs.filter(function(n){ return n.program; }).length;
     var kol = needs.filter(function(n){ return n.kolab; }).length;
     var unf = needs.length - filled - prog - kol;
-    var fairTxt = R.set.weekFair ? (WEEKDAYS ? ' • Keutamaan mingguan (' + WEEKDAYS + ' hari direkod)' : ' • Keutamaan mingguan (tiada rekod lain)') : '';
+    var fairTxt = R.set.weekDropped ? ' • KEUTAMAAN MINGGUAN DIBATALKAN (jadual tidak dapat diisi sepenuhnya dengannya)' : R.set.weekFair ? (WEEKDAYS ? ' • Keutamaan mingguan (' + WEEKDAYS + ' hari direkod)' : ' • Keutamaan mingguan (tiada rekod lain)') : '';
     var setTxt = 'Maks teach-in: ≤4 masa→' + R.set.tier4 + ', 5→' + R.set.tier5 + ', 6→' + R.set.tier6 + ', 7+→' + R.set.tier7 + (R.set.flexMax ? ' • Fleksibel maks ' + R.set.flexMax : ' • Fleksibel tidak dilibatkan') + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '') + (R.set.noAdjacent ? ' • Elak bersambung kelas sendiri' : '') + (R.set.noReliefRun ? ' • Elak teach-in berturut' : '') + fairTxt + (R.set.splitKolab ? ' • Kolaborasi boleh dipecahkan' : '');
     $('gridSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + setTxt + ' • ' + TT.label;
     $('slipSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + absents.length + ' guru tidak hadir • ' + setTxt;
