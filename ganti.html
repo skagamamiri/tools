@@ -1183,10 +1183,19 @@
   }
   function stat(cls, v, lbl){ return '<div class="stat ' + cls + '"><b>' + v + '</b><span>' + lbl + '</span></div>'; }
 
+  // Gelaran: guru Bahasa Arab / Pendidikan Islam → USTAZ (bin) / USTAZAH (binti); lain-lain → CIKGU.
+  var AGAMA_SUBJ = /^(BA|PI-)/;
+  function honorific(name){
+    if (!TT.agama) return 'CIKGU';
+    if (!TT.agama[name]) return 'CIKGU';
+    if (/\b(binti|bt)\b\.?/i.test(name)) return 'USTAZAH';
+    if (/\b(bin|b)\b\.?/i.test(name)) return 'USTAZ';
+    return 'CIKGU';
+  }
   function reliefLabel(n){
     if (n.program) return { t: n.program.name.toUpperCase(), c: '' };
-    if (n.kolab) return { t: 'KOLABORASI – ' + n.partners.map(function(p){ return 'CIKGU ' + upShort(p); }).join(', '), c: 'kol' };
-    if (n.relief) return { t: 'CIKGU ' + upShort(n.relief) + (n.byMentor ? ' (GURU ASAL)' : ''), c: '' };
+    if (n.kolab) return { t: 'KOLABORASI – ' + n.partners.map(function(p){ return honorific(p) + ' ' + upShort(p); }).join(', '), c: 'kol' };
+    if (n.relief) return { t: honorific(n.relief) + ' ' + upShort(n.relief) + (n.byMentor ? ' (GURU ASAL)' : ''), c: '' };
     return { t: 'TIADA GURU', c: 'none' };
   }
   function renderSlips(){
@@ -1697,6 +1706,8 @@
     classCodes = tt.data.classes.map(function(c){ return c.code; }).sort();
     TT.classTeachers = {};
     tt.data.teachers.forEach(function(t){ t.entries.forEach(function(e){ (TT.classTeachers[e.class] = TT.classTeachers[e.class] || {})[t.name] = 1; }); });
+    TT.agama = {};
+    tt.data.teachers.forEach(function(t){ if (t.entries.some(function(e){ return AGAMA_SUBJ.test(e.subject || ''); })) TT.agama[t.name] = 1; });
     admins = new Set(Array.from(admins).filter(function(n){ return teachers.indexOf(n) >= 0; }));
     flex = new Set(Array.from(flex).filter(function(n){ return teachers.indexOf(n) >= 0; }));
     $('loadingCard').classList.add('hidden');
