@@ -75,6 +75,9 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   present and none already released (`canRelease`); need gets `releasedFrom` (shown in Senarai masa ganti).
 - Flexible teachers (Guru Pemulihan + Guru Bimbingan & Kaunseling, default list `DEFAULT_FLEX`, kept in localStorage `ganti_fleksibel`):
   priority group 4 (after ≤5-masa teachers), exempt from the tier limits and the consecutive rule, own daily max (`flexMax` 0–4, default 4; saved values above 4 are clamped).
+- Guru ganti penuh (per absent teacher, select `data-k=cover` in the absent row → `a.cover`, saved in records): in attempt(), after
+  update-mode locks and before the greedy fill, every open need of that absent teacher goes to `a.cover` when the cover is present and
+  not busy (`n.byCover`, tag "guru ganti penuh"); ignores tiers/consecutive rules; slots where the cover teaches fall back to normal relief.
 - `EXTRA_TEACHERS` adds teachers with no timetable entries (Ku Muhammad Nadjri bin Ku Nasir, Guru B&K).
 - Co-taught class slot ("A / B" in the class timetable): if the partner is present, no relief — shown as KOLABORASI with the partner's name.
 - Program option per program: teachers of the program's classes either stay with the program (default) or are released (`free`) —

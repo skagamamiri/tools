@@ -692,6 +692,9 @@
             '<button type="button" class="rng-del" data-xdel="' + x + '" title="Buang julat ini">×</button></span>'; }).join('') +
           '<button type="button" class="btn ghost small" data-addrng="1">+ Tambah masa</button>') +
         '<input data-k="reason" list="sebabList" placeholder="Sebab (cth. MC)" value="' + esc(a.reason || '') + '" style="width:150px">' +
+        '<select data-k="cover" title="Guru ini akan masuk semua kelas guru yang tidak hadir (jika lapang)" style="max-width:230px">' +
+          '<option value="">Guru ganti: ikut sistem</option>' + teachers.filter(function(t){ return t !== a.name; }).map(function(t){
+            return '<option value="' + esc(t) + '"' + (a.cover === t ? ' selected' : '') + '>Semua kelas → ' + esc(t) + '</option>'; }).join('') + '</select>' +
         '<button class="btn danger" type="button" data-del="1">Buang</button></div>';
     }).join('');
     Array.prototype.forEach.call(el.querySelectorAll('.item'), function(row){
@@ -1027,6 +1030,14 @@
       });
     }
 
+    // Guru ganti penuh: guru yang dipilih masuk semua kelas guru tidak hadir itu (jika tidak mengajar / tidak hadir pada masa itu).
+    open.forEach(function(n){
+      if (n.relief || n.done) return;
+      var a = absents.find(function(x){ return x.cover && n.absent.indexOf(x.name) >= 0; });
+      if (!a || !st.relief[a.cover] || absentAt(a.cover, n.i) || busy(a.cover, n.i, st)) return;
+      n.relief = a.cover; n.done = true; n.byCover = true; st.relief[a.cover].push(n.i);
+    });
+
     // Tamak: isi dahulu slot yang paling sedikit calon.
     while (true){
       var best = null;
@@ -1277,6 +1288,7 @@
         }).join('') + '</select>';
       }
       if (n.releasedFrom) note += ' <span class="tag">guru ganti dilepaskan dari kolaborasi ' + esc(n.releasedFrom) + '</span>';
+      if (n.byCover && absents.some(function(x){ return x.cover === n.relief && n.absent.indexOf(x.name) >= 0; })) note += ' <span class="tag">guru ganti penuh</span>';
       if (n.added) note += ' <span class="tag add">' + addTag() + '</span>' + (n.prevRelief ? ' <span class="tag">asal: ' + esc(shortName(n.prevRelief)) + (absents.some(function(a){ return a.name === n.prevRelief; }) ? ' (tidak hadir)' : '') + '</span>' : '');
       h += '<tr class="' + (n.program ? 'prog' : n.kolab ? 'kolr' : (n.relief ? (n.added ? 'addr' : '') : 'unfilled')) + '"><td><b>' + s.start + '–' + s.end + '</b></td><td><b>' + esc(n.class) + '</b></td><td>' + esc(n.subject) +
         '</td><td>' + esc(n.absent.join(', ')) + note + '</td><td>' + cell + '</td></tr>';
@@ -1451,6 +1463,7 @@
       absents = (rec.absents || []).filter(function(a){ return teachers.indexOf(a.name) >= 0; }).map(function(a){
         var b = bounds();
         return { name: a.name, full: !!a.full, from: a.full ? b[0] : a.from, to: a.full ? b[b.length - 1] : a.to, reason: a.reason || '', base: true,
+          cover: a.cover && teachers.indexOf(a.cover) >= 0 ? a.cover : '',
           extra: a.full ? [] : (a.extra || []).map(function(r){ return { from: r.from, to: r.to }; }) };
       });
       holds = (rec.holds || []).filter(function(h){ return teachers.indexOf(h.name) >= 0; }).map(function(h){ return { name: h.name, from: h.from, to: h.to, reason: h.reason || '' }; });
@@ -1477,7 +1490,7 @@
       programs: programs.map(function(p){ return { name: p.name, from: p.from, to: p.to, classes: p.classes.slice(), free: !!p.free }; }),
       holds: holds.map(function(h){ return { name: h.name, from: h.from, to: h.to, reason: h.reason || '' }; }),
       swaps: swaps.map(function(w){ return { owner: w.owner, taker: w.taker, from: w.from, to: w.to, ownerFree: !!w.ownerFree }; }),
-      absents: absents.map(function(a){ return { name: a.name, reason: a.reason || '', full: !!a.full, from: a.full ? '' : a.from, to: a.full ? '' : a.to,
+      absents: absents.map(function(a){ return { name: a.name, reason: a.reason || '', full: !!a.full, from: a.full ? '' : a.from, to: a.full ? '' : a.to, cover: a.cover || '',
         extra: a.full ? [] : (a.extra || []).map(function(r){ return { from: r.from, to: r.to }; }) }; }),
       items: R.needs.map(function(n){
         var sl = D.slots[n.i];
