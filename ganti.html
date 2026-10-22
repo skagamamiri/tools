@@ -256,6 +256,24 @@
     <div class="admin-list" id="coordList" style="margin-top:10px"><div class="empty">Memuatkan senarai guru…</div></div>
   </section>
 
+  <!-- ADMIN / PENYELARAS: sekolah ganti -->
+  <section class="card no-print hidden jana-only" id="sgCard">
+    <div class="card-head">
+      <div>
+        <h2><span class="step adm">S</span>Sekolah ganti <span class="tag amber">Admin / Penyelaras</span></h2>
+        <p>Tetapkan tarikh persekolahan ganti (cth. hari Sabtu) dan jadual hari persekolahan yang digunakan. Terpakai kepada semua yang menjana jadual teach-in.</p>
+      </div>
+    </div>
+    <div class="row">
+      <div><label class="lbl" for="sgDate">Tarikh sekolah ganti</label><input type="date" id="sgDate"></div>
+      <div><label class="lbl" for="sgDay">Gunakan jadual hari</label>
+        <select id="sgDay"><option>ISNIN</option><option>SELASA</option><option>RABU</option><option>KHAMIS</option><option>JUMAAT</option></select></div>
+      <div class="grow"><label class="lbl" for="sgNote">Catatan (pilihan)</label><input id="sgNote" placeholder="cth. Ganti cuti Deepavali"></div>
+      <div><button class="btn primary" id="sgAddBtn" type="button">+ Simpan</button></div>
+    </div>
+    <div class="list" id="sgList"></div>
+  </section>
+
   <!-- ADMIN SAHAJA: guru praktikum -->
   <section class="card no-print hidden jana-only" id="prCard">
     <div class="card-head">
@@ -642,13 +660,18 @@
   }
 
   /* ---------- UI: tarikh ---------- */
+  // Sekolah ganti (Firestore sekolahGanti, diurus Admin / Penyelaras): tarikh → jadual hari persekolahan yang digunakan.
+  function sekolahGanti(date){ return (window.GANTI_SEKOLAH_GANTI || []).find(function(x){ return x.date === date; }) || null; }
   function onDate(){
-    var day = dayOf($('dateIn').value || KD.dateKey());
+    var date = $('dateIn').value || KD.dateKey(), real = dayOf(date), sg = sekolahGanti(date);
+    var day = sg ? sg.ikut : real;
     D = buildDay(day);
+    D.realDay = real; D.sg = sg;
     var badge = $('dayBadge');
-    badge.textContent = day + (D.slots.length ? ' • ' + D.slots[0].start + '–' + D.slots[D.slots.length - 1].end : '');
+    var lbl = real + (sg ? ' (sekolah ganti • jadual ' + day + ')' : '');
+    badge.textContent = lbl + (D.slots.length ? ' • ' + D.slots[0].start + '–' + D.slots[D.slots.length - 1].end : '');
     badge.classList.toggle('warn', !D.slots.length);
-    if (!D.slots.length) badge.textContent = day + ' • tiada jadual';
+    if (!D.slots.length) badge.textContent = lbl + ' • tiada jadual';
     absents.forEach(function(a){ if (!a.full){ clampRange(a); (a.extra || []).forEach(clampRange); } });
     programs.forEach(clampRange);
     holds.forEach(clampRange);
@@ -946,7 +969,7 @@
     var needs = bestRun.run.needs, st = bestRun.run.st;
     needs.forEach(function(n){ delete n.done; markAdded(n); });
     needs.sort(function(a, b){ return a.i - b.i || a.class.localeCompare(b.class); });
-    R = { needs: needs, st: st, set: set, day: D.day, date: $('dateIn').value };
+    R = { needs: needs, st: st, set: set, day: D.realDay || D.day, ttDay: D.day, date: $('dateIn').value };
     renderResults();
     if (set.weekDropped) toast('Keutamaan mingguan dibatalkan supaya semua petak dapat diisi.');
   }
@@ -1178,8 +1201,9 @@
     var unf = needs.length - filled - prog - kol;
     var fairTxt = R.set.weekDropped ? ' • KEUTAMAAN MINGGUAN DIBATALKAN (jadual tidak dapat diisi sepenuhnya dengannya)' : R.set.weekFair ? (WEEKDAYS ? ' • Keutamaan mingguan (' + WEEKDAYS + ' hari direkod)' : ' • Keutamaan mingguan (tiada rekod lain)') : '';
     var setTxt = 'Maks teach-in: ≤4 masa→' + R.set.tier4 + ', 5→' + R.set.tier5 + ', 6→' + R.set.tier6 + ', 7+→' + R.set.tier7 + (R.set.flexMax ? ' • Fleksibel maks ' + R.set.flexMax : ' • Fleksibel tidak dilibatkan') + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '') + (R.set.noAdjacent ? ' • Elak bersambung kelas sendiri' : '') + (R.set.noReliefRun ? ' • Elak teach-in berturut' : '') + fairTxt + (R.set.splitKolab ? ' • Kolaborasi boleh dipecahkan' : '');
-    $('gridSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + setTxt + ' • ' + TT.label;
-    $('slipSub').textContent = R.day + ', ' + fmtDate(R.date) + ' • ' + absents.length + ' guru tidak hadir • ' + setTxt;
+    var sgTxt = R.ttDay && R.ttDay !== R.day ? ' (sekolah ganti • jadual ' + R.ttDay + ')' : '';
+    $('gridSub').textContent = R.day + sgTxt + ', ' + fmtDate(R.date) + ' • ' + setTxt + ' • ' + TT.label;
+    $('slipSub').textContent = R.day + sgTxt + ', ' + fmtDate(R.date) + ' • ' + absents.length + ' guru tidak hadir • ' + setTxt;
     $('printTitle').textContent = 'Jadual Guru Ganti — ' + R.day + ', ' + fmtDate(R.date);
     $('printSub').textContent = absents.length + ' guru tidak hadir • ' + filled + ' masa ganti' + (prog ? ' • ' + prog + ' diganti program' : '') + (unf ? ' • ' + unf + ' TIDAK TERISI' : '') + ' • ' + setTxt;
     $('stats').innerHTML =
@@ -1536,13 +1560,14 @@
   function loadWeekView(){
     var code = $('wkSel').value; if (!code || !wkWeeks) return;
     var w = wkWeeks.find(function(x){ return x.code === code; });
-    var dates = WDAYS.map(function(_, k){ return addDays(w.date, k + 1); });
+    var dates = WDAYS.concat(['SABTU']).map(function(_, k){ return addDays(w.date, k + 1); });
     var A = window.GantiAuth;
     if (!A || !A.user()){ $('wkGrid').innerHTML = ''; $('wkStats').innerHTML = ''; wkMsg('Sila <b>log masuk</b> dengan akaun DELIMa (bahagian atas halaman) untuk melihat rekod mingguan.', true); return; }
     if (wkCache[code]){ renderWeek(wkCache[code]); return; }
     wkMsg('Memuatkan rekod Minggu ' + code.replace(/^M/, '') + '…');
     A.loadRecords(dates).then(function(recs){
-      var data = { code: code, dates: dates, recs: recs };
+      // Lajur Sabtu hanya jika ada rekod (sekolah ganti).
+      var data = { code: code, dates: recs[dates[5]] ? dates : dates.slice(0, 5), recs: recs };
       wkCache[code] = data; renderWeek(data);
     }).catch(function(e){ wkMsg('Rekod tidak dapat dimuatkan: ' + esc(e.code || e.message) + ' (semak peraturan Firestore gantiRekod).', true); });
   }
@@ -1572,15 +1597,15 @@
     names.sort(function(a, b){ return ($('wkSort').value === 'jumlah' ? tot[b] - tot[a] : 0) || a.localeCompare(b); });
     var involved = names.filter(function(n){ return tot[n] > 0; }).length;
 
-    var wl = 'Minggu ' + data.code.replace(/^M/, '') + ' (' + fmtDate(dates[0]) + ' – ' + fmtDate(dates[4]) + ')';
+    var wl = 'Minggu ' + data.code.replace(/^M/, '') + ' (' + fmtDate(dates[0]) + ' – ' + fmtDate(dates[dates.length - 1]) + ')';
     $('wkTitle').textContent = 'Rekod Teach-In Mingguan — ' + wl;
-    $('wkSub').textContent = saved + '/5 hari direkod • ' + totalSlots + ' masa teach-in • ' + involved + ' guru terlibat • ' + absDays + ' guru-hari tidak hadir';
-    $('wkStats').innerHTML = stat('', saved + '/5', 'Hari direkod') + stat('ok', totalSlots, 'Masa teach-in') +
+    $('wkSub').textContent = saved + '/' + dates.length + ' hari direkod • ' + totalSlots + ' masa teach-in • ' + involved + ' guru terlibat • ' + absDays + ' guru-hari tidak hadir';
+    $('wkStats').innerHTML = stat('', saved + '/' + dates.length, 'Hari direkod') + stat('ok', totalSlots, 'Masa teach-in') +
       stat('', involved, 'Guru terlibat') + stat('bad', absDays, 'Guru-hari tidak hadir');
     wkMsg(saved ? '' : 'Belum ada rekod disimpan untuk minggu ini. Rekod dicipta apabila <b>Simpan Rekod</b> ditekan pada tab Jana Teach-In.');
 
     var h = '<thead><tr><th class="tn">Guru</th>' + dates.map(function(d, k){
-      return '<th class="' + (recs[d] ? '' : 'nr') + '">' + WDAYS[k] + '<br>' + fmtDate(d) + (recs[d] ? '' : '<br><i>tiada rekod</i>') + '</th>';
+      return '<th class="' + (recs[d] ? '' : 'nr') + '">' + (WDAYS[k] || 'SABTU') + '<br>' + fmtDate(d) + (recs[d] ? '' : '<br><i>tiada rekod</i>') + '</th>';
     }).join('') + '<th>Jumlah</th></tr></thead><tbody>';
     names.forEach(function(n){
       h += '<tr class="' + (tot[n] ? '' : 'none') + '"><td class="tn" title="' + esc(n) + '">' + esc(n) + '</td>';
@@ -1658,7 +1683,7 @@
   }
 
   $('genBtn').addEventListener('click', function(){
-    if (!D.slots.length){ toast('Tiada jadual pada hari ini.'); return; }
+    if (!D.slots.length){ toast(/SABTU|AHAD/.test(D.realDay || '') ? 'Tiada jadual pada hari ini. Jika hari ini sekolah ganti, Admin / Penyelaras perlu menetapkannya dalam kad Sekolah ganti.' : 'Tiada jadual pada hari ini.'); return; }
     if (!absents.length){ toast('Tambah sekurang-kurangnya seorang guru tidak hadir.'); return; }
     if (!$('preparedBy').value){ toast('Pilih guru yang menyediakan jadual teach-in.'); $('preparedBy').focus(); return; }
     if (absents.some(function(a){ return !a.full && rangesOf(a).some(function(r){ return mins(r.to) <= mins(r.from); }); })){ toast('Semak masa tidak hadir: masa tamat mesti selepas masa mula.'); return; }
@@ -1667,7 +1692,8 @@
     if (!$('weekFair').checked){ generate(); return; }
     if (!A || !A.user()){ toast('Log masuk untuk menggunakan keutamaan mingguan. Jadual dijana tanpanya.'); generate(); return; }
     var date = $('dateIn').value, dow = new Date(date + 'T00:00:00Z').getUTCDay();
-    var dates = [1, 2, 3, 4, 5].map(function(k){ return addDays(date, k - dow); }).filter(function(d){ return d !== date; });
+    if (dow === 0) dow = 7;
+    var dates = [1, 2, 3, 4, 5, 6].map(function(k){ return addDays(date, k - dow); }).filter(function(d){ return d !== date; });
     btn.disabled = true;
     A.loadRecords(dates).then(function(recs){
       Object.keys(recs).forEach(function(d){
@@ -1697,6 +1723,7 @@
       renderAdmins(); renderFlex(); renderPreparedBy(); if (by) $('preparedBy').value = by;
       onDate();
     },
+    sgChanged: function(){ if (!dateTouched) $('dateIn').value = defaultDate(); onDate(); },
     authChanged: function(){ wkCache = {}; if (document.body.classList.contains('tab-minggu')) initWeekTab(); },
     // Diagnostik: jana PDF slip / kod minggu tanpa memuat naik.
     pdf: function(){ return loadPdfLib().then(buildPdf); },
@@ -1705,10 +1732,11 @@
   };
 
   /* ---------- Mula ---------- */
+  var dateTouched = false;
   function defaultDate(){
     var d = new Date();
     if (d.getHours() >= 13) d.setDate(d.getDate() + 1);       // selepas waktu sekolah: hari esok
-    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    while ((d.getDay() === 0 || d.getDay() === 6) && !sekolahGanti(KD.dateKey(d))) d.setDate(d.getDate() + 1);
     return KD.dateKey(d);
   }
   window.GantiUI.ready = KD.loadTimetable().then(function(tt){
@@ -1727,6 +1755,7 @@
     ['absCard','holdCard','swapCard','progCard','setCard','byCard','genBar'].forEach(function(id){ $(id).classList.remove('hidden'); });
     $('dateIn').value = defaultDate();
     $('dateIn').addEventListener('change', function(){
+      dateTouched = true;
       if (BASE) exitUpdate(true);
       if (holds.length || swaps.length){ holds = []; swaps = []; toast('Permohonan dan jual beli masa dikosongkan kerana tarikh ditukar.'); }
       onDate();
@@ -1786,6 +1815,45 @@
     catch (e) { msg("Gagal log masuk: " + esc(e.message), true); }
   });
 
+  // Sekolah ganti: dibaca tanpa log masuk (peraturan: read if true), diurus Admin / Penyelaras.
+  window.GANTI_SEKOLAH_GANTI = [];
+  async function loadSekolahGanti() {
+    const snap = await getDocs(collection(db, "sekolahGanti"));
+    window.GANTI_SEKOLAH_GANTI = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.date.localeCompare(b.date));
+    await window.GantiUI.ready; window.GantiUI.sgChanged();
+    if (isAdmin) renderSekolahGanti();
+  }
+  loadSekolahGanti().catch(e => console.warn("sekolahGanti", e));
+  let sgReady = false;
+  function initSgForm() {
+    if (sgReady) return; sgReady = true;
+    $("sgAddBtn").addEventListener("click", async () => {
+      const date = $("sgDate").value, ikut = $("sgDay").value, catatan = $("sgNote").value.trim();
+      if (!date) return alert("Pilih tarikh sekolah ganti.");
+      $("sgAddBtn").disabled = true;
+      try {
+        await setDoc(doc(db, "sekolahGanti", date), { date, ikut, catatan, createdBy: auth.currentUser.email, createdAt: serverTimestamp() });
+        $("sgNote").value = "";
+        await loadSekolahGanti();
+      } catch (e) { alert("Gagal menyimpan: " + (e.code || e.message) + "\nPastikan peraturan Firestore untuk sekolahGanti sudah ditambah."); }
+      finally { $("sgAddBtn").disabled = false; }
+    });
+    $("sgList").addEventListener("click", async ev => {
+      const id = ev.target.dataset.sgdel; if (!id) return;
+      if (!confirm("Padam tarikh sekolah ganti ini?")) return;
+      try { await deleteDoc(doc(db, "sekolahGanti", id)); await loadSekolahGanti(); } catch (e) { alert("Gagal memadam: " + (e.code || e.message)); }
+    });
+  }
+  function renderSekolahGanti() {
+    const HARI = ["AHAD", "ISNIN", "SELASA", "RABU", "KHAMIS", "JUMAAT", "SABTU"];
+    const today = new Date().toISOString().slice(0, 10);
+    const list = window.GANTI_SEKOLAH_GANTI;
+    $("sgList").innerHTML = list.length ? list.map(x => `<div class="item"${x.date < today ? ' style="opacity:.55"' : ''}><div class="name">${fmtD(x.date)} (${HARI[new Date(x.date + "T00:00:00Z").getUTCDay()]}) → jadual ${esc(x.ikut)}
+        <div class="meta">${x.catatan ? esc(x.catatan) : "Sekolah ganti"}${x.date < today ? " • telah berlalu" : ""}</div></div>
+        <button class="btn danger" type="button" data-sgdel="${esc(x.id)}">Padam</button></div>`).join("")
+      : '<div class="empty">Tiada tarikh sekolah ganti ditetapkan.</div>';
+  }
+
   window.GANTI_PRAKTIKUM = [];
   async function loadPraktikum() {
     const snap = await getDocs(collection(db, "gantiPraktikum"));
@@ -1805,7 +1873,7 @@
   }
 
   onAuthStateChanged(auth, async u => {
-    isAdmin = false; isRealAdmin = false; window.GANTI_SEKATAN = []; window.GANTI_SEE_SEKATAN = false; $("blockCard").classList.add("hidden"); $("prCard").classList.add("hidden"); $("coordCard").classList.add("hidden");
+    isAdmin = false; isRealAdmin = false; window.GANTI_SEKATAN = []; window.GANTI_SEE_SEKATAN = false; $("blockCard").classList.add("hidden"); $("prCard").classList.add("hidden"); $("sgCard").classList.add("hidden"); $("coordCard").classList.add("hidden");
     if (window.GANTI_PRAKTIKUM.length) { window.GANTI_PRAKTIKUM = []; window.GantiUI?.ready?.then(() => window.GantiUI.praktikumChanged()); }
     window.GantiUI?.ready?.then(() => window.GantiUI.authChanged());
     if (!u) { window.ICTHeader?.clearUser(); msg("Log masuk dengan akaun DELIMa supaya tetapan sekolah (guru praktikum dan lain-lain) turut diambil kira, dan rekod boleh disimpan.", true); return; }
@@ -1820,7 +1888,7 @@
       if (isRealAdmin) { $("coordCard").classList.remove("hidden"); loadCoordinators(); }
       window.GANTI_SEE_SEKATAN = isRealAdmin;   // sekatan teach-in: admin sahaja boleh melihat & mengurus
       if (isRealAdmin) { await window.GantiUI.ready; initForm(); $("blockCard").classList.remove("hidden"); }
-      if (isAdmin) { await window.GantiUI.ready; initPrForm(); $("prCard").classList.remove("hidden"); }
+      if (isAdmin) { await window.GantiUI.ready; initPrForm(); $("prCard").classList.remove("hidden"); initSgForm(); $("sgCard").classList.remove("hidden"); renderSekolahGanti(); }
       await window.GantiUI.ready;
       try { await loadPraktikum(); } catch (e) { console.warn("gantiPraktikum", e); if (isAdmin) $("prList").innerHTML = '<div class="empty" style="color:var(--red)">Senarai guru praktikum tidak dapat dibaca (' + esc(e.code || e.message) + '). Semak peraturan Firestore gantiPraktikum.</div>'; }
       const n = await loadBlocks();

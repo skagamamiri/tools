@@ -34,3 +34,12 @@
       allow read: if isActiveTeacher();
       allow create, update, delete: if isGantiAdmin();
     }
+
+    // ==========================================
+    // SEKOLAH GANTI — tarikh persekolahan ganti dan jadual hari yang digunakan
+    // (doc id = YYYY-MM-DD; dibaca tanpa log masuk supaya semua boleh menjana teach-in)
+    // ==========================================
+    match /sekolahGanti/{date} {
+      allow read: if true;
+      allow create, update, delete: if isGantiAdmin();
+    }
