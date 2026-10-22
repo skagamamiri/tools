@@ -80,8 +80,11 @@
   .tabs{display:flex;gap:6px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:5px;width:max-content;max-width:100%;overflow-x:auto}
   .tab{border:0;background:transparent;padding:10px 18px;border-radius:12px;font:inherit;font-weight:800;font-size:14px;color:#475569;cursor:pointer;white-space:nowrap}
   .tab.on{background:var(--navy);color:#fff}
-  body.tab-minggu .jana-only{display:none!important}
+  body.tab-minggu .jana-only, body.tab-panduan .jana-only{display:none!important}
   body:not(.tab-minggu) .minggu-only{display:none!important}
+  body:not(.tab-panduan) .panduan-only{display:none!important}
+  #guideBody{padding:4px 2px 12px}
+  #guideBody .pg img{max-width:100%}
   .wk-msg{font-size:13px;color:#475569;margin:0 0 10px}
   .wk-msg.err{color:var(--red);font-weight:700}
   table.g.wk td.c{min-width:118px;height:34px;white-space:normal;padding:2px 4px;line-height:1.15}
@@ -240,7 +243,20 @@
   <nav class="tabs no-print" id="tabs">
     <button type="button" class="tab on" data-tab="jana">Jana Teach-In</button>
     <button type="button" class="tab" data-tab="minggu">Rekod Mingguan</button>
+    <button type="button" class="tab" data-tab="panduan">Panduan</button>
   </nav>
+
+  <!-- Tab Panduan: kandungan dibaca daripada panduan-ganti.html (sumber tunggal panduan) -->
+  <section class="card no-print panduan-only" id="guideCard">
+    <div class="card-head">
+      <div>
+        <h2><span class="step">?</span>Panduan Guru Ganti</h2>
+        <p>Cara menjana teach-in, maksud setiap tetapan dan apa perlu dibuat jika jadual tidak dapat dijana. Panduan ini dikemas kini bersama sistem.</p>
+      </div>
+      <a class="btn ghost small" href="panduan-ganti.html" target="_blank" rel="noopener">Buka / Cetak PDF</a>
+    </div>
+    <div id="guideBody"><div class="empty">Memuatkan panduan…</div></div>
+  </section>
 
   <!-- ADMIN SEBENAR SAHAJA: lantik Penyelaras Teach-In -->
   <section class="card no-print hidden jana-only" id="coordCard">
@@ -1531,9 +1547,25 @@
   function addDays(d, n){ var x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); }
   function setTab(t){
     document.body.classList.toggle('tab-minggu', t === 'minggu');
+    document.body.classList.toggle('tab-panduan', t === 'panduan');
     Array.prototype.forEach.call(document.querySelectorAll('#tabs .tab'), function(b){ b.classList.toggle('on', b.dataset.tab === t); });
     lsSet('ganti_tab', t);
     if (t === 'minggu') initWeekTab();
+    if (t === 'panduan') loadGuide();
+  }
+  // Panduan: dibaca daripada panduan-ganti.html supaya sentiasa sama dengan versi terkini (tanpa salinan dalam fail ini).
+  var guideLoaded = false;
+  function loadGuide(){
+    if (guideLoaded) return; guideLoaded = true;
+    fetch('panduan-ganti.html', { cache: 'no-cache' }).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }).then(function(html){
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      var css = Array.prototype.map.call(doc.querySelectorAll('style'), function(x){ return x.textContent.replace(/@page[^}]*\}/g, ''); }).join('\n');
+      var pg = doc.querySelector('.pg');
+      $('guideBody').innerHTML = '<style>' + css + '</style>' + (pg ? pg.outerHTML : '<div class="empty">Panduan tidak ditemui.</div>');
+    }).catch(function(e){
+      guideLoaded = false;
+      $('guideBody').innerHTML = '<div class="empty" style="color:var(--red)">Panduan tidak dapat dimuatkan (' + esc(e.message) + '). <a href="panduan-ganti.html" target="_blank">Buka panduan</a></div>';
+    });
   }
   $('tabs').addEventListener('click', function(ev){ var b = ev.target.closest('.tab'); if (b) setTab(b.dataset.tab); });
 
@@ -1761,7 +1793,7 @@
       onDate();
     });
     restoreSettings(); renderAdmins(); renderFlex(); renderPreparedBy(); renderProgClasses(); onDate();
-    if (lsGet('ganti_tab', 'jana') === 'minggu') setTab('minggu');
+    var savedTab = lsGet('ganti_tab', 'jana'); if (savedTab === 'minggu' || savedTab === 'panduan') setTab(savedTab);
     return teachers;
   }).catch(function(e){
     $('loadingCard').innerHTML = '<div class="empty" style="color:var(--red)">' + esc(e.message) + '</div>';

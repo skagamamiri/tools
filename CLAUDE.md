@@ -132,6 +132,11 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   localStorage `ganti_tab`). Rekod Mingguan: pick a school week, loads gantiRekod for Mon–Fri, grid of all teachers × 5 days
   (relief count + classes, absence reason, grey = day not saved) + weekly total; sort by name/total; prints A4 landscape.
   Rules block for gantiRekod is in `firestore-rules-ganti.txt` (must be added in the Console).
+- Tab "Panduan" (`.panduan-only`, body class `tab-panduan`, remembered in `ganti_tab`): `loadGuide()` fetches `panduan-ganti.html`,
+  takes its `<style>` (minus @page) and the `.pg` element and injects them into `#guideBody`. `panduan-ganti.html` (+ images in
+  `panduan-ganti/*.jpg`) is the SINGLE SOURCE of the user guide — all CSS is scoped under `.pg`, with `@media screen` tweaks for the tab.
+  Whenever a ganti.html feature changes, update panduan-ganti.html in the same commit (and refresh screenshots if the UI changed).
+  The printable PDF is rendered from it (Playwright `page.pdf`, A4, print media); the Claude Doc copy of the guide is secondary.
 - School week comes from erph.html (`const WEEKS=[...].map` and `CUTI`), fetched and parsed — keep that shape intact.
 
 ## e-Kokurikulum (ekokurikulum.html)
