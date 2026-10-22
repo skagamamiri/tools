@@ -1185,8 +1185,8 @@
 
   function reliefLabel(n){
     if (n.program) return { t: n.program.name.toUpperCase(), c: '' };
-    if (n.kolab) return { t: 'KOLABORASI – ' + n.partners.map(upShort).join(', '), c: 'kol' };
-    if (n.relief) return { t: upShort(n.relief) + (n.byMentor ? ' (GURU ASAL)' : ''), c: '' };
+    if (n.kolab) return { t: 'KOLABORASI – ' + n.partners.map(function(p){ return 'CIKGU ' + upShort(p); }).join(', '), c: 'kol' };
+    if (n.relief) return { t: 'CIKGU ' + upShort(n.relief) + (n.byMentor ? ' (GURU ASAL)' : ''), c: '' };
     return { t: 'TIADA GURU', c: 'none' };
   }
   function renderSlips(){
