@@ -84,6 +84,13 @@
   body:not(.tab-minggu) .minggu-only{display:none!important}
   body:not(.tab-panduan) .panduan-only{display:none!important}
   #guideBody{padding:4px 2px 12px}
+  .wk-settings{margin-top:16px}
+  .wk-settings h3{font-size:15px;margin:0 0 8px}
+  .wk-settings details{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:8px;background:#fff}
+  .wk-settings summary{cursor:pointer;font-weight:700;font-size:13px}
+  .wk-settings summary .meta{font-weight:500;color:var(--muted)}
+  .wk-settings ul{margin:8px 0 2px;padding-left:18px;font-size:12.5px;line-height:1.55}
+  @media print{ .wk-settings details{break-inside:avoid} .wk-settings summary{list-style:none} }
   #guideBody .pg img{max-width:100%}
   .wk-msg{font-size:13px;color:#475569;margin:0 0 10px}
   .wk-msg.err{color:var(--red);font-weight:700}
@@ -561,6 +568,7 @@
       <span><i style="background:#f1f5f9"></i>Tiada rekod disimpan untuk hari itu</span>
       <span>Jumlah = bilangan masa teach-in (30 minit) dalam minggu</span>
     </div>
+    <div id="wkSettings" class="wk-settings"></div>
   </section>
 </main>
 
@@ -938,6 +946,19 @@
       splitKolab: $('splitKolab').checked,
       flexMax: +$('flexMax').value
     };
+  }
+  // Senarai tetapan dalam bentuk teks (disimpan bersama rekod supaya boleh disemak kemudian).
+  function settingsLines(set){
+    var L = [];
+    L.push('Had teach-in: 4 masa ke bawah → ' + set.tier4 + ', 5 masa → ' + set.tier5 + ', 6 masa → ' + set.tier6 + ', 7 masa ke atas → ' + set.tier7);
+    L.push('Guru fleksibel: ' + (set.flexMax ? 'maks ' + set.flexMax + ' masa' : 'tidak dilibatkan') + (set.flexMax && set.fleksibel && set.fleksibel.length ? ' (' + set.fleksibel.join(', ') + ')' : ''));
+    L.push('Pentadbir: ' + (set.adm ? 'maks ' + set.adm + ' masa' : 'tidak dilibatkan') + (set.adm && set.pentadbir && set.pentadbir.length ? ' (' + set.pentadbir.join(', ') + ')' : ''));
+    L.push('Elak 3 masa atau lebih berturut-turut: ' + (set.noConsec ? 'Ya' : 'Tidak'));
+    L.push('Elak teach-in bersambung kelas asal: ' + (set.noAdjacent ? 'Ya' : 'Tidak'));
+    L.push('Elak teach-in berturut-turut: ' + (set.noReliefRun ? 'Ya' : 'Tidak'));
+    L.push('Utamakan guru belum teach-in minggu ini: ' + (set.weekDropped ? 'Ya, tetapi DIBATALKAN kerana jadual tidak dapat diisi sepenuhnya' : set.weekFair ? 'Ya' : 'Tidak'));
+    L.push('Kelas kolaborasi boleh dipecahkan: ' + (set.splitKolab ? 'Ya' : 'Tidak'));
+    return L;
   }
   function restoreSettings(){
     var s = lsGet(LS_SET, null); if (!s) return;
@@ -1527,6 +1548,13 @@
       date: R.date, day: R.day, week: weekLabel || '',
       preparedBy: $('preparedBy').value,
       revision: BASE ? (BASE.rec.revision == null ? 0 : BASE.rec.revision || 1) + 1 : 1,
+      settings: (function(){
+        var x = Object.assign({}, R.set, { weekDropped: !!R.set.weekDropped,
+          pentadbir: Array.from(admins).sort(), fleksibel: Array.from(flex).sort() });
+        x.lines = settingsLines(x);
+        return x;
+      })(),
+      mode: BASE ? BASE.mode : 'baru',
       programs: programs.map(function(p){ return { name: p.name, from: p.from, to: p.to, classes: p.classes.slice(), free: !!p.free }; }),
       holds: holds.map(function(h){ return { name: h.name, from: h.from, to: h.to, reason: h.reason || '' }; }),
       swaps: swaps.map(function(w){ return { owner: w.owner, taker: w.taker, from: w.from, to: w.to, ownerFree: !!w.ownerFree }; }),
@@ -1656,6 +1684,17 @@
       h += '<td class="sum tot' + (tot[n] ? ' hl' : '') + '">' + (tot[n] || '–') + '</td></tr>';
     });
     $('wkGrid').innerHTML = h + '</tbody>';
+    // Tetapan yang digunakan oleh penyedia setiap hari (disimpan bersama rekod).
+    var days = WDAYS.concat(['SABTU']);
+    var sh = dates.map(function(d, k){
+      var r = recs[d]; if (!r) return '';
+      var st = r.settings, who = (r.preparedBy || '—') + (r.savedBy ? ' • disimpan oleh ' + r.savedBy : '');
+      var lines = st ? (st.lines || settingsLines(st)) : ['Tetapan tidak direkodkan (rekod disimpan sebelum ciri ini ditambah).'];
+      return '<details open><summary>' + days[k] + ' ' + fmtDate(d) + ' <span class="meta">— disediakan oleh ' + esc(who) +
+        (r.revision > 1 ? ' • kemas kini ke-' + (r.revision - 1) + (r.mode === 'semula' ? ' (jana semula)' : r.mode === 'tambah' ? ' (tambah teach-in)' : '') : '') + '</span></summary><ul>' +
+        lines.map(function(l){ return '<li>' + esc(l) + '</li>'; }).join('') + '</ul></details>';
+    }).join('');
+    $('wkSettings').innerHTML = sh ? '<h3>Tetapan yang digunakan</h3>' + sh : '';
   }
 
   /* ---------- Salin & cetak ---------- */

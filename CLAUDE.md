@@ -120,6 +120,8 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   {"ok":true,...} from the ganti.html origin.
 - "Simpan Rekod" also writes the day's structured record to Firestore `gantiRekod/<YYYY-MM-DD>` (date, day, week, preparedBy,
   absents[], items[{start,end,class,subject,absent[],relief,kind ganti|program|kolab|tiada,note}], savedBy, savedAt); re-saving overwrites.
+  Also `settings` (R.set + `pentadbir[]`, `fleksibel[]`, `weekDropped`, `lines[]` = readable Malay lines from `settingsLines()`) and
+  `mode` (baru|tambah|semula). Rekod Mingguan shows them per day under the grid (`#wkSettings`, "Tetapan yang digunakan").
 - Update mode (`BASE = {rec,map,mode,src}`), two buttons in absCard: "Tambah Teach-In" (`mode:'tambah'`) and "Jana Semula Keseluruhan"
   (`mode:'semula'`); banner can switch mode. `startUpdate()` uses the on-screen result R as base when it is for the same date
   (`src:'skrin'`, no sign-in needed), otherwise loads gantiRekod for the date (`src:'rekod'`, absents marked ASAL, programs, holds, swaps, preparedBy).
