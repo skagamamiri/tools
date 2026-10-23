@@ -101,7 +101,7 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   write isGantiAdmin — rules block in `firestore-rules-ganti.txt`, must be added in the Console). Loaded at page start without sign-in
   (`GANTI_SEKOLAH_GANTI`). onDate(): `D.day` = timetable day used (`ikut`), `D.realDay` = actual day (SABTU); R.day / slips / record /
   PDF name use the real day, subtitles show "(sekolah ganti • jadual X)". defaultDate() no longer skips a weekend that is a sekolah ganti.
-  weekFair counts Mon–Sat; Rekod Mingguan shows a SABTU column only when that Saturday has a record.
+  weekFair counts Mon–Sat; Rekod Mingguan shows a SABTU column when that Saturday is a sekolah ganti or has a record.
 - Penyelaras Teach-In: teachers/<email>.penyelarasTeachIn == true gives admin access inside ganti.html only (Guru praktikum card only —
   Sekatan is real-admin only: card hidden, reasons/SEKAT cells hidden from others via `GANTI_SEE_SEKATAN`; header shows "PENYELARAS TEACH-IN"). Only role admin sees the "Penyelaras Teach-In" card that ticks this field (updateDoc on
   teachers). Rules use isGantiAdmin() = isAdmin() || penyelarasTeachIn (see `firestore-rules-ganti.txt`). Cikgu Haslinda is the coordinator.

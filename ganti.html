@@ -1626,8 +1626,8 @@
     if (wkCache[code]){ renderWeek(wkCache[code]); return; }
     wkMsg('Memuatkan rekod Minggu ' + code.replace(/^M/, '') + '…');
     A.loadRecords(dates).then(function(recs){
-      // Lajur Sabtu hanya jika ada rekod (sekolah ganti).
-      var data = { code: code, dates: recs[dates[5]] ? dates : dates.slice(0, 5), recs: recs };
+      // Lajur Sabtu jika Sabtu itu sekolah ganti atau ada rekod.
+      var data = { code: code, dates: recs[dates[5]] || sekolahGanti(dates[5]) ? dates : dates.slice(0, 5), recs: recs };
       wkCache[code] = data; renderWeek(data);
     }).catch(function(e){ wkMsg('Rekod tidak dapat dimuatkan: ' + esc(e.code || e.message) + ' (semak peraturan Firestore gantiRekod).', true); });
   }
@@ -1665,7 +1665,7 @@
     wkMsg(saved ? '' : 'Belum ada rekod disimpan untuk minggu ini. Rekod dicipta apabila <b>Simpan Rekod</b> ditekan pada tab Jana Teach-In.');
 
     var h = '<thead><tr><th class="tn">Guru</th>' + dates.map(function(d, k){
-      return '<th class="' + (recs[d] ? '' : 'nr') + '">' + (WDAYS[k] || 'SABTU') + '<br>' + fmtDate(d) + (recs[d] ? '' : '<br><i>tiada rekod</i>') + '</th>';
+      return '<th class="' + (recs[d] ? '' : 'nr') + '">' + (WDAYS[k] || 'SABTU') + (k === 5 && sekolahGanti(d) ? ' <small>(sekolah ganti)</small>' : '') + '<br>' + fmtDate(d) + (recs[d] ? '' : '<br><i>tiada rekod</i>') + '</th>';
     }).join('') + '<th>Jumlah</th></tr></thead><tbody>';
     names.forEach(function(n){
       h += '<tr class="' + (tot[n] ? '' : 'none') + '"><td class="tn" title="' + esc(n) + '">' + esc(n) + '</td>';
@@ -1794,7 +1794,10 @@
       renderAdmins(); renderFlex(); renderPreparedBy(); if (by) $('preparedBy').value = by;
       onDate();
     },
-    sgChanged: function(){ if (!dateTouched) $('dateIn').value = defaultDate(); onDate(); },
+    sgChanged: function(){
+      if (!dateTouched) $('dateIn').value = defaultDate(); onDate();
+      wkCache = {}; if (document.body.classList.contains('tab-minggu')) loadWeekView();
+    },
     authChanged: function(){ wkCache = {}; if (document.body.classList.contains('tab-minggu')) initWeekTab(); },
     // Diagnostik: jana PDF slip / kod minggu tanpa memuat naik.
     pdf: function(){ return loadPdfLib().then(buildPdf); },
