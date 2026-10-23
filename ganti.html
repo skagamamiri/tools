@@ -148,6 +148,10 @@
   table.slip-t td.none{color:var(--red);font-weight:800}
   table.slip-t td.kol{color:#92400e}
   .prepared{margin-top:16px;font-size:14px;color:#000}
+  .kolab-note:empty{display:none}
+  .kolab-note{margin-top:14px;padding:10px 12px;border:1px solid #000;font-size:13px;color:#000;line-height:1.5;break-inside:avoid}
+  .kolab-note b.h{display:block;margin-bottom:4px;text-transform:uppercase}
+  .kolab-note ul{margin:6px 0 0;padding-left:18px}
   .prepared b{text-transform:uppercase}
   .print-title{display:none}
   .grid-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px;max-height:80vh}
@@ -502,6 +506,7 @@
     <div class="save-status hidden no-print" id="saveStatus"></div>
     <div class="stats no-print" id="stats"></div>
     <div class="slips" id="slips"></div>
+    <div class="kolab-note" id="kolabNote"></div>
     <div class="prepared" id="preparedLine"></div>
   </section>
 
@@ -917,7 +922,30 @@
     lsSet(LS_BY, this.value);
     if (R) renderPreparedLine();
   });
+  // Makluman kelas kolaborasi dipecahkan (guru dilepaskan untuk teach-in, pasangan meneruskan kelas).
+  function titleCase(h){ return h.charAt(0) + h.slice(1).toLowerCase(); }
+  function gelar(n){ return titleCase(honorific(n)) + ' ' + shortName(n); }
+  function kolabNotes(){
+    if (!R) return [];
+    var out = [];
+    R.needs.slice().sort(function(a, b){ return a.i - b.i; }).forEach(function(n){
+      if (!n.relief || !n.releasedFrom) return;
+      var co = (coTeachers(n.relief, n.i) || []).filter(function(t){ return t !== n.relief; });
+      var sl = D.slots[n.i], last = out[out.length - 1];
+      if (last && last.t === n.relief && last.from === n.releasedFrom && last.to === n.class && last.end === sl.start){ last.end = sl.end; return; }
+      out.push({ t: n.relief, from: n.releasedFrom, to: n.class, co: co, start: sl.start, end: sl.end });
+    });
+    return out.map(function(x){
+      return fmtT(x.start) + '-' + fmtT(x.end) + ': ' + gelar(x.t) + ' dilepaskan daripada kelas ' + x.from +
+        ' untuk teach-in di kelas ' + x.to + '. Pengajaran di kelas ' + x.from + ' diteruskan oleh ' +
+        (x.co.length ? x.co.map(gelar).join(' dan ') : 'guru pasangan') + '.';
+    });
+  }
+  var KOLAB_INTRO = 'Bagi memastikan setiap kelas mempunyai guru, guru berikut telah dilepaskan buat sementara waktu daripada kelas kolaborasi untuk melaksanakan teach-in. Pengajaran di kelas kolaborasi tersebut akan diteruskan oleh guru pasangan. Kerjasama dan persefahaman semua guru amat dihargai.';
   function renderPreparedLine(){
+    var kn = kolabNotes();
+    $('kolabNote').innerHTML = kn.length ? '<b class="h">Makluman: Kelas kolaborasi</b>' + esc(KOLAB_INTRO) +
+      '<ul>' + kn.map(function(l){ return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' : '';
     var by = $('preparedBy').value;
     $('preparedLine').innerHTML = 'Jadual teach-in disediakan oleh: <b>' + esc(by || '______________________') + '</b>';
   }
@@ -1435,6 +1463,21 @@
       y = doc.lastAutoTable.finalY + 8;
     });
     var by = $('preparedBy').value;
+    var kn = kolabNotes();
+    if (kn.length){
+      var W = 210 - 2 * M;
+      doc.setFontSize(9.5);
+      var intro = doc.splitTextToSize(KOLAB_INTRO, W - 6);
+      var items = kn.map(function(l){ return doc.splitTextToSize('• ' + l, W - 9); });
+      var h = 6 + 5 + intro.length * 4.3 + items.reduce(function(s, x){ return s + x.length * 4.3 + 1; }, 0) + 2;
+      if (y + h > 297 - M - 10){ doc.addPage(); y = M; }
+      doc.setDrawColor(0); doc.setLineWidth(0.3); doc.rect(M, y, W, h);
+      var yy = y + 6;
+      doc.setFont('helvetica', 'bold'); doc.text('MAKLUMAN: KELAS KOLABORASI', M + 3, yy); yy += 5;
+      doc.setFont('helvetica', 'normal'); doc.text(intro, M + 3, yy); yy += intro.length * 4.3 + 1;
+      items.forEach(function(x){ doc.text(x, M + 4.5, yy); yy += x.length * 4.3 + 1; });
+      y += h + 8;
+    }
     if (y > 297 - M - 8){ doc.addPage(); y = M; }
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
     doc.text('Jadual teach-in disediakan oleh: ', M, y);

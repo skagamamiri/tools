@@ -109,7 +109,8 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 - Output: "Teach-In" slips in the school's form layout (one per absent teacher: Nama/Tarikh/Hari/Sebab + Nama Guru/Masa/Kelas-MP,
   no blank padding rows; "Disediakan oleh" (preparer, required, remembered in localStorage `ganti_disediakan`) printed after the last slip;
   printed A4 portrait, 3 per page; relief names prefixed by `honorific()`: USTAZ/USTAZAH (bin/binti) for teachers of BA or PI-* in the
-  timetable (`TT.agama`), else CIKGU — also in PDF and WhatsApp), plus a one-page grid of all teachers (A4 landscape), editable relief list, WhatsApp text copy.
+  timetable (`TT.agama`), else CIKGU — also in PDF and WhatsApp; when any need has `releasedFrom` (split kolab), a boxed
+  "MAKLUMAN: KELAS KOLABORASI" note (`kolabNotes()`, `KOLAB_INTRO`, `#kolabNote`) is printed before "Disediakan oleh" on slips and in the PDF), plus a one-page grid of all teachers (A4 landscape), editable relief list, WhatsApp text copy.
 - "Simpan Rekod": builds a vector PDF of the slips (jsPDF + autotable from cdnjs, loaded on click) and POSTs it (text/plain JSON:
   idToken, week, fileName, pdfBase64) to the Apps Script web app `apps-script/teach-in-drive.gs` (URL in `TEACHIN_DRIVE_URL`).
   The script verifies the Firebase ID token by reading teachers/<email> via Firestore REST, then saves to Drive
