@@ -323,6 +323,28 @@
     <div class="list" id="prList"></div>
   </section>
 
+  <!-- ADMIN / PENYELARAS: pelepasan kelas -->
+  <section class="card no-print hidden jana-only" id="lpCard">
+    <div class="card-head">
+      <div>
+        <h2><span class="step adm">L</span>Pelepasan kelas <span class="tag amber">Admin / Penyelaras</span></h2>
+        <p>Guru dibebaskan daripada kelas / mata pelajaran tertentu (cth. tidak dibenarkan mengajar kelas itu). Guru tersebut boleh diberikan teach-in pada masa itu, dan kelas berkenaan akan diberikan guru teach-in.</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="grow"><label class="lbl" for="lpTeacher">Guru</label><select id="lpTeacher"></select></div>
+      <div><label class="lbl" for="lpFrom">Tarikh mula (pilihan)</label><input type="date" id="lpFrom"></div>
+      <div><label class="lbl" for="lpTo">Tarikh tamat (pilihan)</label><input type="date" id="lpTo"></div>
+    </div>
+    <label class="lbl" style="margin-top:12px">Kelas / mata pelajaran yang dibebaskan</label>
+    <div class="chips" id="lpClasses"><span class="meta">Pilih guru dahulu.</span></div>
+    <div class="row" style="margin-top:10px">
+      <div class="grow"><label class="lbl" for="lpReason">Sebab</label><input id="lpReason" placeholder="cth. Tidak dibenarkan mengajar kelas ini"></div>
+      <div><button class="btn primary" id="lpAddBtn" type="button">+ Simpan Pelepasan</button></div>
+    </div>
+    <div class="list" id="lpList"></div>
+  </section>
+
   <!-- ADMIN SAHAJA: sekatan teach-in -->
   <section class="card no-print hidden jana-only" id="blockCard">
     <div class="card-head">
@@ -650,6 +672,15 @@
         if (x && take[x.class + '|' + x.subject]){ row[i] = { class: x.class, subject: x.subject, mentor: p.mentor }; mrow[i] = null; }
       });
     });
+    // Pelepasan kelas: slot kelas+subjek guru itu dikosongkan (guru lapang); kelas perlu guru teach-in.
+    var lepas = [];
+    activePelepasan().forEach(function(p){
+      var row = tmap[p.teacher]; if (!row) return;
+      var take = {}; (p.classes || []).forEach(function(c){ take[c.class + '|' + c.subject] = 1; });
+      row.forEach(function(x, i){
+        if (x && !x.mentor && take[x.class + '|' + x.subject]){ lepas.push({ i: i, class: x.class, subject: x.subject, teacher: p.teacher, reason: p.reason || '' }); row[i] = null; }
+      });
+    });
     // Jual beli masa: pindahkan slot guru asal dalam julat kepada guru yang mengambil alih.
     swaps.forEach(function(w){
       var orow = tmap[w.owner], trow = tmap[w.taker] = tmap[w.taker] || new Array(slots.length).fill(null);
@@ -669,7 +700,11 @@
     });
     // Slot yang ada guru mengajar bukan rehat walaupun tiada data kelas.
     Object.keys(tmap).forEach(function(n){ tmap[n].forEach(function(x, i){ if (x) slots[i].brk = false; }); });
-    return { day: day, slots: slots, tmap: tmap, cmap: cmap, lo: lo, mentorOf: mentorOf };
+    return { day: day, slots: slots, tmap: tmap, cmap: cmap, lo: lo, mentorOf: mentorOf, lepas: lepas };
+  }
+  function activePelepasan(){
+    var date = ($('dateIn') && $('dateIn').value) || KD.dateKey();
+    return (window.GANTI_PELEPASAN || []).filter(function(p){ return (!p.from || p.from <= date) && (!p.to || date <= p.to); });
   }
   function activePraktikum(){
     var date = ($('dateIn') && $('dateIn').value) || KD.dateKey();
@@ -1081,6 +1116,13 @@
         seen[key] = n; needs.push(n);
       });
     });
+    // Pelepasan kelas: kelas yang ditinggalkan guru yang dibebaskan perlu guru teach-in.
+    (D.lepas || []).forEach(function(l){
+      var key = l.class + '@' + l.i;
+      if (seen[key]){ if (seen[key].absent.indexOf(l.teacher) < 0) seen[key].absent.push(l.teacher); seen[key].lepas = l; return; }
+      var n = { key: key, i: l.i, class: l.class, subject: l.subject, absent: [l.teacher], lepas: l, program: programFor(l.class, l.i), partners: [], relief: null };
+      seen[key] = n; needs.push(n);
+    });
     // Pasangan guru bersama yang turut tidak hadir tidak dikira hadir.
     needs.forEach(function(n){ n.partners = n.partners.filter(function(p){ return n.absent.indexOf(p) < 0; }); });
 
@@ -1212,7 +1254,7 @@
   function candidates(need, st, strict){
     var out = [], i = need.i, set = st.set;
     teachers.forEach(function(t){
-      if (absentAt(t, i)) return;
+      if (absentAt(t, i) || need.absent.indexOf(t) >= 0) return;
       var released = false;
       if (busy(t, i, st)){
         if (teaching(t, i) && st.relief[t].indexOf(i) < 0 && canRelease(t, i, st)) released = true; else return;
@@ -1298,15 +1340,32 @@
     if (n.relief) return { t: honorific(n.relief) + ' ' + upShort(n.relief) + (n.byMentor ? ' (GURU ASAL)' : ''), c: '' };
     return { t: 'TIADA GURU', c: 'none' };
   }
+  // Kumpulan slip: satu bagi setiap guru tidak hadir + satu bagi setiap guru yang dibebaskan daripada kelas (pelepasan).
+  function slipGroups(){
+    var g = absents.map(function(a){
+      return { name: a.name, why: (a.reason || '').toUpperCase() + (a.full ? '' : (a.reason ? ' ' : '') + '(' + rangeTxt(a) + ')'),
+        wa: (a.reason ? ' — ' + a.reason.toUpperCase() : '') + (a.full ? '' : ' (' + rangeTxt(a) + ')'),
+        needs: R.needs.filter(function(n){ return n.absent.indexOf(a.name) >= 0 && !n.lepas; }) };
+    });
+    var lp = {};
+    R.needs.forEach(function(n){ if (n.lepas) (lp[n.lepas.teacher] = lp[n.lepas.teacher] || []).push(n); });
+    Object.keys(lp).sort().forEach(function(t){
+      var cls = lp[t].map(function(n){ return n.class + ' ' + subjLabel(n.subject); }).filter(function(v, i, a){ return a.indexOf(v) === i; });
+      var rs = lp[t][0].lepas.reason;
+      var why = 'DIBEBASKAN DARIPADA ' + cls.join(', ') + (rs ? ' (' + rs.toUpperCase() + ')' : '');
+      g.push({ name: t, why: why, wa: ' — ' + why, needs: lp[t], lepas: true });
+    });
+    return g;
+  }
   function renderSlips(){
-    $('slips').innerHTML = absents.map(function(a){
-      var rows = R.needs.filter(function(n){ return n.absent.indexOf(a.name) >= 0; }).map(function(n){
+    $('slips').innerHTML = slipGroups().map(function(a){
+      var rows = a.needs.map(function(n){
         var s = D.slots[n.i], lb = reliefLabel(n);
         return '<tr><td class="' + lb.c + (n.added ? ' add' : '') + '">' + esc(lb.t) + '</td><td class="m">' + fmtT(s.start) + '-' + fmtT(s.end) +
           '</td><td class="k">' + esc(n.class + ' ' + subjLabel(n.subject)) + '</td></tr>';
       });
       if (!rows.length) rows.push('<tr><td colspan="3" class="m">Tiada kelas perlu diganti</td></tr>');
-      var why = (a.reason || '').toUpperCase() + (a.full ? '' : (a.reason ? ' ' : '') + '(' + rangeTxt(a) + ')');
+      var why = a.why;
       return '<div class="slip"><table class="slip-t">' +
         '<tr><th colspan="3" class="ttl">TEACH-IN SK AGAMA (MIS) MIRI</th></tr>' +
         '<tr><th class="lab">NAMA GURU</th><td colspan="2">' + esc(a.name.toUpperCase()) + '</td></tr>' +
@@ -1342,6 +1401,8 @@
           h += '<td class="c abs' + (cov ? ' cov' : '') + (kl ? ' kol' : '') + '" title="' + (cov ? 'Program: ' + esc(cov.name) : kl ? 'Kolaborasi: ' + esc(n.partners.join(', ')) : (n && n.relief ? 'Diganti: ' + esc(n.relief) : 'TIADA GANTI')) + '">' + esc(x.class) + '<small>' + (cov ? 'PROG' : kl ? 'KOLAB' : (n && n.relief ? esc(shortName(n.relief)).slice(0, 8) : 'KOSONG')) + '</small></td>';
           return;
         }
+        var lp = !x && (D.lepas || []).find(function(l){ return l.teacher === t && l.i === i; });
+        if (lp){ h += '<td class="c hold" title="Dibebaskan daripada ' + esc(lp.class + ' ' + lp.subject) + (lp.reason ? ': ' + esc(lp.reason) : '') + '"><small>LEPAS</small></td>'; return; }
         var fp = x && freedAt(t, i);
         if (fp){ h += '<td class="c cov" title="Dibebaskan: ' + esc(fp.name) + '">' + esc(x.class) + '<small>PROG</small></td>'; return; }
         if (x){ h += '<td class="c t' + (x.swapFrom ? ' jb' : '') + '"' + (x.swapFrom ? ' title="Jual beli: kelas ' + esc(x.swapFrom) + '"' : '') + '>' + esc(x.class) + '<small>' + esc(x.subject) + (x.swapFrom ? ' ⇄' : '') + '</small></td>'; return; }
@@ -1377,6 +1438,7 @@
         }).join('') + '</select>';
       }
       if (n.releasedFrom) note += ' <span class="tag">guru ganti dilepaskan dari kolaborasi ' + esc(n.releasedFrom) + '</span>';
+      if (n.lepas) note += ' <span class="tag">dibebaskan daripada kelas ini</span>';
       if (n.byCover && absents.some(function(x){ return x.cover === n.relief && n.absent.indexOf(x.name) >= 0; })) note += ' <span class="tag">guru ganti penuh</span>';
       if (n.added) note += ' <span class="tag add">' + addTag() + '</span>' + (n.prevRelief ? ' <span class="tag">asal: ' + esc(shortName(n.prevRelief)) + (absents.some(function(a){ return a.name === n.prevRelief; }) ? ' (tidak hadir)' : '') + '</span>' : '');
       h += '<tr class="' + (n.program ? 'prog' : n.kolab ? 'kolr' : (n.relief ? (n.added ? 'addr' : '') : 'unfilled')) + '"><td><b>' + s.start + '–' + s.end + '</b></td><td><b>' + esc(n.class) + '</b></td><td>' + esc(n.subject) +
@@ -1444,13 +1506,13 @@
       styles: { font: 'helvetica', fontSize: 10, textColor: 0, lineColor: 0, lineWidth: 0.2, fillColor: false, cellPadding: { top: 1.4, bottom: 1.4, left: 2, right: 2 }, valign: 'middle' },
       columnStyles: { 0: { cellWidth: W * 0.46 }, 1: { cellWidth: W * 0.22, halign: 'center' }, 2: { cellWidth: W * 0.32, halign: 'center' } } };
     var lab = function(t){ return { content: t, styles: { fontStyle: 'bold', halign: 'center' } }; };
-    absents.forEach(function(a){
-      var rows = R.needs.filter(function(n){ return n.absent.indexOf(a.name) >= 0; }).map(function(n){
+    slipGroups().forEach(function(a){
+      var rows = a.needs.map(function(n){
         var sl = D.slots[n.i];
         return [reliefLabel(n).t, fmtT(sl.start) + '-' + fmtT(sl.end), n.class + ' ' + subjLabel(n.subject)];
       });
       if (!rows.length) rows.push([{ content: 'Tiada kelas perlu diganti', colSpan: 3, styles: { halign: 'center' } }]);
-      var why = (a.reason || '').toUpperCase() + (a.full ? '' : (a.reason ? ' ' : '') + '(' + rangeTxt(a) + ')');
+      var why = a.why;
       var body = [
         [{ content: 'TEACH-IN SK AGAMA (MIS) MIRI', colSpan: 3, styles: { fontStyle: 'bold', halign: 'center', fontSize: 11 } }],
         [lab('NAMA GURU'), { content: a.name.toUpperCase(), colSpan: 2, styles: { halign: 'left' } }],
@@ -1605,7 +1667,7 @@
         extra: a.full ? [] : (a.extra || []).map(function(r){ return { from: r.from, to: r.to }; }) }; }),
       items: R.needs.map(function(n){
         var sl = D.slots[n.i];
-        return { start: sl.start, end: sl.end, class: n.class, subject: n.subject, absent: n.absent.slice(),
+        return { start: sl.start, end: sl.end, class: n.class, subject: n.subject, absent: n.absent.slice(), lepas: !!n.lepas,
           relief: n.relief || '', kind: n.program ? 'program' : n.kolab ? 'kolab' : n.relief ? 'ganti' : 'tiada',
           note: n.program ? n.program.name : n.kolab ? n.partners.join(', ') : n.byMentor ? 'guru asal' : '', added: !!n.added };
       })
@@ -1776,9 +1838,9 @@
       if ($('preparedBy').value) lines.push('', 'Disediakan oleh: ' + $('preparedBy').value);
       return copyText(lines.join('\n'));
     }
-    absents.forEach(function(a){
-      lines.push('', '*' + a.name.toUpperCase() + '*' + (a.reason ? ' — ' + a.reason.toUpperCase() : '') + (a.full ? '' : ' (' + rangeTxt(a) + ')'));
-      var mine = R.needs.filter(function(n){ return n.absent.indexOf(a.name) >= 0; });
+    slipGroups().forEach(function(a){
+      lines.push('', '*' + a.name.toUpperCase() + '*' + a.wa);
+      var mine = a.needs;
       if (!mine.length) lines.push('Tiada kelas perlu diganti');
       mine.forEach(function(n){
         var s = D.slots[n.i];
@@ -1798,7 +1860,7 @@
 
   $('genBtn').addEventListener('click', function(){
     if (!D.slots.length){ toast(/SABTU|AHAD/.test(D.realDay || '') ? 'Tiada jadual pada hari ini. Jika hari ini sekolah ganti, Admin / Penyelaras perlu menetapkannya dalam kad Sekolah ganti.' : 'Tiada jadual pada hari ini.'); return; }
-    if (!absents.length){ toast('Tambah sekurang-kurangnya seorang guru tidak hadir.'); return; }
+    if (!absents.length && !(D.lepas || []).length){ toast('Tambah sekurang-kurangnya seorang guru tidak hadir.'); return; }
     if (!$('preparedBy').value){ toast('Pilih guru yang menyediakan jadual teach-in.'); $('preparedBy').focus(); return; }
     if (absents.some(function(a){ return !a.full && rangesOf(a).some(function(r){ return mins(r.to) <= mins(r.from); }); })){ toast('Semak masa tidak hadir: masa tamat mesti selepas masa mula.'); return; }
     var A = window.GantiAuth, btn = $('genBtn');
@@ -1972,9 +2034,50 @@
   }
 
   window.GANTI_PRAKTIKUM = [];
+  window.GANTI_PELEPASAN = [];
+  // Pelepasan kelas disimpan dalam koleksi gantiPraktikum dengan jenis: "pelepasan" (peraturan Firestore sedia ada).
+  let lpReady = false;
+  function initLpForm() {
+    if (lpReady) return; lpReady = true;
+    $("lpTeacher").innerHTML = '<option value="">— Pilih guru —</option>' + window.GantiUI.timetableTeachers().map(n => `<option>${esc(n)}</option>`).join("");
+    $("lpTeacher").addEventListener("change", () => {
+      const list = window.GantiUI.mentorClasses($("lpTeacher").value);
+      $("lpClasses").innerHTML = list.length ? list.map(c => `<label class="chip pr"><input type="checkbox" value="${esc(c.class)}|${esc(c.subject)}">${esc(c.class)} ${esc(c.subject)} <span class="meta">(${c.masa} masa/minggu)</span></label>`).join("")
+        : '<span class="meta">Guru ini tiada kelas dalam jadual.</span>';
+    });
+    $("lpAddBtn").addEventListener("click", async () => {
+      const teacher = $("lpTeacher").value, reason = $("lpReason").value.trim(), from = $("lpFrom").value, to = $("lpTo").value;
+      const classes = [...$("lpClasses").querySelectorAll("input:checked")].map(x => { const [c, s] = x.value.split("|"); return { class: c, subject: s }; });
+      if (!teacher) return alert("Pilih guru.");
+      if (!classes.length) return alert("Pilih sekurang-kurangnya satu kelas.");
+      if (from && to && to < from) return alert("Tarikh tamat mesti selepas tarikh mula.");
+      $("lpAddBtn").disabled = true;
+      try {
+        await addDoc(collection(db, "gantiPraktikum"), { jenis: "pelepasan", name: teacher, teacher, classes, from, to, reason, createdBy: auth.currentUser.email, createdAt: serverTimestamp() });
+        $("lpReason").value = ""; [...$("lpClasses").querySelectorAll("input")].forEach(x => x.checked = false);
+        await loadPraktikum();
+      } catch (e) { alert("Gagal menyimpan: " + (e.code || e.message)); }
+      finally { $("lpAddBtn").disabled = false; }
+    });
+    $("lpList").addEventListener("click", async ev => {
+      const id = ev.target.dataset.lpdel; if (!id) return;
+      if (!confirm("Padam pelepasan ini?")) return;
+      try { await deleteDoc(doc(db, "gantiPraktikum", id)); await loadPraktikum(); } catch (e) { alert("Gagal memadam: " + (e.code || e.message)); }
+    });
+  }
+  function renderPelepasan() {
+    const list = window.GANTI_PELEPASAN;
+    $("lpList").innerHTML = list.length ? list.map(p => `<div class="item"><div class="name">${esc(p.teacher)} <span class="base-tag" style="background:#fef3c7;color:#92400e">DIBEBASKAN</span>
+        <div class="meta">${(p.classes || []).map(c => esc(c.class + " " + c.subject)).join(", ")} • ${p.from ? fmtD(p.from) : "—"} hingga ${p.to ? fmtD(p.to) : "—"}${p.reason ? " • " + esc(p.reason) : ""}</div></div>
+        <button class="btn danger" type="button" data-lpdel="${esc(p.id)}">Padam</button></div>`).join("")
+      : '<div class="empty">Tiada pelepasan kelas.</div>';
+  }
   async function loadPraktikum() {
     const snap = await getDocs(collection(db, "gantiPraktikum"));
-    window.GANTI_PRAKTIKUM = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name));
+    const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    window.GANTI_PELEPASAN = all.filter(x => x.jenis === "pelepasan").sort((a, b) => String(a.teacher).localeCompare(String(b.teacher)));
+    window.GANTI_PRAKTIKUM = all.filter(x => !x.jenis).sort((a, b) => a.name.localeCompare(b.name));
+    if (isAdmin) renderPelepasan();
     window.GantiUI && window.GantiUI.praktikumChanged();
     if (isAdmin) renderPraktikum();
     return window.GANTI_PRAKTIKUM.length;
@@ -1990,8 +2093,8 @@
   }
 
   onAuthStateChanged(auth, async u => {
-    isAdmin = false; isRealAdmin = false; window.GANTI_SEKATAN = []; window.GANTI_SEE_SEKATAN = false; $("blockCard").classList.add("hidden"); $("prCard").classList.add("hidden"); $("sgCard").classList.add("hidden"); $("coordCard").classList.add("hidden");
-    if (window.GANTI_PRAKTIKUM.length) { window.GANTI_PRAKTIKUM = []; window.GantiUI?.ready?.then(() => window.GantiUI.praktikumChanged()); }
+    isAdmin = false; isRealAdmin = false; window.GANTI_SEKATAN = []; window.GANTI_SEE_SEKATAN = false; $("blockCard").classList.add("hidden"); $("prCard").classList.add("hidden"); $("sgCard").classList.add("hidden"); $("lpCard").classList.add("hidden"); $("coordCard").classList.add("hidden");
+    if (window.GANTI_PRAKTIKUM.length || window.GANTI_PELEPASAN.length) { window.GANTI_PRAKTIKUM = []; window.GANTI_PELEPASAN = []; window.GantiUI?.ready?.then(() => window.GantiUI.praktikumChanged()); }
     window.GantiUI?.ready?.then(() => window.GantiUI.authChanged());
     if (!u) { window.ICTHeader?.clearUser(); msg("Log masuk dengan akaun DELIMa supaya tetapan sekolah (guru praktikum dan lain-lain) turut diambil kira, dan rekod boleh disimpan.", true); return; }
     try {
@@ -2005,7 +2108,7 @@
       if (isRealAdmin) { $("coordCard").classList.remove("hidden"); loadCoordinators(); }
       window.GANTI_SEE_SEKATAN = isRealAdmin;   // sekatan teach-in: admin sahaja boleh melihat & mengurus
       if (isRealAdmin) { await window.GantiUI.ready; initForm(); $("blockCard").classList.remove("hidden"); }
-      if (isAdmin) { await window.GantiUI.ready; initPrForm(); $("prCard").classList.remove("hidden"); initSgForm(); $("sgCard").classList.remove("hidden"); renderSekolahGanti(); }
+      if (isAdmin) { await window.GantiUI.ready; initPrForm(); $("prCard").classList.remove("hidden"); initSgForm(); $("sgCard").classList.remove("hidden"); renderSekolahGanti(); initLpForm(); $("lpCard").classList.remove("hidden"); renderPelepasan(); }
       await window.GantiUI.ready;
       try { await loadPraktikum(); } catch (e) { console.warn("gantiPraktikum", e); if (isAdmin) $("prList").innerHTML = '<div class="empty" style="color:var(--red)">Senarai guru praktikum tidak dapat dibaca (' + esc(e.code || e.message) + '). Semak peraturan Firestore gantiPraktikum.</div>'; }
       const n = await loadBlocks();

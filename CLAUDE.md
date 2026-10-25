@@ -102,6 +102,11 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   (`GANTI_SEKOLAH_GANTI`). onDate(): `D.day` = timetable day used (`ikut`), `D.realDay` = actual day (SABTU); R.day / slips / record /
   PDF name use the real day, subtitles show "(sekolah ganti • jadual X)". defaultDate() no longer skips a weekend that is a sekolah ganti.
   weekFair counts Mon–Sat; Rekod Mingguan shows a SABTU column when that Saturday is a sekolah ganti or has a record.
+- Pelepasan kelas (card `lpCard`, admin + penyelaras): stored in `gantiPraktikum` with `jenis:"pelepasan"` {teacher, name, classes[{class,subject}],
+  from, to, reason} — reuses that collection's rules; loader splits into `GANTI_PELEPASAN` / `GANTI_PRAKTIKUM`. buildDay removes the matching
+  slots from the teacher's tmap (`D.lepas[{i,class,subject,teacher,reason}]`) so the teacher is free for relief; attempt() adds a need per slot
+  (`n.lepas`, `absent:[teacher]`; candidates() excludes the teacher for their own class). `slipGroups()` (absents + one group per released
+  teacher, SEBAB "DIBEBASKAN DARIPADA …") drives slips, PDF and WhatsApp. Grid cell LEPAS. Jana is allowed with no absents if D.lepas exists.
 - Penyelaras Teach-In: teachers/<email>.penyelarasTeachIn == true gives admin access inside ganti.html only (Guru praktikum card only —
   Sekatan is real-admin only: card hidden, reasons/SEKAT cells hidden from others via `GANTI_SEE_SEKATAN`; header shows "PENYELARAS TEACH-IN"). Only role admin sees the "Penyelaras Teach-In" card that ticks this field (updateDoc on
   teachers). Rules use isGantiAdmin() = isAdmin() || penyelarasTeachIn (see `firestore-rules-ganti.txt`). Cikgu Haslinda is the coordinator.
