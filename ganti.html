@@ -469,7 +469,11 @@
     <div class="opts">
       <div class="opt-group">Had teach-in mengikut beban waktu mengajar guru</div>
       <p class="tier-note">Bilangan maksimum masa teach-in sehari bagi seorang guru ditentukan oleh jumlah masa mengajar guru itu dalam jadual pada hari tersebut.</p>
-      <div class="opt num-opt"><span><b>Guru yang mempunyai 4 masa mengajar dan ke bawah</b><small>Tetapan lalai: maksimum 1 masa.</small></span>
+      <div class="opt num-opt"><span><b>Guru yang mempunyai 2 masa mengajar dan ke bawah</b><small>Tetapan lalai: maksimum 1 masa.</small></span>
+        <select id="tier2"><option value="0">0 masa (tiada teach-in)</option><option value="1" selected>1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option></select></div>
+      <div class="opt num-opt"><span><b>Guru yang mempunyai 3 masa mengajar</b><small>Tetapan lalai: maksimum 1 masa.</small></span>
+        <select id="tier3"><option value="0">0 masa (tiada teach-in)</option><option value="1" selected>1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option></select></div>
+      <div class="opt num-opt"><span><b>Guru yang mempunyai 4 masa mengajar</b><small>Tetapan lalai: maksimum 1 masa.</small></span>
         <select id="tier4"><option value="0">0 masa (tiada teach-in)</option><option value="1" selected>1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option></select></div>
       <div class="opt num-opt"><span><b>Guru yang mempunyai 5 masa mengajar</b><small>Tetapan lalai: maksimum 1 masa.</small></span>
         <select id="tier5"><option value="0">0 masa (tiada teach-in)</option><option value="1" selected>1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option></select></div>
@@ -1000,7 +1004,7 @@
   });
   function getSettings(){
     return {
-      tier4: +$('tier4').value, tier5: +$('tier5').value, tier6: +$('tier6').value, tier7: +$('tier7').value,
+      tier2: +$('tier2').value, tier3: +$('tier3').value, tier4: +$('tier4').value, tier5: +$('tier5').value, tier6: +$('tier6').value, tier7: +$('tier7').value,
       adm: +document.querySelector('input[name=adm]:checked').value,
       noConsec: $('noConsec').checked,
       noAdjacent: $('noAdjacent').checked,
@@ -1013,7 +1017,7 @@
   // Senarai tetapan dalam bentuk teks (disimpan bersama rekod supaya boleh disemak kemudian).
   function settingsLines(set){
     var L = [];
-    L.push('Had teach-in: 4 masa ke bawah → ' + set.tier4 + ', 5 masa → ' + set.tier5 + ', 6 masa → ' + set.tier6 + ', 7 masa ke atas → ' + set.tier7);
+    L.push('Had teach-in: 2 masa ke bawah → ' + (set.tier2 != null ? set.tier2 : set.tier4) + ', 3 masa → ' + (set.tier3 != null ? set.tier3 : set.tier4) + ', 4 masa → ' + set.tier4 + ', 5 masa → ' + set.tier5 + ', 6 masa → ' + set.tier6 + ', 7 masa ke atas → ' + set.tier7);
     L.push('Guru fleksibel: ' + (set.flexMax ? 'maks ' + set.flexMax + ' masa' : 'tidak dilibatkan') + (set.flexMax && set.fleksibel && set.fleksibel.length ? ' (' + set.fleksibel.join(', ') + ')' : ''));
     L.push('Pentadbir: ' + (set.adm ? 'maks ' + set.adm + ' masa' : 'tidak dilibatkan') + (set.adm && set.pentadbir && set.pentadbir.length ? ' (' + set.pentadbir.join(', ') + ')' : ''));
     L.push('Elak 3 masa atau lebih berturut-turut: ' + (set.noConsec ? 'Ya' : 'Tidak'));
@@ -1026,6 +1030,8 @@
   function restoreSettings(){
     var s = lsGet(LS_SET, null); if (!s) return;
     ['tier4', 'tier5', 'tier6', 'tier7'].forEach(function(k){ if (s[k] != null) $(k).value = String(s[k]); });
+    // Tetapan lama (sebelum had 2 & 3 masa ditambah): ikut nilai "4 masa ke bawah".
+    ['tier2', 'tier3'].forEach(function(k){ var v = s[k] != null ? s[k] : s.tier4; if (v != null) $(k).value = String(v); });
     var a = document.querySelector('input[name=adm][value="' + s.adm + '"]'); if (a) a.checked = true;
     if (typeof s.noConsec === 'boolean') $('noConsec').checked = s.noConsec;
     if (typeof s.noAdjacent === 'boolean') $('noAdjacent').checked = s.noAdjacent;
@@ -1035,7 +1041,7 @@
     if (s.flexMax != null) $('flexMax').value = String(Math.min(4, Math.max(0, +s.flexMax || 0)));   // maksimum 4 masa
   }
   $('setCard').addEventListener('change', function(ev){
-    if (ev.target.name === 'adm' || ['noConsec','noAdjacent','noReliefRun','weekFair','splitKolab','flexMax','tier4','tier5','tier6','tier7'].indexOf(ev.target.id) >= 0){ lsSet(LS_SET, getSettings()); hideResults(); }
+    if (ev.target.name === 'adm' || ['noConsec','noAdjacent','noReliefRun','weekFair','splitKolab','flexMax','tier2','tier3','tier4','tier5','tier6','tier7'].indexOf(ev.target.id) >= 0){ lsSet(LS_SET, getSettings()); hideResults(); }
     if (ev.target.name === 'adm' && ev.target.value !== '0' && !admins.size){ $('adminBox').open = true; toast('Tandakan guru yang merupakan pentadbir dahulu.'); }
   });
 
@@ -1222,7 +1228,7 @@
     return n;
   }
   // Had teach-in sehari mengikut jumlah masa mengajar asal guru pada hari itu.
-  function tierMax(set, orig){ return orig <= 4 ? set.tier4 : orig === 5 ? set.tier5 : orig === 6 ? set.tier6 : set.tier7; }
+  function tierMax(set, orig){ return orig <= 2 ? set.tier2 : orig === 3 ? set.tier3 : orig === 4 ? set.tier4 : orig === 5 ? set.tier5 : orig === 6 ? set.tier6 : set.tier7; }
   // Adakah guru sudah diberi teach-in pada slot sejurus sebelum/selepas i (tanpa rehat di antara)?
   function nextToOwnRelief(name, i, st){
     var r = st.relief[name] || [], j = i - 1, k = i + 1;
@@ -1307,7 +1313,7 @@
     var kol = needs.filter(function(n){ return n.kolab; }).length;
     var unf = needs.length - filled - prog - kol;
     var fairTxt = R.set.weekDropped ? ' • KEUTAMAAN MINGGUAN DIBATALKAN (jadual tidak dapat diisi sepenuhnya dengannya)' : R.set.weekFair ? (WEEKDAYS ? ' • Keutamaan mingguan (' + WEEKDAYS + ' hari direkod)' : ' • Keutamaan mingguan (tiada rekod lain)') : '';
-    var setTxt = 'Maks teach-in: ≤4 masa→' + R.set.tier4 + ', 5→' + R.set.tier5 + ', 6→' + R.set.tier6 + ', 7+→' + R.set.tier7 + (R.set.flexMax ? ' • Fleksibel maks ' + R.set.flexMax : ' • Fleksibel tidak dilibatkan') + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '') + (R.set.noAdjacent ? ' • Elak bersambung kelas sendiri' : '') + (R.set.noReliefRun ? ' • Elak teach-in berturut' : '') + fairTxt + (R.set.splitKolab ? ' • Kolaborasi boleh dipecahkan' : '');
+    var setTxt = 'Maks teach-in: ≤2 masa→' + R.set.tier2 + ', 3→' + R.set.tier3 + ', 4→' + R.set.tier4 + ', 5→' + R.set.tier5 + ', 6→' + R.set.tier6 + ', 7+→' + R.set.tier7 + (R.set.flexMax ? ' • Fleksibel maks ' + R.set.flexMax : ' • Fleksibel tidak dilibatkan') + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '') + (R.set.noAdjacent ? ' • Elak bersambung kelas sendiri' : '') + (R.set.noReliefRun ? ' • Elak teach-in berturut' : '') + fairTxt + (R.set.splitKolab ? ' • Kolaborasi boleh dipecahkan' : '');
     var sgTxt = R.ttDay && R.ttDay !== R.day ? ' (sekolah ganti • jadual ' + R.ttDay + ')' : '';
     $('gridSub').textContent = R.day + sgTxt + ', ' + fmtDate(R.date) + ' • ' + setTxt + ' • ' + TT.label;
     $('slipSub').textContent = R.day + sgTxt + ', ' + fmtDate(R.date) + ' • ' + absents.length + ' guru tidak hadir • ' + setTxt;
