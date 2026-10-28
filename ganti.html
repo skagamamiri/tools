@@ -148,6 +148,8 @@
   table.slip-t td.none{color:var(--red);font-weight:800}
   table.slip-t td.kol{color:#92400e}
   .prepared{margin-top:16px;font-size:14px;color:#000}
+  .tier-hint{margin:12px 0 4px;padding:12px 14px;border-radius:14px;background:#fff7ed;border:1px solid #fdba74;color:#7c2d12;font-size:13.5px;line-height:1.5;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .tier-hint b{color:#431407}
   .kolab-note:empty{display:none}
   .kolab-note{margin-top:14px;padding:10px 12px;border:1px solid #000;font-size:13px;color:#000;line-height:1.5;break-inside:avoid}
   .kolab-note b.h{display:block;margin-bottom:4px;text-transform:uppercase}
@@ -531,6 +533,7 @@
     </div>
     <div class="save-status hidden no-print" id="saveStatus"></div>
     <div class="stats no-print" id="stats"></div>
+    <div class="tier-hint no-print hidden" id="tierHint"></div>
     <div class="slips" id="slips"></div>
     <div class="kolab-note" id="kolabNote"></div>
     <div class="prepared" id="preparedLine"></div>
@@ -1065,11 +1068,23 @@
   var ATTEMPTS = 40;
   function generate(){
     var set = getSettings();
-    var bestRun = runBatch(set), total = bestRun.run.needs.length;
+    var bestRun = runBatch(set), total = bestRun.run.needs.length, hint = null;
+    // Keadilan dahulu: jika ada petak kosong dan had guru 6 masa masih 0, semak sama ada membuka had itu dapat mengisinya
+    // tanpa melonggarkan keutamaan "belum teach-in minggu ini". Jika ya, kekalkan hasil ini dan maklumkan penyedia jadual.
+    if (bestRun.score[0] < total && set.tier6 < 1){
+      var trial = runBatch(Object.assign({}, set, { tier6: 1 }));
+      if (trial.score[0] > bestRun.score[0]){
+        var helpers = Object.keys(trial.run.st.relief).filter(function(t){
+          return trial.run.st.relief[t].length && !flex.has(t) && !admins.has(t) && origLoad(t) === 6;
+        });
+        hint = { gain: trial.score[0] - bestRun.score[0], full: trial.score[0] === total, helpers: helpers,
+          fresh: helpers.filter(function(t){ return !weekCount(t); }).length };
+      }
+    }
     // Jika masih ada petak tidak terisi, batalkan keutamaan no. 1 (belum ada teach-in minggu ini) dan cuba semula.
     // Langkah 1: tukar kepada "guru paling sedikit teach-in minggu ini dahulu" (weekSoft).
     // Langkah 2: jika masih kurang, abaikan rekod mingguan sepenuhnya (weekDropped).
-    if (set.weekFair && bestRun.score[0] < total){
+    if (set.weekFair && bestRun.score[0] < total && !hint){
       var setS = Object.assign({}, set, { weekSoft: true });
       var soft = runBatch(setS);
       if (soft.score[0] > bestRun.score[0]){ bestRun = soft; set = setS; }
@@ -1082,7 +1097,7 @@
     var needs = bestRun.run.needs, st = bestRun.run.st;
     needs.forEach(function(n){ delete n.done; markAdded(n); });
     needs.sort(function(a, b){ return a.i - b.i || a.class.localeCompare(b.class); });
-    R = { needs: needs, st: st, set: set, day: D.realDay || D.day, ttDay: D.day, date: $('dateIn').value };
+    R = { needs: needs, st: st, set: set, day: D.realDay || D.day, ttDay: D.day, date: $('dateIn').value, hint: hint };
     renderResults();
     if (set.weekDropped) toast('Keutamaan mingguan dibatalkan supaya semua petak dapat diisi.');
     else if (set.weekSoft) toast('Keutamaan no. 1 dilonggarkan: guru yang paling sedikit teach-in minggu ini dipilih dahulu.');
@@ -1314,7 +1329,23 @@
   function fmtDate(ds){
     var p = ds.split('-'); return p[2] + '.' + p[1] + '.' + p[0];
   }
+  function renderTierHint(){
+    var el = $('tierHint'), h = R.hint;
+    if (!h){ el.className = 'tier-hint no-print hidden'; el.innerHTML = ''; return; }
+    el.innerHTML = '<div><b>Makluman kepada penyedia jadual:</b> masih ada petak <b>TIADA GURU</b> kerana had teach-in guru yang mengajar <b>6 masa</b> ditetapkan 0. ' +
+      'Jika had itu dibuka kepada <b>1 masa</b>, <b>' + h.gain + ' petak lagi</b> boleh diisi' + (h.full ? ' (semua petak terisi)' : '') +
+      ' tanpa mengetepikan keutamaan guru yang belum bertugas teach-in' +
+      (h.fresh ? '. Seramai <b>' + h.fresh + ' guru 6 masa</b> yang belum ada teach-in minggu ini boleh membantu' : '') + '. Tetapan lain tidak berubah.</div>' +
+      '<button class="btn primary small" type="button" id="openTier6Btn">Buka had 6 masa &amp; Jana semula</button>';
+    el.className = 'tier-hint no-print';
+    $('openTier6Btn').onclick = function(){
+      $('tier6').value = '1'; lsSet(LS_SET, getSettings());
+      toast('Had guru 6 masa dibuka kepada 1 masa. Jadual dijana semula.');
+      $('genBtn').click();
+    };
+  }
   function renderResults(keepScroll){
+    renderTierHint();
     var st = R.st, needs = R.needs;
     var filled = needs.filter(function(n){ return n.relief; }).length;
     var prog = needs.filter(function(n){ return n.program; }).length;

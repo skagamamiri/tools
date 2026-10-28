@@ -69,6 +69,9 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   If the best weekFair run still leaves slots unfilled, generate() first reruns with `set.weekSoft` (week count ascending as the first
   sort key instead of week==0 binary; score adds 4×weekCount) — "DILONGGARKAN"; if still unfilled, reruns with weekFair off
   (`set.weekDropped`) — "DIBATALKAN". Each fallback is kept only if it fills more slots.
+  Fairness first: before those fallbacks, if slots are unfilled and `tier6` is 0, a trial run with tier6=1 is made; if it fills more,
+  the strict result is kept (no weekly fallback) and `R.hint` shows an orange "Makluman kepada penyedia jadual" box (`#tierHint`,
+  `renderTierHint()`) with a "Buka had 6 masa & Jana semula" button (sets tier6=1, saves settings, re-runs Jana).
 - Tier rule (`tierMax`): ordinary teacher's relief count that day < tier limit for their original load (excludes freed program slots). The old `cap` radio and `maxRelief` were replaced by these tiers.
 - `weekFair` (default on, needs sign-in): before Jana, loads gantiRekod for the other weekdays of the same calendar week and counts
   each teacher's `ganti` items (`WEEKCNT`); candidates sort by weekly count after original load (fewest first).
