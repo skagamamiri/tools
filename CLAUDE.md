@@ -66,8 +66,9 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 - Candidate order (school's priority, `priorityRank`): no-reason first → 1) no teach-in yet this week (`week==0`, when weekFair) →
   2) ≤4 masa → 3) 5 masa → 4) flex → 5) 6+ masa → 6) pentadbir → 7) released kolab teacher; then orig load, weekly count, relief, random.
   Attempt score uses Σ rank (+10 if the teacher already has teach-in this week) instead of raw load.
-  If the best weekFair run still leaves slots unfilled, generate() reruns `runBatch()` with weekFair off (`set.weekDropped`) and
-  keeps it only if it fills more slots (toast + "KEUTAMAAN MINGGUAN DIBATALKAN" in the summary line).
+  If the best weekFair run still leaves slots unfilled, generate() first reruns with `set.weekSoft` (week count ascending as the first
+  sort key instead of week==0 binary; score adds 4×weekCount) — "DILONGGARKAN"; if still unfilled, reruns with weekFair off
+  (`set.weekDropped`) — "DIBATALKAN". Each fallback is kept only if it fills more slots.
 - Tier rule (`tierMax`): ordinary teacher's relief count that day < tier limit for their original load (excludes freed program slots). The old `cap` radio and `maxRelief` were replaced by these tiers.
 - `weekFair` (default on, needs sign-in): before Jana, loads gantiRekod for the other weekdays of the same calendar week and counts
   each teacher's `ganti` items (`WEEKCNT`); candidates sort by weekly count after original load (fewest first).

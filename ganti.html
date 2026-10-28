@@ -1023,7 +1023,7 @@
     L.push('Elak 3 masa atau lebih berturut-turut: ' + (set.noConsec ? 'Ya' : 'Tidak'));
     L.push('Elak teach-in bersambung kelas asal: ' + (set.noAdjacent ? 'Ya' : 'Tidak'));
     L.push('Elak teach-in berturut-turut: ' + (set.noReliefRun ? 'Ya' : 'Tidak'));
-    L.push('Utamakan guru belum teach-in minggu ini: ' + (set.weekDropped ? 'Ya, tetapi DIBATALKAN kerana jadual tidak dapat diisi sepenuhnya' : set.weekFair ? 'Ya' : 'Tidak'));
+    L.push('Utamakan guru belum teach-in minggu ini: ' + (set.weekDropped ? 'Ya, tetapi DIBATALKAN kerana jadual tidak dapat diisi sepenuhnya' : set.weekSoft ? 'Ya, dilonggarkan kepada guru paling sedikit teach-in minggu ini (jadual tidak dapat diisi sepenuhnya)' : set.weekFair ? 'Ya' : 'Tidak'));
     L.push('Kelas kolaborasi boleh dipecahkan: ' + (set.splitKolab ? 'Ya' : 'Tidak'));
     return L;
   }
@@ -1067,10 +1067,17 @@
     var set = getSettings();
     var bestRun = runBatch(set), total = bestRun.run.needs.length;
     // Jika masih ada petak tidak terisi, batalkan keutamaan no. 1 (belum ada teach-in minggu ini) dan cuba semula.
+    // Langkah 1: tukar kepada "guru paling sedikit teach-in minggu ini dahulu" (weekSoft).
+    // Langkah 2: jika masih kurang, abaikan rekod mingguan sepenuhnya (weekDropped).
     if (set.weekFair && bestRun.score[0] < total){
-      var set2 = Object.assign({}, set, { weekFair: false, weekDropped: true });
-      var alt = runBatch(set2);
-      if (alt.score[0] > bestRun.score[0]){ bestRun = alt; set = set2; }
+      var setS = Object.assign({}, set, { weekSoft: true });
+      var soft = runBatch(setS);
+      if (soft.score[0] > bestRun.score[0]){ bestRun = soft; set = setS; }
+      if (bestRun.score[0] < total){
+        var set2 = Object.assign({}, set, { weekFair: false, weekSoft: false, weekDropped: true });
+        var alt = runBatch(set2);
+        if (alt.score[0] > bestRun.score[0]){ bestRun = alt; set = set2; }
+      }
     }
     var needs = bestRun.run.needs, st = bestRun.run.st;
     needs.forEach(function(n){ delete n.done; markAdded(n); });
@@ -1078,6 +1085,7 @@
     R = { needs: needs, st: st, set: set, day: D.realDay || D.day, ttDay: D.day, date: $('dateIn').value };
     renderResults();
     if (set.weekDropped) toast('Keutamaan mingguan dibatalkan supaya semua petak dapat diisi.');
+    else if (set.weekSoft) toast('Keutamaan no. 1 dilonggarkan: guru yang paling sedikit teach-in minggu ini dipilih dahulu.');
   }
   function runBatch(set){
     var bestRun = null;
@@ -1091,7 +1099,7 @@
         var c = run.st.relief[t].length; if (!c) return;
         used++;
         if (!flex.has(t)) maxLoad = Math.max(maxLoad, c);
-        rankSum += c * (priorityRank(t, origLoad(t), false) + (set.weekFair && weekCount(t) > 0 ? 10 : 0));
+        rankSum += c * (priorityRank(t, origLoad(t), false) + (!set.weekFair ? 0 : set.weekSoft ? weekCount(t) * 4 : weekCount(t) > 0 ? 10 : 0));
       });
       run.needs.forEach(function(n){ if (n.releasedFrom) rankSum += 5; });
       var score = [filled, -maxLoad, -rankSum, used];
@@ -1293,7 +1301,7 @@
     out.sort(function(a, b){
       // Turutan keutamaan (ditetapkan sekolah): 1) belum ada teach-in minggu ini → 2) ≤4 masa → 3) 5 masa → 4) guru fleksibel
       // → 5) 6 masa ke atas → 6) pentadbir → 7) guru kolaborasi yang dilepaskan. Dalam kumpulan: masa paling sedikit dahulu.
-      return (a.reason ? 1 : 0) - (b.reason ? 1 : 0) || ((a.week > 0) - (b.week > 0)) || (a.rank - b.rank) || (a.orig - b.orig) ||
+      return (a.reason ? 1 : 0) - (b.reason ? 1 : 0) || (set.weekSoft ? a.week - b.week : (a.week > 0) - (b.week > 0)) || (a.rank - b.rank) || (a.orig - b.orig) ||
         (a.week - b.week) || a.relief - b.relief ||
         (st.rnd ? st.rnd[a.name] - st.rnd[b.name] : 0) || (b.knows - a.knows) || (a.adm - b.adm) || a.name.localeCompare(b.name);
     });
@@ -1312,7 +1320,8 @@
     var prog = needs.filter(function(n){ return n.program; }).length;
     var kol = needs.filter(function(n){ return n.kolab; }).length;
     var unf = needs.length - filled - prog - kol;
-    var fairTxt = R.set.weekDropped ? ' • KEUTAMAAN MINGGUAN DIBATALKAN (jadual tidak dapat diisi sepenuhnya dengannya)' : R.set.weekFair ? (WEEKDAYS ? ' • Keutamaan mingguan (' + WEEKDAYS + ' hari direkod)' : ' • Keutamaan mingguan (tiada rekod lain)') : '';
+    var fairTxt = R.set.weekDropped ? ' • KEUTAMAAN MINGGUAN DIBATALKAN (jadual tidak dapat diisi sepenuhnya dengannya)' :
+      R.set.weekSoft ? ' • KEUTAMAAN MINGGUAN DILONGGARKAN (guru paling sedikit teach-in minggu ini dahulu)' : R.set.weekFair ? (WEEKDAYS ? ' • Keutamaan mingguan (' + WEEKDAYS + ' hari direkod)' : ' • Keutamaan mingguan (tiada rekod lain)') : '';
     var setTxt = 'Maks teach-in: ≤2 masa→' + R.set.tier2 + ', 3→' + R.set.tier3 + ', 4→' + R.set.tier4 + ', 5→' + R.set.tier5 + ', 6→' + R.set.tier6 + ', 7+→' + R.set.tier7 + (R.set.flexMax ? ' • Fleksibel maks ' + R.set.flexMax : ' • Fleksibel tidak dilibatkan') + ' • ' + (R.set.adm ? 'Pentadbir ' + R.set.adm + ' masa' : 'Tanpa pentadbir') + (R.set.noConsec ? ' • Elak 3+ masa berturut' : '') + (R.set.noAdjacent ? ' • Elak bersambung kelas sendiri' : '') + (R.set.noReliefRun ? ' • Elak teach-in berturut' : '') + fairTxt + (R.set.splitKolab ? ' • Kolaborasi boleh dipecahkan' : '');
     var sgTxt = R.ttDay && R.ttDay !== R.day ? ' (sekolah ganti • jadual ' + R.ttDay + ')' : '';
     $('gridSub').textContent = R.day + sgTxt + ', ' + fmtDate(R.date) + ' • ' + setTxt + ' • ' + TT.label;
@@ -1660,7 +1669,7 @@
       preparedBy: $('preparedBy').value,
       revision: BASE ? (BASE.rec.revision == null ? 0 : BASE.rec.revision || 1) + 1 : 1,
       settings: (function(){
-        var x = Object.assign({}, R.set, { weekDropped: !!R.set.weekDropped,
+        var x = Object.assign({}, R.set, { weekDropped: !!R.set.weekDropped, weekSoft: !!R.set.weekSoft,
           pentadbir: Array.from(admins).sort(), fleksibel: Array.from(flex).sort() });
         x.lines = settingsLines(x);
         return x;
