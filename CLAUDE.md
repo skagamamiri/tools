@@ -28,6 +28,8 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
 - `aktiviti` — school activities (aktiviti.html; shown on the index calendar). Public read.
 - `roomBookings` — special-room bookings (tempahan.html). Activities with a room create
   linked bookings (`aktivitiId`, `sumber: "aktiviti"`). Read requires an active teacher.
+  Admin can edit any booking in tempahan.html (modal, updateDoc + overlap check excluding itself; adds updatedAt/updatedBy).
+  Linked aktiviti bookings are edited via `aktiviti.html?edit=<aktivitiId>` instead, so the activity and booking stay in sync.
 - `kehadiranKelas` — teacher class attendance from QR scans (kehadiran.html). Doc id
   `<date>_<email-key>_<slotStart HHMM>`; create-only for the teacher; admin + pentadbir read all (report). Rules block is live in the Console.
   Required rules are in `firestore-rules-kehadiran.txt`.

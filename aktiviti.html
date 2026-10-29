@@ -360,6 +360,7 @@
       const snap = await getDocs(collection(db, COLLECTION));
       semua = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(a => a.tarikh && a.tajuk);
       render();
+      cubaEditDariUrl();
     } catch (err) {
       console.error(err);
       $("akList").innerHTML = `
@@ -452,6 +453,19 @@
     render();
     $("formTitle").scrollIntoView({ behavior: "smooth", block: "start" });
     setTimeout(() => $("akTajuk").focus({ preventScroll: true }), 400);
+  }
+
+  // Dibuka dari tempahan.html: aktiviti.html?edit=<id>
+  let editDariUrl = new URLSearchParams(location.search).get("edit") || "";
+  function cubaEditDariUrl() {
+    if (!editDariUrl || !currentTeacher || !semua.length) return;
+    const id = editDariUrl;
+    editDariUrl = "";
+    history.replaceState(null, "", location.pathname);
+    const a = semua.find(x => x.id === id);
+    if (!a) return showToast("Aktiviti tidak ditemui.", "error");
+    if (!canDelete(a)) return showToast("Anda tiada kebenaran mengedit aktiviti ini.", "error");
+    mulaEdit(id);
   }
 
   function batalEdit() {
@@ -683,6 +697,7 @@
       $("userRole").textContent = currentTeacher.role === "admin" ? "ADMIN" : "GURU";
       setUI(true);
       render();
+      cubaEditDariUrl();
     } catch (err) {
       console.error(err);
       setUI(false);

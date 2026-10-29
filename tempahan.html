@@ -26,7 +26,8 @@
     Timestamp,
     doc,
     getDoc,
-    deleteDoc
+    deleteDoc,
+    updateDoc
   } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -221,15 +222,103 @@ function renderBookingList() {
         <span>Tempah oleh: ${escapeHtml(b.displayName || b.email || "-")}</span>
         ${b.sumber === "aktiviti" ? `<span style="color:#1d5fd1;font-weight:700">🔒 Melalui Daftar Aktiviti</span>` : ""}
       </div>
-      ${currentUser && (b.uid === currentUser.uid || currentTeacher?.role === "admin")
+      <div class="booking-actions">
+      ${isAdmin()
+        ? `<button class="edit-btn" data-id="${escapeHtml(b.id)}" title="Edit tempahan">Edit</button>`
+        : ""}
+      ${currentUser && (b.uid === currentUser.uid || isAdmin())
         ? `<button class="delete-btn" data-id="${escapeHtml(b.id)}" title="Batalkan tempahan">Batalkan</button>`
         : ""}
+      </div>
     </article>
   `).join("");
 
   list.querySelectorAll(".delete-btn").forEach(btn => {
     btn.addEventListener("click", () => cancelBooking(btn.dataset.id));
   });
+  list.querySelectorAll(".edit-btn").forEach(btn => {
+    btn.addEventListener("click", () => openEdit(btn.dataset.id));
+  });
+}
+
+/* ===== Edit tempahan (admin sahaja) ===== */
+function isAdmin() { return currentTeacher?.role === "admin"; }
+
+let editingBooking = null;
+
+function openEdit(id) {
+  if (!isAdmin()) return;
+  const b = allBookingsForDate.find(x => x.id === id);
+  if (!b) return;
+  // Tempahan daripada Daftar Aktiviti diedit melalui aktiviti supaya kedua-duanya kekal sama.
+  if (b.sumber === "aktiviti" && b.aktivitiId) {
+    if (confirm("Tempahan ini dibuat melalui Daftar Aktiviti.\nBuka aktiviti tersebut untuk diedit? (Tempahan bilik akan dikemaskini bersama.)")) {
+      location.href = "aktiviti.html?edit=" + encodeURIComponent(b.aktivitiId);
+    }
+    return;
+  }
+  editingBooking = b;
+  $("editRoom").value = b.room || "";
+  $("editDate").value = b.date || "";
+  $("editStart").value = b.startTime || "";
+  $("editEnd").value = b.endTime || "";
+  $("editPurpose").value = b.purpose || "";
+  $("editGroup").value = b.groupName || "";
+  $("editOwner").textContent = b.displayName || b.email || "-";
+  $("editModal").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+function closeEdit() {
+  editingBooking = null;
+  $("editModal").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+async function saveEdit(event) {
+  event.preventDefault();
+  if (!editingBooking || !isAdmin()) return;
+  const room = $("editRoom").value;
+  const date = $("editDate").value;
+  const startTime = $("editStart").value;
+  const endTime = $("editEnd").value;
+  const purpose = $("editPurpose").value.trim();
+  const groupName = $("editGroup").value.trim();
+
+  if (!room || !date || !startTime || !endTime || !purpose || !groupName) {
+    showToast("Sila lengkapkan semua maklumat.", "error"); return;
+  }
+  if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
+    showToast("Masa tamat mesti selepas masa mula.", "error"); return;
+  }
+
+  const btn = $("editSaveBtn");
+  btn.disabled = true; btn.textContent = "Menyemak...";
+  try {
+    const existing = await getDocs(query(collection(db, "roomBookings"), where("date", "==", date)));
+    const conflict = existing.docs
+      .filter(d => d.id !== editingBooking.id)
+      .map(d => d.data())
+      .filter(b => b.room === room)
+      .some(b => overlaps(startTime, endTime, b.startTime, b.endTime));
+    if (conflict) { showToast("Bilik tersebut sudah ditempah pada waktu berkenaan.", "error"); return; }
+
+    await updateDoc(doc(db, "roomBookings", editingBooking.id), {
+      room, date, startTime, endTime, purpose, groupName,
+      updatedAt: Timestamp.now(),
+      updatedBy: currentUser.email
+    });
+    closeEdit();
+    showToast("Tempahan telah dikemaskini.", "success");
+    await loadBookings(currentDate);
+  } catch (error) {
+    console.error(error);
+    showToast(error.code === "permission-denied"
+      ? "Tiada kebenaran mengemaskini. Firestore Rules perlu membenarkan admin mengemaskini roomBookings."
+      : (error.message || "Gagal mengemaskini tempahan."), "error");
+  } finally {
+    btn.disabled = false; btn.textContent = "Simpan Perubahan";
+  }
 }
 
 function setFormDefaults() {
@@ -355,6 +444,11 @@ $("googleLoginBtn").addEventListener("click", async () => {
 });
 
 $("bookingForm").addEventListener("submit", submitBooking);
+$("editRoom").insertAdjacentHTML("beforeend", ROOMS.map(r => `<option>${escapeHtml(r)}</option>`).join(""));
+$("editForm").addEventListener("submit", saveEdit);
+$("editCancelBtn").addEventListener("click", closeEdit);
+$("editModal").addEventListener("click", e => { if (e.target === $("editModal")) closeEdit(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && editingBooking) closeEdit(); });
 $("bookingDate").addEventListener("change", e => loadBookings(e.target.value));
 $("statusDate").addEventListener("change", e => loadBookings(e.target.value));
 
@@ -529,6 +623,20 @@ onAuthStateChanged(auth, async user => {
   .booking-time strong { display:block;font-size:13px;color:var(--green-dark); }
   .booking-time span,.booking-detail span { display:block;color:var(--muted);font-size:11px;margin-top:3px; }
   .booking-detail strong { display:block;font-size:13px; }
+  .booking-actions { display:flex;flex-direction:column;gap:6px; }
+  .edit-btn {
+    border:0;background:#eaf3ff;color:#1d5fd1;border-radius:10px;padding:9px 10px;font-size:10px;font-weight:900;
+  }
+  .modal-back {
+    position:fixed;inset:0;z-index:90;background:#0b1a2b80;display:flex;align-items:center;justify-content:center;padding:16px;
+  }
+  .modal-back.hidden { display:none; }
+  .modal-card { width:min(460px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#fff;border-radius:20px;box-shadow:0 25px 70px #0004; }
+  .modal-card .form { padding-top:6px; }
+  .modal-owner { margin:0;color:var(--muted);font-size:12px; }
+  .modal-actions { display:flex;gap:8px; }
+  .modal-actions button { flex:1; }
+  .ghost-btn { border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:13px;padding:12px;font-weight:800; }
   .delete-btn {
     border:0;background:#fff0f2;color:#d62e4d;border-radius:10px;padding:9px 10px;font-size:10px;font-weight:900;
   }
@@ -704,6 +812,43 @@ onAuthStateChanged(auth, async user => {
   </main>
 
   <div class="footer">Hub Tool ICT • SK Agama (MIS) Miri</div>
+</div>
+
+<div id="editModal" class="modal-back hidden" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+  <div class="modal-card">
+    <div class="card-head">
+      <h2 id="editTitle">Edit Tempahan</h2>
+      <p class="modal-owner">Ditempah oleh: <b id="editOwner"></b></p>
+    </div>
+    <form id="editForm" class="form">
+      <label>
+        Bilik
+        <select id="editRoom" required>
+          <option value="">-- Pilih bilik --</option>
+        </select>
+      </label>
+      <label>
+        Tarikh
+        <input id="editDate" type="date" required>
+      </label>
+      <div class="two">
+        <label>Masa Mula <input id="editStart" type="time" required></label>
+        <label>Masa Tamat <input id="editEnd" type="time" required></label>
+      </div>
+      <label>
+        Tujuan
+        <input id="editPurpose" type="text" maxlength="120" required>
+      </label>
+      <label>
+        Kelas / Panitia / Unit / Agensi / Sekolah
+        <input id="editGroup" type="text" maxlength="120" required>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="ghost-btn" id="editCancelBtn">Batal</button>
+        <button type="submit" class="primary" id="editSaveBtn">Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <div id="toast" class="toast"></div>
