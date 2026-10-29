@@ -1,0 +1,15 @@
+// TEMPAHAN BILIK (tempahan.html) — kebenaran Admin mengedit tempahan.
+// Firebase Console → Firestore Database → Rules. Cari blok `match /roomBookings/{...}` yang sedia ada
+// dan tambah SATU baris di bawah di dalamnya. Jangan buang baris lain dalam blok itu.
+// Ia menggunakan fungsi sedia ada isAdmin().
+
+    match /roomBookings/{bookingId} {
+      // ... baris read / create / delete yang sedia ada kekal ...
+
+      // Admin boleh mengemaskini mana-mana tempahan (butang Edit dalam tempahan.html).
+      allow update: if isAdmin();
+    }
+
+// Jika blok itu SUDAH ada baris `allow update: if <syarat>;`, jangan tambah baris baharu.
+// Tambah `|| isAdmin()` pada hujung syarat itu, contoh:
+//   allow update: if resource.data.uid == request.auth.uid || isAdmin();
