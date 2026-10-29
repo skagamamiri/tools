@@ -148,6 +148,7 @@
   table.slip-t td.none{color:var(--red);font-weight:800}
   table.slip-t td.kol{color:#92400e}
   .prepared{margin-top:16px;font-size:14px;color:#000}
+  .fri-note{background:#fff7ed;border:1px solid #fdba74;color:#7c2d12;border-radius:12px;padding:8px 12px}
   .tier-hint{margin:12px 0 4px;padding:12px 14px;border-radius:14px;background:#fff7ed;border:1px solid #fdba74;color:#7c2d12;font-size:13.5px;line-height:1.5;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
   .tier-hint b{color:#431407}
   .kolab-note:empty{display:none}
@@ -471,6 +472,7 @@
     <div class="opts">
       <div class="opt-group">Had teach-in mengikut beban waktu mengajar guru</div>
       <p class="tier-note">Bilangan maksimum masa teach-in sehari bagi seorang guru ditentukan oleh jumlah masa mengajar guru itu dalam jadual pada hari tersebut.</p>
+      <p class="tier-note fri-note hidden" id="friNote"><b>Hari Jumaat:</b> had teach-in bagi guru yang mempunyai <b>4 masa mengajar dan ke atas</b> ditetapkan <b>0</b> secara automatik. Tetapan di bawah kekal untuk hari lain.</p>
       <div class="opt num-opt"><span><b>Guru yang mempunyai 2 masa mengajar dan ke bawah</b><small>Tetapan lalai: maksimum 1 masa.</small></span>
         <select id="tier2"><option value="0">0 masa (tiada teach-in)</option><option value="1" selected>1 masa</option><option value="2">2 masa</option><option value="3">3 masa</option></select></div>
       <div class="opt num-opt"><span><b>Guru yang mempunyai 3 masa mengajar</b><small>Tetapan lalai: maksimum 1 masa.</small></span>
@@ -754,7 +756,14 @@
     renderHolds();
     fillTimeSel($('progFrom'), $('progFrom').value, false);
     fillTimeSel($('progTo'), $('progTo').value, true);
+    var fri = D.day === 'JUMAAT';
+    $('friNote').classList.toggle('hidden', !fri);
+    ['tier4', 'tier5', 'tier6', 'tier7'].forEach(function(k){ $(k).disabled = fri; $(k).title = fri ? 'Hari Jumaat: ditetapkan 0 secara automatik' : ''; });
     renderAbs(); renderProgs(); hideResults();
+  }
+  // Hari Jumaat: guru 4 masa ke atas tidak diberi teach-in (tetapan yang disimpan tidak diubah).
+  function daySettings(set){
+    return D && D.day === 'JUMAAT' ? Object.assign({}, set, { tier4: 0, tier5: 0, tier6: 0, tier7: 0, jumaat: true }) : set;
   }
   // Julat masa tidak hadir: a.from/a.to (julat pertama) + a.extra [{from,to}] (julat tambahan).
   function rangesOf(a){ return [{ from: a.from, to: a.to }].concat(a.extra || []); }
@@ -1021,6 +1030,7 @@
   function settingsLines(set){
     var L = [];
     L.push('Had teach-in: 2 masa ke bawah → ' + (set.tier2 != null ? set.tier2 : set.tier4) + ', 3 masa → ' + (set.tier3 != null ? set.tier3 : set.tier4) + ', 4 masa → ' + set.tier4 + ', 5 masa → ' + set.tier5 + ', 6 masa → ' + set.tier6 + ', 7 masa ke atas → ' + set.tier7);
+    if (set.jumaat) L.push('Hari Jumaat: had guru 4 masa mengajar dan ke atas ditetapkan 0 secara automatik');
     L.push('Guru fleksibel: ' + (set.flexMax ? 'maks ' + set.flexMax + ' masa' : 'tidak dilibatkan') + (set.flexMax && set.fleksibel && set.fleksibel.length ? ' (' + set.fleksibel.join(', ') + ')' : ''));
     L.push('Pentadbir: ' + (set.adm ? 'maks ' + set.adm + ' masa' : 'tidak dilibatkan') + (set.adm && set.pentadbir && set.pentadbir.length ? ' (' + set.pentadbir.join(', ') + ')' : ''));
     L.push('Elak 3 masa atau lebih berturut-turut: ' + (set.noConsec ? 'Ya' : 'Tidak'));
@@ -1067,11 +1077,11 @@
   // berkongsi beban (beban paling tinggi seorang guru paling rendah). Setiap kali Jana ditekan, hasil boleh berbeza.
   var ATTEMPTS = 40;
   function generate(){
-    var set = getSettings();
+    var set = daySettings(getSettings());
     var bestRun = runBatch(set), total = bestRun.run.needs.length, hint = null;
     // Keadilan dahulu: jika ada petak kosong dan had guru 6 masa masih 0, semak sama ada membuka had itu dapat mengisinya
     // tanpa melonggarkan keutamaan "belum teach-in minggu ini". Jika ya, kekalkan hasil ini dan maklumkan penyedia jadual.
-    if (bestRun.score[0] < total && set.tier6 < 1){
+    if (bestRun.score[0] < total && set.tier6 < 1 && !set.jumaat){
       var trial = runBatch(Object.assign({}, set, { tier6: 1 }));
       if (trial.score[0] > bestRun.score[0]){
         var helpers = Object.keys(trial.run.st.relief).filter(function(t){

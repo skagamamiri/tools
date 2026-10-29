@@ -74,6 +74,8 @@ stored in Firestore as github.io are rewritten by `localiseToolUrl()` in index.h
   Fairness first: before those fallbacks, if slots are unfilled and `tier6` is 0, a trial run with tier6=1 is made; if it fills more,
   the strict result is kept (no weekly fallback) and `R.hint` shows an orange "Makluman kepada penyedia jadual" box (`#tierHint`,
   `renderTierHint()`) with a "Buka had 6 masa & Jana semula" button (sets tier6=1, saves settings, re-runs Jana).
+- Friday (`D.day === 'JUMAAT'`, incl. a sekolah ganti following the Friday timetable): `daySettings()` forces tier4–tier7 to 0
+  (`set.jumaat`) at Jana without touching saved settings; selects are disabled and `#friNote` shown; no tier-6 hint.
 - Tier rule (`tierMax`): ordinary teacher's relief count that day < tier limit for their original load (excludes freed program slots). The old `cap` radio and `maxRelief` were replaced by these tiers.
 - `weekFair` (default on, needs sign-in): before Jana, loads gantiRekod for the other weekdays of the same calendar week and counts
   each teacher's `ganti` items (`WEEKCNT`); candidates sort by weekly count after original load (fewest first).
